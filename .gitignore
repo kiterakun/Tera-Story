@@ -1,1 +1,10 @@
 .sisyphus
+node_modules/
+dist/
+build/
+.env
+*.local
+.DS_Store
+Thumbs.db
+*.log
+uploads/images/
