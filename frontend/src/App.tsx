@@ -6,6 +6,10 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import WorldListPage from './pages/WorldListPage'
 import WorldDetailPage from './pages/WorldDetailPage'
+import WorldCreatePage from './pages/WorldCreatePage'
+import PlaythroughPage from './pages/PlaythroughPage'
+import CharacterCreatePage from './pages/CharacterCreatePage'
+import StoryReaderPage from './pages/StoryReaderPage'
 import PlaythroughPage from './pages/PlaythroughPage'
 import StoryReaderPage from './pages/StoryReaderPage'
 import SettingsPage from './pages/SettingsPage'
@@ -26,7 +30,11 @@ function App() {
         
         {/* Protected Routes */}
         <Route path="/worlds" element={<ProtectedRoute><WorldListPage /></ProtectedRoute>} />
+        <Route path="/worlds/create" element={<ProtectedRoute><WorldCreatePage /></ProtectedRoute>} />
         <Route path="/worlds/:id" element={<ProtectedRoute><WorldDetailPage /></ProtectedRoute>} />
+        <Route path="/worlds/:worldId/playthroughs/:id" element={<ProtectedRoute><PlaythroughPage /></ProtectedRoute>} />
+        <Route path="/worlds/:worldId/playthroughs/:playthroughId/characters/create" element={<ProtectedRoute><CharacterCreatePage /></ProtectedRoute>} />
+        <Route path="/play/:playthroughId" element={<ProtectedRoute><StoryReaderPage /></ProtectedRoute>} />
         <Route path="/worlds/:worldId/playthroughs/:id" element={<ProtectedRoute><PlaythroughPage /></ProtectedRoute>} />
         <Route path="/play/:playthroughId" element={<ProtectedRoute><StoryReaderPage /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

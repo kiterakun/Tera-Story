@@ -9,6 +9,7 @@ import settingsRouter from './routes/settings';
 import worldsRouter from './routes/worlds';
 import playthroughsRouter from './routes/playthroughs';
 import charactersRouter from './routes/characters';
+import chaptersRouter from './routes/chapters';
 import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
@@ -46,6 +47,9 @@ app.use('/api/playthroughs', authMiddleware, playthroughsRouter);
 
 // Character Routes (nested under playthroughs + standalone)
 app.use('/api', authMiddleware, charactersRouter);
+
+// Chapter/Arc Routes (nested under playthroughs, arcs, chapters)
+app.use('/api', authMiddleware, chaptersRouter);
 
 // Start logic separated for testing
 if (require.main === module) {

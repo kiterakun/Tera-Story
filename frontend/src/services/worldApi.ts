@@ -1,24 +1,51 @@
-// Stub API for World management
-export async function listWorlds(): Promise<any[]> {
-  return [];
+import { api } from './api';
+
+export interface ResourceTemplate {
+  key: string;
+  type: 'number' | 'text' | 'progress' | 'enum';
+  min?: number;
+  max?: number;
+  defaultValue?: string | number;
+  displayFormat?: string;
+  options?: string[];
 }
 
-export async function getWorld(id: string): Promise<any> {
-  return {};
+export interface World {
+  _id: string;
+  name: string;
+  description: string;
+  genre: 'fantasy' | 'sci-fi' | 'wuxia' | 'modern' | 'custom';
+  imageUrl?: string;
+  resourceTemplates: ResourceTemplate[];
+  createdAt: string;
+  updatedAt: string;
 }
 
-export async function createWorld(data: any): Promise<any> {
-  return {};
+export async function listWorlds(): Promise<World[]> {
+  const { data } = await api.get('/worlds');
+  return data.worlds;
 }
 
-export async function updateWorld(id: string, data: any): Promise<any> {
-  return {};
+export async function getWorld(id: string): Promise<World> {
+  const { data } = await api.get(`/worlds/${id}`);
+  return data.world;
+}
+
+export async function createWorld(payload: Partial<World>): Promise<World> {
+  const { data } = await api.post('/worlds', payload);
+  return data.world;
+}
+
+export async function updateWorld(id: string, payload: Partial<World>): Promise<World> {
+  const { data } = await api.put(`/worlds/${id}`, payload);
+  return data.world;
 }
 
 export async function deleteWorld(id: string): Promise<void> {
-  return;
+  await api.delete(`/worlds/${id}`);
 }
 
-export async function createFromTemplate(templateId: string, name: string): Promise<any> {
-  return {};
+export async function createFromTemplate(templateId: string, name: string): Promise<World> {
+  const { data } = await api.post(`/worlds/from-template/${templateId}`, { name });
+  return data.world;
 }
