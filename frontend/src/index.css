@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0F172A;
+  --text-primary: #E2E8F0;
+  --accent: #818CF8;
+}
+
+html {
+  @apply dark;
+}
+
+html.dark body {
+  @apply bg-ink-950 text-ink-200;
+}
+
+html:not(.dark) body {
+  @apply bg-parchment-50 text-parchment-900;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  min-height: 100vh;
+}
