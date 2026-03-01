@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
+import logo from '../assets/logo.png';
 
 export default function LoginPage() {
   const t = useTranslation();
@@ -38,9 +39,7 @@ export default function LoginPage() {
 
       <div className="relative bg-ink-800 border border-ink-700 rounded-2xl p-8 sm:p-10 max-w-md w-full shadow-2xl shadow-black/20 animate-fade-in">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-accent-600 flex items-center justify-center text-white font-display text-2xl font-bold mx-auto mb-4 shadow-lg shadow-accent-600/25">
-            T
-          </div>
+          <img src={logo} alt="Tera-Story" className="w-14 h-14 rounded-2xl mx-auto mb-4 shadow-lg shadow-accent-600/25" />
           <h1 className="font-display text-3xl sm:text-4xl text-ink-100 mb-2">{t.login.title}</h1>
           <p className="text-ink-200/60 text-sm">{t.login.subtitle}</p>
         </div>

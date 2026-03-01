@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useUIStore } from '../stores/uiStore';
 import { useTranslation } from '../i18n';
+import logo from '../assets/logo.png';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const t = useTranslation();
@@ -26,9 +27,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link to="/worlds" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-accent-600 flex items-center justify-center text-white font-display text-sm font-bold group-hover:bg-accent-500 transition-colors shadow-sm">
-              T
-            </div>
+            <img src={logo} alt="Tera-Story" className="w-8 h-8 rounded-lg shadow-sm group-hover:shadow-accent-600/20 transition-shadow" />
             <span className="font-display text-xl text-ink-100 group-hover:text-accent-400 transition-colors hidden sm:block">
               Tera-Story
             </span>
