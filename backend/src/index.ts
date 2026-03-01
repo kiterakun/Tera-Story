@@ -6,6 +6,9 @@ import { env } from './config/env';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import authRouter from './routes/auth';
 import settingsRouter from './routes/settings';
+import worldsRouter from './routes/worlds';
+import playthroughsRouter from './routes/playthroughs';
+import charactersRouter from './routes/characters';
 import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
@@ -34,6 +37,15 @@ app.use('/api/auth', authRouter);
 
 // Settings Routes
 app.use('/api/settings', authMiddleware, settingsRouter);
+
+// World Routes
+app.use('/api/worlds', authMiddleware, worldsRouter);
+
+// Playthrough Routes (standalone)
+app.use('/api/playthroughs', authMiddleware, playthroughsRouter);
+
+// Character Routes (nested under playthroughs + standalone)
+app.use('/api', authMiddleware, charactersRouter);
 
 // Start logic separated for testing
 if (require.main === module) {
