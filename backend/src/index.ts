@@ -4,6 +4,9 @@ import path from 'path';
 import mongoose from 'mongoose';
 import { env } from './config/env';
 import { connectDatabase, disconnectDatabase } from './config/database';
+import authRouter from './routes/auth';
+import settingsRouter from './routes/settings';
+import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
 
@@ -25,6 +28,12 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString() 
   });
 });
+
+// Auth Routes
+app.use('/api/auth', authRouter);
+
+// Settings Routes
+app.use('/api/settings', authMiddleware, settingsRouter);
 
 // Start logic separated for testing
 if (require.main === module) {
