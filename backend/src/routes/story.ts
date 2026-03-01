@@ -85,12 +85,10 @@ router.get(
         .sort({ arcIndex: -1 })
         .lean();
 
-      // Recent chapters (last 5 across all arcs for this playthrough)
+      // ALL chapters for this playthrough (for chapter navigation)
       const chapters = await Chapter.find({ playthroughId })
-        .sort({ chapterIndex: -1 })
-        .limit(5)
+        .sort({ chapterIndex: 1 })
         .lean();
-      chapters.reverse();
 
       // Latest chapter for choices
       const latestChapter = chapters.length > 0 ? chapters[chapters.length - 1] : null;

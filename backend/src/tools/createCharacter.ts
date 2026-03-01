@@ -2,6 +2,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { Character } from '../models/Character';
 import { initializeDynamicStats } from '../services/characterService';
+import { queueImageGeneration } from '../services/imageService';
 
 export function makeCreateCharacterTool(
   playthroughId: string,
@@ -28,8 +29,13 @@ export function makeCreateCharacterTool(
         dynamicStats,
       });
 
-      // TODO: Queue image generation (fire-and-forget)
-
+      // Fire-and-forget image generation
+      queueImageGeneration(
+        `Portrait of a character: ${name}. ${description}. Fantasy RPG style, detailed, high quality.`,
+        'character',
+        character._id.toString(),
+        userId
+      );
       return { characterId: character._id.toString(), name };
     },
   });

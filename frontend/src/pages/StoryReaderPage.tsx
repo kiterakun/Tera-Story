@@ -1,12 +1,14 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useStoryStream } from '../hooks/useStoryStream';
 import { TypewriterText } from '../components/TypewriterText';
+import { StoryContent, type EntityRef } from '../components/StoryContent';
+import { EntityDetailModal, type EntityData } from '../components/EntityDetailModal';
 import * as storyApi from '../services/storyApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useTranslation } from '../i18n';
-import { UserRound, Users, Package, Sparkles, Swords, X, BookOpen } from 'lucide-react';
+import { UserRound, Users, Package, Sparkles, Swords, X, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ItemRarity } from '../services/playthroughApi';
 
 // Matches backend Chapter model
@@ -41,8 +43,10 @@ export default function StoryReaderPage() {
   const [choices, setChoices] = useState<Choice[]>([]);
   const [isLoadingState, setIsLoadingState] = useState(true);
   const [isNewGame, setIsNewGame] = useState(false);
+  const [currentChapterIdx, setCurrentChapterIdx] = useState(-1); // -1 = latest/streaming
   const [rpgTab, setRpgTab] = useState<'stats' | 'inventory' | 'abilities'>('stats');
   const [rpgOpen, setRpgOpen] = useState(false);
+  const [detailEntity, setDetailEntity] = useState<EntityData | null>(null);
   
   const { streamedText, isStreaming, isThinking, startStream, skipToEnd } = useStoryStream();
   
@@ -64,6 +68,22 @@ export default function StoryReaderPage() {
   };
   
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Chapter navigation
+  const totalChapters = chapters.length;
+  const isOnLatest = currentChapterIdx === -1 || currentChapterIdx >= totalChapters - 1;
+  const activeChapter = isOnLatest ? chapters[totalChapters - 1] : chapters[currentChapterIdx];
+  const showChoices = isOnLatest && !isStreaming && !isThinking && choices.length > 0;
+
+  const goToChapter = useCallback((idx: number) => {
+    if (idx >= 0 && idx < totalChapters) {
+      setCurrentChapterIdx(idx);
+    }
+  }, [totalChapters]);
+
+  const goToLatest = useCallback(() => {
+    setCurrentChapterIdx(-1);
+  }, []);
 
   // Auto-scroll
   useEffect(() => {
@@ -87,6 +107,8 @@ export default function StoryReaderPage() {
        fetchCharacters(playthroughId).catch(console.error);
        fetchItems(playthroughId).catch(console.error);
        fetchSpecialItems(playthroughId).catch(console.error);
+       // Jump to latest chapter after stream ends
+       setCurrentChapterIdx(-1);
     }
   }, [isStreaming]);
 
@@ -95,7 +117,6 @@ export default function StoryReaderPage() {
       setIsLoadingState(true);
       const state = await storyApi.getStoryState(playthroughId!);
       
-      // Backend returns chapters array now
       if (state.chapters && state.chapters.length > 0) {
         setChapters(state.chapters);
       } else if (state.latestChapter) {
@@ -113,29 +134,43 @@ export default function StoryReaderPage() {
     }
   };
 
-  // Send the choice text (not _id, since choices have _id: false)
   const handleChoiceSelect = async (choiceText: string) => {
     if (!playthroughId || !token) return;
     try {
         await startStream(playthroughId, choiceText, token);
         setChoices([]);
         setIsNewGame(false);
+        setCurrentChapterIdx(-1);
     } catch (e) {
         console.error("Stream failed to start", e);
     }
   };
 
-  // Begin story for fresh playthroughs
   const handleBeginStory = async () => {
     if (!playthroughId || !token) return;
     try {
       await startStream(playthroughId, 'Begin the story', token);
       setIsNewGame(false);
       setChoices([]);
+      setCurrentChapterIdx(-1);
     } catch (e) {
       console.error("Failed to begin story", e);
     }
   };
+
+  // Handle entity clicks from story content or sidebar
+  const handleEntityClick = useCallback((entity: EntityRef) => {
+    if (entity.type === 'char') {
+      const char = characters.find(c => c.name === entity.name);
+      if (char) setDetailEntity({ type: 'character', data: char });
+    } else if (entity.type === 'item') {
+      const item = items.find(i => i.name === entity.name);
+      if (item) setDetailEntity({ type: 'item', data: item });
+    } else if (entity.type === 'special') {
+      const si = specialItems.find(s => s.name === entity.name);
+      if (si) setDetailEntity({ type: 'special', data: si });
+    }
+  }, [characters, items, specialItems]);
 
   if (isLoadingState && chapters.length === 0) {
     return (
@@ -147,8 +182,6 @@ export default function StoryReaderPage() {
       </div>
     );
   }
-
-  const visibleChapters = chapters.slice(-3);
 
   const rpgPanelContent = (
     <div className="flex flex-col flex-1 min-h-0">
@@ -174,7 +207,7 @@ export default function StoryReaderPage() {
         <div className="space-y-5 overflow-y-auto flex-1">
           {protagonist && (
             <div>
-              <div className="flex items-center gap-3 mb-3">
+              <button onClick={() => setDetailEntity({ type: 'character', data: protagonist })} className="flex items-center gap-3 mb-3 w-full text-left hover:bg-ink-800/50 rounded-xl p-1.5 -m-1.5 transition-colors cursor-pointer">
                 {protagonist.imageUrl ? (
                   <img src={protagonist.imageUrl} alt={protagonist.name} className="w-12 h-12 rounded-xl object-cover border-2 border-accent-400/30" />
                 ) : (
@@ -184,7 +217,7 @@ export default function StoryReaderPage() {
                   <h4 className="font-display text-sm text-ink-100">{protagonist.name}</h4>
                   <span className="text-[10px] text-accent-400 uppercase tracking-wide font-medium">{t.characterPanel.protagonist}</span>
                 </div>
-              </div>
+              </button>
               <div className="space-y-1.5">
                 {protagonist.dynamicStats.map(stat => (
                   <div key={stat.k}>
@@ -206,9 +239,9 @@ export default function StoryReaderPage() {
           {npcs.length > 0 && (
             <div>
               <h4 className="font-display text-xs text-ink-200/60 uppercase tracking-wider mb-2">{t.characterPanel.storyCharacters}</h4>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {npcs.map(npc => (
-                  <div key={npc._id} className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-ink-800/50 transition-colors">
+                  <button key={npc._id} onClick={() => setDetailEntity({ type: 'character', data: npc })} className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-ink-800/50 transition-colors w-full text-left cursor-pointer">
                     {npc.imageUrl ? (
                       <img src={npc.imageUrl} alt={npc.name} className="w-9 h-9 rounded-lg object-cover border border-ink-600" />
                     ) : (
@@ -218,7 +251,7 @@ export default function StoryReaderPage() {
                       <p className="text-ink-100 text-sm truncate">{npc.name}</p>
                       <p className="text-ink-200/50 text-xs truncate">{npc.description}</p>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -234,7 +267,7 @@ export default function StoryReaderPage() {
       {rpgTab === 'inventory' && (
         <div className="space-y-2 overflow-y-auto flex-1">
           {items.length > 0 ? items.map(item => (
-            <div key={item._id} className="bg-ink-800/60 border border-ink-700 rounded-xl p-3">
+            <button key={item._id} onClick={() => setDetailEntity({ type: 'item', data: item })} className="bg-ink-800/60 border border-ink-700 rounded-xl p-3 w-full text-left hover:bg-ink-800 hover:border-ink-600 transition-colors cursor-pointer">
               <div className="flex items-start gap-2.5">
                 {item.imageUrl ? (
                   <img src={item.imageUrl} alt={item.name} className="w-9 h-9 rounded-lg object-cover border border-ink-600 shrink-0" />
@@ -247,7 +280,7 @@ export default function StoryReaderPage() {
                 </div>
               </div>
               <p className="text-ink-200/60 text-xs mt-1.5 line-clamp-2">{item.description}</p>
-            </div>
+            </button>
           )) : (
             <p className="text-ink-200/40 text-sm italic">{t.characterPanel.noItems}</p>
           )}
@@ -258,7 +291,7 @@ export default function StoryReaderPage() {
       {rpgTab === 'abilities' && (
         <div className="space-y-2 overflow-y-auto flex-1">
           {specialItems.length > 0 ? specialItems.map(si => (
-            <div key={si._id} className="bg-ink-800/60 border border-ink-700 rounded-xl p-3">
+            <button key={si._id} onClick={() => setDetailEntity({ type: 'special', data: si })} className="bg-ink-800/60 border border-ink-700 rounded-xl p-3 w-full text-left hover:bg-ink-800 hover:border-ink-600 transition-colors cursor-pointer">
               <div className="flex items-start gap-2.5">
                 {si.imageUrl ? (
                   <img src={si.imageUrl} alt={si.name} className="w-9 h-9 rounded-lg object-cover border border-ink-600 shrink-0" />
@@ -274,7 +307,7 @@ export default function StoryReaderPage() {
                 </div>
               </div>
               <p className="text-ink-200/60 text-xs mt-1.5 line-clamp-2">{si.description}</p>
-            </div>
+            </button>
           )) : (
             <p className="text-ink-200/40 text-sm italic">{t.characterPanel.noSpecialItems}</p>
           )}
@@ -285,13 +318,33 @@ export default function StoryReaderPage() {
 
   return (
     <div className="flex bg-ink-950 min-h-[calc(100vh-4rem)] relative">
-      {/* Left sidebar */}
-      <div className="hidden lg:block w-64 border-r border-ink-700 bg-ink-900/50 p-5 shrink-0">
+      {/* Left sidebar — Chapter Navigation */}
+      <div className="hidden lg:flex flex-col w-64 border-r border-ink-700 bg-ink-900/50 p-5 shrink-0">
         <h3 className="font-display text-sm text-ink-100 mb-4 border-b border-ink-700 pb-3 uppercase tracking-wider">{t.storyReader.storyNavigation}</h3>
-        <p className="text-sm text-ink-200/40 italic">{t.storyReader.navigationPanel}</p>
-        <div className="mt-8">
+        
+        {/* Chapter list */}
+        <div className="space-y-1 flex-1 overflow-y-auto mb-4">
+          {chapters.map((ch, idx) => (
+            <button
+              key={ch._id}
+              onClick={() => goToChapter(idx)}
+              className={`w-full text-left px-3 py-2 rounded-xl text-sm transition-colors ${
+                (isOnLatest && idx === totalChapters - 1) || (!isOnLatest && idx === currentChapterIdx)
+                  ? 'bg-accent-600/20 text-accent-400 border border-accent-400/30'
+                  : 'text-ink-200/70 hover:bg-ink-800/50 hover:text-ink-100'
+              }`}
+            >
+              {t.storyNav.chapter} {ch.chapterIndex + 1}
+            </button>
+          ))}
+          {chapters.length === 0 && (
+            <p className="text-sm text-ink-200/40 italic">{t.storyReader.navigationPanel}</p>
+          )}
+        </div>
+
+        <div>
           <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 text-accent-400 hover:text-accent-500 text-sm transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg>
+            <ChevronLeft size={16} />
             {t.storyReader.backToPlaythrough}
           </button>
         </div>
@@ -317,21 +370,49 @@ export default function StoryReaderPage() {
               </button>
             </div>
           )}
+
+          {/* Chapter header + navigation */}
+          {activeChapter && !isNewGame && (
+            <div className="flex items-center justify-between mb-8 font-sans">
+              <button
+                onClick={() => goToChapter((isOnLatest ? totalChapters - 1 : currentChapterIdx) - 1)}
+                disabled={isOnLatest ? totalChapters <= 1 : currentChapterIdx <= 0}
+                className="p-2 rounded-xl text-ink-200/60 hover:text-ink-100 hover:bg-ink-800/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                title={t.storyReader.prevChapter}
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <h3 className="font-display text-sm text-ink-200/60 uppercase tracking-wider">
+                {t.storyNav.chapter} {activeChapter.chapterIndex + 1}{totalChapters > 0 ? ` / ${totalChapters}` : ''}
+              </h3>
+              <button
+                onClick={() => {
+                  const next = (isOnLatest ? totalChapters - 1 : currentChapterIdx) + 1;
+                  if (next >= totalChapters - 1) goToLatest();
+                  else goToChapter(next);
+                }}
+                disabled={isOnLatest}
+                className="p-2 rounded-xl text-ink-200/60 hover:text-ink-100 hover:bg-ink-800/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                title={t.storyReader.nextChapter}
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
           
-          {/* Previous Chapters */}
-          <div className="space-y-8 md:space-y-12 mb-8">
-            {visibleChapters.map((chapter) => (
-              <div key={chapter._id} className="text-ink-200/90">
-                {chapter.content.split('\n\n').map((paragraph, i) => (
-                  <p key={i} className="mb-4 leading-[1.8]">{paragraph}</p>
-                ))}
-              </div>
-            ))}
-          </div>
+          {/* Current chapter content (with entity highlighting) */}
+          {activeChapter && !isStreaming && !isThinking && (
+            <div className="text-ink-200/90 animate-fade-in">
+              <StoryContent
+                text={activeChapter.content}
+                onEntityClick={handleEntityClick}
+              />
+            </div>
+          )}
 
           {/* Current Chapter Stream */}
           {(isStreaming || isThinking) && (
-            <div className="border-l-2 border-accent-400/30 pl-5 py-3 mt-8 md:mt-12 bg-accent-400/[0.03] rounded-r-2xl animate-fade-in">
+            <div className="border-l-2 border-accent-400/30 pl-5 py-3 mt-4 bg-accent-400/[0.03] rounded-r-2xl animate-fade-in">
               <div className="text-ink-200/90">
                 <TypewriterText text={streamedText} isActive={isStreaming} className="whitespace-pre-wrap" />
               </div>
@@ -356,8 +437,8 @@ export default function StoryReaderPage() {
             </div>
           )}
 
-          {/* Choice Cards */}
-          {!isStreaming && !isThinking && choices.length > 0 && (
+          {/* Choice Cards — only on the latest chapter */}
+          {showChoices && (
             <div className="mt-16 md:mt-24 border-t border-ink-700 pt-8 animate-fade-in">
               <h3 className="font-display text-lg text-ink-100 mb-6 text-center">{t.storyReader.whatDoYouDoNext}</h3>
               <div className="flex flex-col gap-3">
@@ -412,6 +493,9 @@ export default function StoryReaderPage() {
       {rpgOpen && (
         <div className="xl:hidden fixed inset-0 bg-black/50 z-10" onClick={() => setRpgOpen(false)} />
       )}
+
+      {/* Entity Detail Modal */}
+      <EntityDetailModal entity={detailEntity} onClose={() => setDetailEntity(null)} />
     </div>
   );
 }

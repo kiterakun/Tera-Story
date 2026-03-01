@@ -59,7 +59,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t.login.emailPlaceholder}
               required
               className="bg-ink-950 border border-ink-700 text-ink-100 rounded-xl px-4 py-3 w-full focus:border-accent-400 focus:ring-2 focus:ring-accent-400/20 outline-none transition-all placeholder:text-ink-500"
             />
@@ -70,7 +70,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder={t.login.passwordPlaceholder}
               required
               className="bg-ink-950 border border-ink-700 text-ink-100 rounded-xl px-4 py-3 w-full focus:border-accent-400 focus:ring-2 focus:ring-accent-400/20 outline-none transition-all placeholder:text-ink-500"
             />

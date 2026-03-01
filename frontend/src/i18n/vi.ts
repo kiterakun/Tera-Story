@@ -14,6 +14,8 @@ const vi: Translations = {
     subtitle: 'Bước vào vương quốc của vô vàn câu chuyện',
     email: 'Email',
     password: 'Mật khẩu',
+    emailPlaceholder: 'you@example.com',
+    passwordPlaceholder: '••••••••',
     loginBtn: 'Đăng nhập',
     loggingIn: 'Đang đăng nhập...',
     noAccount: 'Chưa có tài khoản?',
@@ -27,6 +29,8 @@ const vi: Translations = {
     usernamePlaceholder: 'Tên hiển thị của bạn',
     email: 'Email',
     password: 'Mật khẩu',
+    emailPlaceholder: 'you@example.com',
+    passwordPlaceholder: '••••••••',
     registerBtn: 'Đăng ký',
     registering: 'Đang tạo...',
     hasAccount: 'Đã có tài khoản?',
@@ -207,6 +211,9 @@ const vi: Translations = {
     beginAdventureDesc: 'Câu chuyện đang chờ đợi. Hãy chọn cách hành trình bắt đầu.',
     beginStory: 'Bắt đầu',
     beginningStory: 'Đang bắt đầu...',
+    // Chapter navigation
+    prevChapter: 'Chương trước',
+    nextChapter: 'Chương tiếp',
   },
 
   characterPanel: {

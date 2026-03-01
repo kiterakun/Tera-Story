@@ -2,6 +2,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { Item } from '../models/Item';
 import { Character } from '../models/Character';
+import { queueImageGeneration } from '../services/imageService';
 
 export function makeCreateItemTool(playthroughId: string, userId: string) {
   return tool({
@@ -37,6 +38,14 @@ export function makeCreateItemTool(playthroughId: string, userId: string) {
         playthroughId,
         ...(ownerId ? { ownerId } : {}),
       });
+
+      // Fire-and-forget image generation
+      queueImageGeneration(
+        `${name}: ${description}. ${rarity} rarity item. Fantasy RPG item illustration, detailed, high quality.`,
+        'item',
+        item._id.toString(),
+        userId
+      );
 
       return { itemId: item._id.toString(), name };
     },

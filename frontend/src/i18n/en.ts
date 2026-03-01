@@ -12,7 +12,9 @@ const en = {
     subtitle: 'Enter the realm of infinite stories',
     email: 'Email',
     password: 'Password',
+    emailPlaceholder: 'you@example.com',
     loginBtn: 'Login',
+    passwordPlaceholder: '••••••••',
     loggingIn: 'Entering...',
     noAccount: "Don't have an account?",
     register: 'Register',
@@ -25,7 +27,9 @@ const en = {
     usernamePlaceholder: 'Your display name',
     email: 'Email',
     password: 'Password',
+    emailPlaceholder: 'you@example.com',
     registerBtn: 'Register',
+    passwordPlaceholder: '••••••••',
     registering: 'Creating...',
     hasAccount: 'Already have an account?',
     login: 'Login',
@@ -205,6 +209,9 @@ const en = {
     beginAdventureDesc: 'The story awaits. Choose how your journey begins.',
     beginStory: 'Begin Story',
     beginningStory: 'Beginning...',
+    // Chapter navigation
+    prevChapter: 'Previous chapter',
+    nextChapter: 'Next chapter',
   },
 
   characterPanel: {

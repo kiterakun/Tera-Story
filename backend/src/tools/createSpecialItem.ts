@@ -2,6 +2,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { SpecialItem } from '../models/SpecialItem';
 import { Character } from '../models/Character';
+import { queueImageGeneration } from '../services/imageService';
 
 export function makeCreateSpecialItemTool(playthroughId: string, userId: string) {
   return tool({
@@ -47,6 +48,14 @@ export function makeCreateSpecialItemTool(playthroughId: string, userId: string)
         customFields: customFields ?? {},
         ...(ownerId ? { ownerId } : {}),
       });
+
+      // Fire-and-forget image generation
+      queueImageGeneration(
+        `${name}: ${description}. Category: ${category}. ${rarity} rarity. Fantasy RPG ability/skill illustration, magical, detailed.`,
+        'special-item',
+        specialItem._id.toString(),
+        userId
+      );
 
       return { specialItemId: specialItem._id.toString(), name, category };
     },
