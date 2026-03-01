@@ -10,19 +10,17 @@ export default function PlaythroughPage() {
   const { worldId, id } = useParams<{ worldId: string, id: string }>();
   const navigate = useNavigate();
   
-  const { currentPlaythrough, characters, arcs, items, specialItems, isLoading, fetchPlaythrough, fetchCharacters, fetchArcs, fetchItems, fetchSpecialItems } = useStoryStore(state => ({
-    currentPlaythrough: state.currentPlaythrough,
-    characters: state.characters,
-    arcs: state.arcs,
-    items: state.items,
-    specialItems: state.specialItems,
-    isLoading: state.isLoading,
-    fetchPlaythrough: state.fetchPlaythrough,
-    fetchCharacters: state.fetchCharacters,
-    fetchArcs: state.fetchArcs,
-    fetchItems: state.fetchItems,
-    fetchSpecialItems: state.fetchSpecialItems,
-  }));
+  const currentPlaythrough = useStoryStore(s => s.currentPlaythrough);
+  const characters = useStoryStore(s => s.characters);
+  const arcs = useStoryStore(s => s.arcs);
+  const items = useStoryStore(s => s.items);
+  const specialItems = useStoryStore(s => s.specialItems);
+  const isLoading = useStoryStore(s => s.isLoading);
+  const fetchPlaythrough = useStoryStore(s => s.fetchPlaythrough);
+  const fetchCharacters = useStoryStore(s => s.fetchCharacters);
+  const fetchArcs = useStoryStore(s => s.fetchArcs);
+  const fetchItems = useStoryStore(s => s.fetchItems);
+  const fetchSpecialItems = useStoryStore(s => s.fetchSpecialItems);
 
   useEffect(() => {
     if (id) {

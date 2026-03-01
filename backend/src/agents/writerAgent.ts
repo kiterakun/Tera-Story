@@ -1,4 +1,4 @@
-import { streamText, stepCountIs } from 'ai';
+import { streamText, stepCountIs, type StreamTextResult } from 'ai';
 import type { LanguageModel } from 'ai';
 import type { ContextOutput } from './contextAgent';
 import { makeCreateCharacterTool } from '../tools/createCharacter';
@@ -94,7 +94,7 @@ Write the next chapter based on the context above. Remember to:
 5. Call generateChoices at the end with 3-4 meaningful options
 `.trim();
 
-  // Call streamText with tools
+  // Call streamText with tools — onFinish persists content to DB
   const result = streamText({
     model,
     system: `${SYSTEM_PROMPT}\nWrite in ${language}.`,
@@ -102,6 +102,13 @@ Write the next chapter based on the context above. Remember to:
     tools,
     stopWhen: stepCountIs(maxSteps),
     abortSignal,
+    async onFinish({ text }) {
+      // Persist generated content to the chapter document
+      if (text) {
+        const { Chapter } = await import('../models/Chapter');
+        await Chapter.findByIdAndUpdate(chapterId, { content: text });
+      }
+    },
   });
 
   return result;

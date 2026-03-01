@@ -1,8 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useWorldStore } from '../stores/worldStore';
 import { useTranslation } from '../i18n';
-import { Search, BookOpen, Plus, ChevronLeft, Calendar } from 'lucide-react';
+import { Search, BookOpen, Plus, ChevronLeft, Calendar, Play, X } from 'lucide-react';
+import * as playthroughApi from '../services/playthroughApi';
+import type { Playthrough } from '../services/playthroughApi';
+
+const statusColor: Record<string, string> = {
+  active: 'bg-green-400/10 text-green-400 border-green-400/20',
+  paused: 'bg-amber-400/10 text-amber-400 border-amber-400/20',
+  completed: 'bg-ink-200/10 text-ink-200/60 border-ink-700',
+};
 
 export default function WorldDetailPage() {
   const t = useTranslation();
@@ -10,11 +18,47 @@ export default function WorldDetailPage() {
   const navigate = useNavigate();
   const { currentWorld, isLoading, fetchWorld, deleteWorld } = useWorldStore();
 
+  const [playthroughs, setPlaythroughs] = useState<Playthrough[]>([]);
+  const [isLoadingPlaythroughs, setIsLoadingPlaythroughs] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+
   useEffect(() => {
     if (id) {
       fetchWorld(id).catch(console.error);
+      loadPlaythroughs(id);
     }
   }, [id, fetchWorld]);
+
+  const loadPlaythroughs = async (worldId: string) => {
+    setIsLoadingPlaythroughs(true);
+    try {
+      const list = await playthroughApi.listPlaythroughs(worldId);
+      setPlaythroughs(list);
+    } catch (error) {
+      console.error('Failed to load playthroughs:', error);
+    } finally {
+      setIsLoadingPlaythroughs(false);
+    }
+  };
+
+  const handleCreatePlaythrough = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !newName.trim()) return;
+
+    setIsCreating(true);
+    try {
+      const created = await playthroughApi.createPlaythrough(id, newName.trim());
+      setShowCreateModal(false);
+      setNewName('');
+      navigate(`/worlds/${id}/playthroughs/${created._id}`);
+    } catch (error) {
+      console.error('Failed to create playthrough:', error);
+      alert(t.worldDetail.failedToCreatePlaythrough);
+      setIsCreating(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!currentWorld || !window.confirm(t.worldDetail.confirmDelete.replace('{name}', currentWorld.name))) {
@@ -50,6 +94,12 @@ export default function WorldDetailPage() {
       </div>
     );
   }
+
+  const statusLabel: Record<string, string> = {
+    active: t.worldDetail.active,
+    paused: t.worldDetail.paused,
+    completed: t.worldDetail.completed,
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 animate-fade-in">
@@ -87,19 +137,47 @@ export default function WorldDetailPage() {
               <h2 className="text-xl font-display text-ink-100">{t.worldDetail.playthroughs}</h2>
               <button
                 className="inline-flex items-center gap-2 px-4 py-2 bg-accent-600 hover:bg-accent-500 text-white rounded-xl transition-all duration-200 font-medium text-sm shadow-sm"
-                title="Start a new adventure in this world"
-                onClick={() => alert('New Playthrough logic handled in T14.')}
+                onClick={() => setShowCreateModal(true)}
               >
                 <Plus size={16} />
                 {t.worldDetail.startJourney}
               </button>
             </div>
             
-            <div className="border border-dashed border-ink-700 py-10 text-center rounded-xl bg-ink-950/30">
-              <div className="mb-3"><BookOpen size={28} className="mx-auto text-ink-200/40" /></div>
-              <p className="text-ink-200/50 text-sm">{t.worldDetail.noCharactersYet}</p>
-              <p className="text-ink-200/30 text-xs mt-1">{t.worldDetail.startJourneyHint}</p>
-            </div>
+            {isLoadingPlaythroughs ? (
+              <div className="py-8 text-center">
+                <svg className="animate-spin w-6 h-6 mx-auto text-accent-400 mb-2" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+              </div>
+            ) : playthroughs.length === 0 ? (
+              <div className="border border-dashed border-ink-700 py-10 text-center rounded-xl bg-ink-950/30">
+                <div className="mb-3"><BookOpen size={28} className="mx-auto text-ink-200/40" /></div>
+                <p className="text-ink-200/50 text-sm">{t.worldDetail.noPlaythroughsYet}</p>
+                <p className="text-ink-200/30 text-xs mt-1">{t.worldDetail.startJourneyHint}</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {playthroughs.map(pt => (
+                  <Link
+                    key={pt._id}
+                    to={`/worlds/${currentWorld._id}/playthroughs/${pt._id}`}
+                    className="group flex items-center justify-between p-4 bg-ink-950/50 border border-ink-700/50 rounded-xl hover:border-accent-400/30 hover:bg-ink-800/50 transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-accent-600/10 border border-accent-400/20 flex items-center justify-center shrink-0">
+                        <Play size={14} className="text-accent-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-ink-100 text-sm font-medium truncate group-hover:text-accent-400 transition-colors">{pt.name}</p>
+                        <p className="text-ink-200/40 text-xs">{new Date(pt.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    <span className={`text-[10px] uppercase tracking-wider font-medium px-2.5 py-1 rounded-lg border ${statusColor[pt.status] || statusColor.active}`}>
+                      {statusLabel[pt.status] || pt.status}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -195,6 +273,61 @@ export default function WorldDetailPage() {
         </div>
 
       </div>
+
+      {/* Create Playthrough Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/60" onClick={() => setShowCreateModal(false)} />
+          <div className="relative bg-ink-800 border border-ink-700 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl animate-fade-in">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-lg font-display text-ink-100">{t.worldDetail.startJourney}</h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="w-8 h-8 rounded-lg text-ink-200 hover:text-ink-100 hover:bg-ink-700 flex items-center justify-center transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleCreatePlaythrough}>
+              <div className="mb-5">
+                <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
+                  {t.worldDetail.newPlaythroughName} <span className="text-red-400">*</span>
+                </label>
+                <input
+                  autoFocus
+                  required
+                  className="w-full bg-ink-950 border border-ink-700 rounded-xl px-4 py-3 text-ink-100 placeholder:text-ink-500 focus:border-accent-400 focus:ring-2 focus:ring-accent-400/20 outline-none transition-all text-sm"
+                  placeholder={t.worldDetail.newPlaythroughPlaceholder}
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2.5 text-ink-200 hover:text-ink-100 text-sm font-medium rounded-xl hover:bg-ink-700 transition-colors"
+                  disabled={isCreating}
+                >
+                  {t.worldDetail.cancelCreate}
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-accent-600 hover:bg-accent-500 text-white rounded-xl transition-all duration-200 font-medium text-sm shadow-sm disabled:opacity-50"
+                  disabled={isCreating || !newName.trim()}
+                >
+                  {isCreating ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                      {t.worldDetail.creating}
+                    </span>
+                  ) : t.worldDetail.createPlaythrough}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

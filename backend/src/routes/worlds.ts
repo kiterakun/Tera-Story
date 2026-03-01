@@ -23,12 +23,26 @@ const resourceTemplateSchema = z.object({
   options: z.array(z.string()).optional(),
 });
 
+const specialItemFieldSchema = z.object({
+  name: z.string().min(1),
+  type: z.enum(['text', 'number', 'enum']),
+  options: z.array(z.string()).optional(),
+  required: z.boolean().optional(),
+});
+
+const specialItemTemplateSchema = z.object({
+  category: z.string().min(1),
+  description: z.string().optional(),
+  fields: z.array(specialItemFieldSchema).optional(),
+});
+
 const createWorldSchema = z.object({
   name: z.string().min(1, 'Name is required').trim(),
   description: z.string().optional(),
   genre: z.enum(['fantasy', 'sci-fi', 'wuxia', 'modern', 'custom']),
   imageUrl: z.string().url().optional(),
   resourceTemplates: z.array(resourceTemplateSchema).optional(),
+  specialItemTemplates: z.array(specialItemTemplateSchema).optional(),
 });
 
 const updateWorldSchema = z.object({
@@ -37,6 +51,7 @@ const updateWorldSchema = z.object({
   genre: z.enum(['fantasy', 'sci-fi', 'wuxia', 'modern', 'custom']).optional(),
   imageUrl: z.string().url().nullable().optional(),
   resourceTemplates: z.array(resourceTemplateSchema).optional(),
+  specialItemTemplates: z.array(specialItemTemplateSchema).optional(),
 });
 
 // --- Routes ---

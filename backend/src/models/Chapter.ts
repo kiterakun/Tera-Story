@@ -67,7 +67,7 @@ const ChapterSchema = new Schema<IChapterDocument>(
   {
     content: {
       type: String,
-      required: true,
+      default: '',
     },
     arcId: {
       type: Schema.Types.ObjectId,

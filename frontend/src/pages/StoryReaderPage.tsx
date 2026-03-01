@@ -6,19 +6,21 @@ import { TypewriterText } from '../components/TypewriterText';
 import * as storyApi from '../services/storyApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useTranslation } from '../i18n';
-import { UserRound, Users, Package, Sparkles, Swords, X } from 'lucide-react';
+import { UserRound, Users, Package, Sparkles, Swords, X, BookOpen } from 'lucide-react';
 import type { ItemRarity } from '../services/playthroughApi';
 
+// Matches backend Chapter model
 interface Chapter {
   _id: string;
-  text: string;
-  sequence: number;
+  content: string;
+  chapterIndex: number;
+  choices: Choice[];
 }
 
+// Matches backend ChoiceSchema (_id: false)
 interface Choice {
-  _id: string;
   text: string;
-  impact?: string;
+  type: 'continue' | 'new_arc' | 'custom';
 }
 
 const rarityColor: Record<ItemRarity, string> = {
@@ -38,11 +40,19 @@ export default function StoryReaderPage() {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [choices, setChoices] = useState<Choice[]>([]);
   const [isLoadingState, setIsLoadingState] = useState(true);
+  const [isNewGame, setIsNewGame] = useState(false);
   const [rpgTab, setRpgTab] = useState<'stats' | 'inventory' | 'abilities'>('stats');
   const [rpgOpen, setRpgOpen] = useState(false);
   
   const { streamedText, isStreaming, isThinking, startStream, skipToEnd } = useStoryStream();
-  const { characters, items, specialItems, fetchCharacters, fetchItems, fetchSpecialItems } = useStoryStore();
+  
+  // Individual selectors to avoid getSnapshot infinite loop
+  const characters = useStoryStore(s => s.characters);
+  const items = useStoryStore(s => s.items);
+  const specialItems = useStoryStore(s => s.specialItems);
+  const fetchCharacters = useStoryStore(s => s.fetchCharacters);
+  const fetchItems = useStoryStore(s => s.fetchItems);
+  const fetchSpecialItems = useStoryStore(s => s.fetchSpecialItems);
   
   const protagonist = characters.find(c => c.role === 'protagonist') || null;
   const npcs = characters.filter(c => c.role === 'npc');
@@ -84,12 +94,18 @@ export default function StoryReaderPage() {
     try {
       setIsLoadingState(true);
       const state = await storyApi.getStoryState(playthroughId!);
-      if (state.chapters) {
-          setChapters(state.chapters);
+      
+      // Backend returns chapters array now
+      if (state.chapters && state.chapters.length > 0) {
+        setChapters(state.chapters);
       } else if (state.latestChapter) {
-          setChapters([state.latestChapter]); 
+        setChapters([state.latestChapter]);
+      } else {
+        setChapters([]);
       }
+      
       setChoices(state.choices || []);
+      setIsNewGame(state.isNewGame || false);
     } catch (error) {
       console.error('Failed to load story state:', error);
     } finally {
@@ -97,13 +113,27 @@ export default function StoryReaderPage() {
     }
   };
 
-  const handleChoiceSelect = async (choiceId: string) => {
+  // Send the choice text (not _id, since choices have _id: false)
+  const handleChoiceSelect = async (choiceText: string) => {
     if (!playthroughId || !token) return;
     try {
-        await startStream(playthroughId, choiceId, token);
+        await startStream(playthroughId, choiceText, token);
         setChoices([]);
+        setIsNewGame(false);
     } catch (e) {
         console.error("Stream failed to start", e);
+    }
+  };
+
+  // Begin story for fresh playthroughs
+  const handleBeginStory = async () => {
+    if (!playthroughId || !token) return;
+    try {
+      await startStream(playthroughId, 'Begin the story', token);
+      setIsNewGame(false);
+      setChoices([]);
+    } catch (e) {
+      console.error("Failed to begin story", e);
     }
   };
 
@@ -270,12 +300,29 @@ export default function StoryReaderPage() {
       {/* Center: Reading column */}
       <div className="flex-1 overflow-y-auto">
         <article className="max-w-[65ch] mx-auto font-serif text-ink-100 leading-[1.8] text-lg py-8 px-4 md:py-16">
+
+          {/* Begin Story — fresh playthrough with no chapters */}
+          {isNewGame && chapters.length === 0 && !isStreaming && !isThinking && (
+            <div className="text-center py-16 animate-fade-in">
+              <div className="mb-6">
+                <BookOpen size={48} className="mx-auto text-accent-400/60" />
+              </div>
+              <h2 className="font-display text-2xl text-ink-100 mb-3">{t.storyReader.beginAdventure}</h2>
+              <p className="text-ink-200/60 text-base mb-8 max-w-md mx-auto">{t.storyReader.beginAdventureDesc}</p>
+              <button
+                onClick={handleBeginStory}
+                className="inline-flex items-center gap-2 bg-accent-600 hover:bg-accent-500 text-white px-8 py-3.5 rounded-2xl font-display text-base transition-all duration-200 shadow-lg hover:shadow-accent-600/30"
+              >
+                {t.storyReader.beginStory}
+              </button>
+            </div>
+          )}
           
           {/* Previous Chapters */}
           <div className="space-y-8 md:space-y-12 mb-8">
             {visibleChapters.map((chapter) => (
               <div key={chapter._id} className="text-ink-200/90">
-                {chapter.text.split('\n\n').map((paragraph, i) => (
+                {chapter.content.split('\n\n').map((paragraph, i) => (
                   <p key={i} className="mb-4 leading-[1.8]">{paragraph}</p>
                 ))}
               </div>
@@ -314,20 +361,15 @@ export default function StoryReaderPage() {
             <div className="mt-16 md:mt-24 border-t border-ink-700 pt-8 animate-fade-in">
               <h3 className="font-display text-lg text-ink-100 mb-6 text-center">{t.storyReader.whatDoYouDoNext}</h3>
               <div className="flex flex-col gap-3">
-                {choices.map((choice) => (
+                {choices.map((choice, idx) => (
                   <button 
-                    key={choice._id}
-                    onClick={() => handleChoiceSelect(choice._id)}
+                    key={idx}
+                    onClick={() => handleChoiceSelect(choice.text)}
                     className="group bg-ink-800/60 hover:bg-ink-800 border border-ink-700 hover:border-accent-400/40 text-left p-5 rounded-2xl transition-all duration-200 hover:shadow-lg hover:shadow-accent-400/5"
                   >
                     <span className="font-serif text-base text-ink-200 group-hover:text-ink-100 transition-colors leading-relaxed">
                       {choice.text}
                     </span>
-                    {choice.impact && (
-                      <p className="font-sans text-xs text-ink-200/40 mt-2">
-                        {t.storyReader.impact} {choice.impact}
-                      </p>
-                    )}
                   </button>
                 ))}
               </div>

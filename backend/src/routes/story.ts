@@ -72,6 +72,7 @@ router.get(
         return;
       }
 
+
       // Current active arc
       const currentArc = await Arc.findOne({
         playthroughId,
@@ -80,12 +81,15 @@ router.get(
         .sort({ arcIndex: -1 })
         .lean();
 
-      // Latest chapter in current arc
-      const latestChapter = currentArc
-        ? await Chapter.findOne({ arcId: currentArc._id })
-            .sort({ chapterIndex: -1 })
-            .lean()
-        : null;
+      // Recent chapters (last 5 across all arcs for this playthrough)
+      const chapters = await Chapter.find({ playthroughId })
+        .sort({ chapterIndex: -1 })
+        .limit(5)
+        .lean();
+      chapters.reverse();
+
+      // Latest chapter for choices
+      const latestChapter = chapters.length > 0 ? chapters[chapters.length - 1] : null;
 
       // Protagonist
       const protagonist = await Character.findOne({
@@ -93,12 +97,17 @@ router.get(
         role: 'protagonist',
       }).lean();
 
+      // Determine if this is a fresh start (no chapters yet)
+      const isNewGame = chapters.length === 0;
+
       res.json({
         playthrough,
         currentArc,
+        chapters,
         latestChapter,
         choices: latestChapter?.choices ?? [],
         protagonist,
+        isNewGame,
         isGenerating: activeGenerations.has(playthroughId as string),
       });
     } catch (err: any) {
