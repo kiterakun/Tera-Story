@@ -10,8 +10,6 @@ import WorldCreatePage from './pages/WorldCreatePage'
 import PlaythroughPage from './pages/PlaythroughPage'
 import CharacterCreatePage from './pages/CharacterCreatePage'
 import StoryReaderPage from './pages/StoryReaderPage'
-import PlaythroughPage from './pages/PlaythroughPage'
-import StoryReaderPage from './pages/StoryReaderPage'
 import SettingsPage from './pages/SettingsPage'
 import { Layout } from './components/Layout'
 
