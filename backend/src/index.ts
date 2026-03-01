@@ -10,6 +10,7 @@ import worldsRouter from './routes/worlds';
 import playthroughsRouter from './routes/playthroughs';
 import charactersRouter from './routes/characters';
 import chaptersRouter from './routes/chapters';
+import supportRouter from './routes/support';
 import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
@@ -50,6 +51,9 @@ app.use('/api', authMiddleware, charactersRouter);
 
 // Chapter/Arc Routes (nested under playthroughs, arcs, chapters)
 app.use('/api', authMiddleware, chaptersRouter);
+
+// Support Routes (AI-assisted enrichment)
+app.use('/api/support', authMiddleware, supportRouter);
 
 // Start logic separated for testing
 if (require.main === module) {
