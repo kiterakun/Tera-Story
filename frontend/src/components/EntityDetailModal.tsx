@@ -2,6 +2,7 @@ import { X, UserRound, Package, Sparkles, Crown } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import type { Character, Item, SpecialItem, ItemRarity } from '../services/playthroughApi';
 import { getImageUrl } from '../utils/url';
+import { RetryImageButton } from './RetryImageButton';
 
 type EntityData =
   | { type: 'character'; data: Character }
@@ -33,8 +34,9 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
           {char.imageUrl ? (
             <img src={getImageUrl(char.imageUrl)} alt={char.name} className="w-20 h-20 rounded-2xl object-cover border-2 border-accent-400/30" />
           ) : (
-            <div className="w-20 h-20 rounded-2xl bg-ink-700/50 border border-ink-600 flex items-center justify-center">
-              <UserRound size={32} className="text-ink-200/60" />
+            <div className="w-20 h-20 rounded-2xl bg-ink-700/50 border border-ink-600 flex flex-col items-center justify-center gap-1">
+              <UserRound size={28} className="text-ink-200/60" />
+              <RetryImageButton entityType="character" entityId={char._id} showLabel />
             </div>
           )}
           <div>
@@ -84,8 +86,9 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
           {item.imageUrl ? (
             <img src={getImageUrl(item.imageUrl)} alt={item.name} className={`w-20 h-20 rounded-2xl object-cover border-2 ${rc.border}`} />
           ) : (
-            <div className={`w-20 h-20 rounded-2xl bg-ink-700/50 border ${rc.border} flex items-center justify-center`}>
-              <Package size={32} className="text-ink-200/60" />
+            <div className={`w-20 h-20 rounded-2xl bg-ink-700/50 border ${rc.border} flex flex-col items-center justify-center gap-1`}>
+              <Package size={28} className="text-ink-200/60" />
+              <RetryImageButton entityType="item" entityId={item._id} showLabel />
             </div>
           )}
           <div>
@@ -123,8 +126,9 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
           {si.imageUrl ? (
             <img src={getImageUrl(si.imageUrl)} alt={si.name} className={`w-20 h-20 rounded-2xl object-cover border-2 ${rc.border}`} />
           ) : (
-            <div className={`w-20 h-20 rounded-2xl bg-purple-900/30 border ${rc.border} flex items-center justify-center`}>
-              <Sparkles size={32} className="text-purple-400/60" />
+            <div className={`w-20 h-20 rounded-2xl bg-purple-900/30 border ${rc.border} flex flex-col items-center justify-center gap-1`}>
+              <Sparkles size={28} className="text-purple-400/60" />
+              <RetryImageButton entityType="special-item" entityId={si._id} showLabel />
             </div>
           )}
           <div>

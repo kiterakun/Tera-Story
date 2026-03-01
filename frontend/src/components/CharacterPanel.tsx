@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Swords, UserRound, Users, X } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { getImageUrl } from '../utils/url';
+import { RetryImageButton } from './RetryImageButton';
 
 export interface DynamicStat {
   k: string;
@@ -73,7 +74,10 @@ export function CharacterPanel({ protagonist, npcs, resourceTemplates }: Charact
                 {protagonist.imageUrl ? (
                   <img src={getImageUrl(protagonist.imageUrl)} alt={protagonist.name} className="w-14 h-14 rounded-xl object-cover border-2 border-accent-400/30" />
                 ) : (
-                  <div className="w-14 h-14 rounded-xl bg-ink-700/50 border border-ink-600 flex items-center justify-center"><UserRound size={24} className="text-ink-200/60" /></div>
+                  <div className="w-14 h-14 rounded-xl bg-ink-700/50 border border-ink-600 flex flex-col items-center justify-center gap-0.5">
+                    <UserRound size={20} className="text-ink-200/60" />
+                    <RetryImageButton entityType="character" entityId={protagonist._id} />
+                  </div>
                 )}
                 <div>
                   <h3 className="font-display text-ink-100">{protagonist.name}</h3>
@@ -116,7 +120,10 @@ export function CharacterPanel({ protagonist, npcs, resourceTemplates }: Charact
                     {npc.imageUrl ? (
                       <img src={getImageUrl(npc.imageUrl)} alt={npc.name} className="w-10 h-10 rounded-lg object-cover border border-ink-600" />
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-ink-700/50 border border-ink-600 flex items-center justify-center"><Users size={16} className="text-ink-200/60" /></div>
+                      <div className="w-10 h-10 rounded-lg bg-ink-700/50 border border-ink-600 flex flex-col items-center justify-center gap-0.5">
+                        <Users size={14} className="text-ink-200/60" />
+                        <RetryImageButton entityType="character" entityId={npc._id} />
+                      </div>
                     )}
                     <div>
                       <p className="text-ink-100 text-sm">{npc.name}</p>

@@ -307,6 +307,13 @@ const en = {
     close: 'Close',
   },
 
+  // Common
+  common: {
+    regenerateImage: 'Regenerate Image',
+    generating: 'Generating...',
+    imageQueued: 'Queued!',
+  },
+
 };
 
 export type Translations = typeof en;

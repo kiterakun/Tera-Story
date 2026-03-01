@@ -216,10 +216,36 @@ Based on the player's choice and the FULL story state above (including all items
 
   const validated = contextOutputSchema.parse(parsed);
 
+  // Build structured entity refs directly from DB (authoritative, not LLM-summarized)
+  const existingItems = items.map((i) => {
+    const ownerChar = i.ownerId
+      ? characters.find((c) => c._id.toString() === i.ownerId?.toString())
+      : null;
+    return {
+      name: i.name,
+      rarity: i.rarity ?? 'common',
+      owner: ownerChar?.name,
+    };
+  });
+
+  const existingSpecialItems = specialItems.map((si) => {
+    const ownerChar = si.ownerId
+      ? characters.find((c) => c._id.toString() === si.ownerId?.toString())
+      : null;
+    return {
+      name: si.name,
+      rarity: si.rarity ?? 'common',
+      category: si.category,
+      owner: ownerChar?.name,
+    };
+  });
+
   return {
     outline: validated.outline ?? '',
     filteredContext: validated.filteredContext ?? '',
     activeCharacters: validated.activeCharacters ?? [],
+    existingItems,
+    existingSpecialItems,
     currentScene: validated.currentScene ?? '',
     relevantPlotPoints: validated.relevantPlotPoints ?? [],
   };

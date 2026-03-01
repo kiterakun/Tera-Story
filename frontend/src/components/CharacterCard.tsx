@@ -1,6 +1,7 @@
 import type { Character } from '../services/playthroughApi';
 import { useTranslation } from '../i18n';
 import { getImageUrl } from '../utils/url';
+import { RetryImageButton } from './RetryImageButton';
 
 export default function CharacterCard({ character }: { character: Character }) {
   const t = useTranslation();
@@ -15,7 +16,10 @@ export default function CharacterCard({ character }: { character: Character }) {
           {character.imageUrl ? (
             <img src={getImageUrl(character.imageUrl)} alt={character.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-lg font-display text-ink-500 font-bold">{initials}</span>
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-lg font-display text-ink-500 font-bold">{initials}</span>
+              <RetryImageButton entityType="character" entityId={character._id} />
+            </div>
           )}
         </div>
         

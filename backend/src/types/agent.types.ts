@@ -1,7 +1,16 @@
+export interface IEntityRef {
+  name: string;
+  rarity: string;
+  category?: string;
+  owner?: string;
+}
+
 export interface IContextOutput {
   outline: string;
   filteredContext: string;
   activeCharacters: string[];
+  existingItems: IEntityRef[];
+  existingSpecialItems: IEntityRef[];
   currentScene: string;
   relevantPlotPoints: string[];
 }

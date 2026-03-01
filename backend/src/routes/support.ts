@@ -66,8 +66,15 @@ router.post('/enrich-character', async (req: AuthRequest, res: Response): Promis
       if (world) {
         worldContext = `World: ${world.name}\nGenre: ${world.genre}\nDescription: ${world.description}`;
         if (world.resourceTemplates.length > 0) {
-          const stats = world.resourceTemplates.map((t) => `${t.key} (${t.type})`).join(', ');
+          const stats = world.resourceTemplates.map((t) => `${t.key} (${t.type}${t.min !== undefined ? `, min:${t.min}` : ''}${t.max !== undefined ? `, max:${t.max}` : ''}${t.defaultValue !== undefined ? `, default:${t.defaultValue}` : ''})`).join(', ');
           worldContext += `\nResource Templates: ${stats}`;
+        }
+        if (world.specialItemTemplates && world.specialItemTemplates.length > 0) {
+          const sitInfo = world.specialItemTemplates.map((sit) => {
+            const fields = sit.fields?.map((f) => `${f.name}(${f.type})`).join(', ') || 'none';
+            return `${sit.category}: ${sit.description} [fields: ${fields}]`;
+          }).join('; ');
+          worldContext += `\nSpecial Item Categories: ${sitInfo}`;
         }
       }
     }

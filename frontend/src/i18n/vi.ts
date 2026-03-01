@@ -309,6 +309,13 @@ const vi: Translations = {
     close: 'Đóng',
   },
 
+  // Common
+  common: {
+    regenerateImage: 'Tạo lại hình ảnh',
+    generating: 'Đang tạo...',
+    imageQueued: 'Đã xếp hàng!',
+  },
+
 };
 
 export default vi;

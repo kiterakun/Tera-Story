@@ -83,6 +83,16 @@ export function runWriterAgent(
 
   // Format context for prompt — include existing character names to prevent duplication
   const existingCharacters = contextOutput.activeCharacters;
+
+  // Build structured item reference for accurate markup
+  const existingItemsBlock = contextOutput.existingItems.length > 0
+    ? contextOutput.existingItems.map(i => `- ${i.name} (${i.rarity})${i.owner ? ` [owned by ${i.owner}]` : ''}`).join('\n')
+    : 'No items yet.';
+
+  const existingSpecialItemsBlock = contextOutput.existingSpecialItems.length > 0
+    ? contextOutput.existingSpecialItems.map(si => `- ${si.name} [${si.category}] (${si.rarity})${si.owner ? ` [owned by ${si.owner}]` : ''}`).join('\n')
+    : 'No special items yet.';
+
   const userPrompt = `
 Write the next chapter in ${language}.
 
@@ -102,14 +112,22 @@ ${contextOutput.filteredContext}
 === EXISTING CHARACTERS (DO NOT recreate with createCharacter) ===
 ${existingCharacters.length > 0 ? existingCharacters.map(c => `- ${c}`).join('\n') : 'No characters yet — you may create new ones.'}
 
+=== EXISTING ITEMS (USE EXACT rarity when mentioning with [[item:Name:rarity]] markup) ===
+${existingItemsBlock}
+
+=== EXISTING SPECIAL ITEMS (USE EXACT rarity when mentioning with [[special:Name:rarity]] markup) ===
+${existingSpecialItemsBlock}
+
 === INSTRUCTIONS ===
 Write the next chapter based on the context above. Remember to:
 1. ONLY use createCharacter for genuinely NEW characters. NEVER call createCharacter for: ${existingCharacters.join(', ') || 'N/A'}
-2. Create items (weapons, potions, artifacts) using createItem with appropriate rarity
-3. Create special items (skills, techniques, abilities) using createSpecialItem with category and rarity when characters learn/acquire them
-4. Update character stats if story events warrant it using updateStats — values must match data types
-5. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]] markup when mentioning entities in the story text
-6. Call generateChoices at the end with 3-4 meaningful options
+2. NEVER use createItem for items that already exist above. Reference them by name using [[item:Name:rarity]] with the EXACT rarity listed above
+3. NEVER use createSpecialItem for special items that already exist above. Reference them using [[special:Name:rarity]] with the EXACT rarity listed above
+4. Create NEW items (weapons, potions, artifacts) using createItem with appropriate rarity
+5. Create NEW special items (skills, techniques, abilities) using createSpecialItem with category and rarity when characters learn/acquire them
+6. Update character stats if story events warrant it using updateStats — values must match data types
+7. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]] markup when mentioning entities in the story text
+8. Call generateChoices at the end with 3-4 meaningful options
 `.trim();
 
   // Call streamText with tools — onFinish persists content to DB

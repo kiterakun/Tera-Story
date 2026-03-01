@@ -6,6 +6,7 @@ import CharacterCard from '../components/CharacterCard';
 import { Search, UserRound, Plus, ChevronLeft, Play, BookOpen, Trash2 } from 'lucide-react';
 import { getImageUrl } from '../utils/url';
 import * as playthroughApi from '../services/playthroughApi';
+import { RetryImageButton } from '../components/RetryImageButton';
 
 export default function PlaythroughPage() {
   const t = useTranslation();
@@ -182,7 +183,10 @@ export default function PlaythroughPage() {
                       {item.imageUrl ? (
                         <img src={getImageUrl(item.imageUrl)} alt={item.name} className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-xs text-ink-500 font-bold">{item.name.substring(0, 2).toUpperCase()}</span>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="text-xs text-ink-500 font-bold">{item.name.substring(0, 2).toUpperCase()}</span>
+                          <RetryImageButton entityType="item" entityId={item._id} />
+                        </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
