@@ -12,15 +12,28 @@ export async function generateChapter(
   userId: string,
   abortSignal?: AbortSignal
 ) {
+  console.log(`[Story] generateChapter called: playthrough=${playthroughId}, choice="${playerChoice.slice(0, 50)}"`);
   // 1. Load playthrough — verify ownership & active status
   const playthrough = await Playthrough.findById(playthroughId);
   if (!playthrough) throw new Error('Playthrough not found');
   if (playthrough.userId.toString() !== userId) throw new Error('Unauthorized');
   if (playthrough.status !== 'active') throw new Error('Playthrough is not active');
 
-  // 2. Load user AI settings → build provider registry
-  const settings = await UserSettings.findOne({ userId });
-  if (!settings) throw new Error('User settings not found — configure AI providers first');
+  // 2. Load user AI settings → build provider registry (auto-create defaults if missing)
+  let settings = await UserSettings.findOne({ userId });
+  if (!settings) {
+    settings = await UserSettings.create({
+      userId,
+      language: 'en',
+      theme: 'dark',
+      aiSettings: {
+        contextAgent: { provider: 'openai', model: 'gpt-4o' },
+        writerAgent: { provider: 'openai', model: 'gpt-4o' },
+        supportAgent: { provider: 'openai', model: 'gpt-4o' },
+        imageAgent: { provider: 'openai', model: 'dall-e-3' },
+      },
+    });
+  }
   const registry = createUserProviderRegistry(settings.aiSettings);
 
   // 3. Determine current arc: find most recent active, or create first one
@@ -45,6 +58,7 @@ export async function generateChapter(
     chapterIndex: chapterCount,
     metadata: { generatedAt: new Date() },
   });
+  console.log(`[Story] Placeholder chapter created: id=${chapter._id}, arcId=${arc._id}, index=${chapterCount}`);
 
   // 6. Run context agent — analyse story state and produce outline
   const contextOutput = await runContextAgent({
@@ -55,7 +69,9 @@ export async function generateChapter(
     model: registry.getContextModel(),
     language: settings.language,
   });
+  console.log(`[Story] Context agent completed for playthrough=${playthroughId}, outline length=${contextOutput.outline.length}`);
 
+  console.log(`[Story] Starting writer agent for chapter=${chapter._id}, arc=${arc._id}`);
   // 7. Run writer agent (synchronous — returns StreamTextResult directly)
   const result = runWriterAgent({
     contextOutput,
@@ -69,6 +85,8 @@ export async function generateChapter(
     abortSignal,
   });
 
-  // 8. Return StreamTextResult — route handler pipes to response
-  return result;
+  // 8. Return wrapped — StreamTextResult is thenable, so returning it directly
+  //    from an async function would auto-await it, consuming the stream.
+  //    Wrapping in { stream } prevents JavaScript from unwrapping the thenable.
+  return { stream: result };
 }

@@ -58,20 +58,8 @@ export function useStoryStream(): UseStoryStreamReturn {
         if (done) break;
         
         const chunk = decoder.decode(value, { stream: true });
-        // AI SDK streams text in data: prefix format — extract text content
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('0:')) {
-            // Text delta format from AI SDK
-            try {
-              const jsonStr = line.slice(2).trim();
-              const text = JSON.parse(jsonStr);
-              if (typeof text === 'string') {
-                fullTextRef.current += text;
-              }
-            } catch {}
-          }
-        }
+        // Backend uses pipeTextStreamToResponse → plain UTF-8 text chunks
+        fullTextRef.current += chunk;
       }
       
       clearInterval(typewriterInterval);

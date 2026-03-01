@@ -31,25 +31,29 @@ router.post(
     }
 
     const abortController = new AbortController();
-    req.on('close', () => abortController.abort());
+    // Abort when CLIENT disconnects (res 'close'), NOT when request body is consumed (req 'close').
+    res.on('close', () => { if (!res.writableFinished) abortController.abort(); });
 
     activeGenerations.add(playthroughId);
     try {
-      const result = await generateChapter(
+      const { stream } = await generateChapter(
         playthroughId,
         choice,
         userId,
         abortController.signal
       );
-      result.pipeTextStreamToResponse(res);
+      stream.pipeTextStreamToResponse(res);
+      // CRITICAL: await stream completion so async errors are caught by this try/catch.
+      // Without this, pipeTextStreamToResponse returns void immediately and the
+      // try block exits — any provider/streaming error is silently swallowed.
+      await stream.text;
     } catch (err: any) {
+      console.error('[Story] Generation error:', err);
       if (!res.headersSent) {
         res.status(500).json({ error: err.message || 'Generation failed' });
       }
     } finally {
-      // Remove after stream ends — listen to finish/error events
-      res.on('finish', () => activeGenerations.delete(playthroughId));
-      res.on('error', () => activeGenerations.delete(playthroughId));
+      activeGenerations.delete(playthroughId);
     }
   }
 );

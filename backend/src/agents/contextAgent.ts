@@ -1,5 +1,6 @@
 import { generateText } from 'ai';
 import type { LanguageModel } from 'ai';
+import { z } from 'zod';
 import { Chapter } from '../models/Chapter';
 import { Arc } from '../models/Arc';
 import { Character } from '../models/Character';
@@ -20,16 +21,40 @@ export interface ContextAgentParams {
 
 export type ContextOutput = IContextOutput;
 
-const SYSTEM_PROMPT = `You are a story intelligence analyst for an interactive novel. Analyze the current story state and produce a focused context for the next chapter writer. Respond in valid JSON only.
+const SYSTEM_PROMPT = `You are a story intelligence analyst for an interactive novel. Analyze the current story state and produce a focused context for the next chapter writer. Respond ONLY with valid JSON — no markdown fences, no explanation.
 
 Output JSON schema:
 {
-  "outline": "string — a brief outline of what should happen next based on the player's choice and story state",
-  "filteredContext": "string — the most relevant context the writer needs, distilled from chapters, characters, items, special items, and world info",
-  "activeCharacters": ["string array — names of characters relevant to the next scene"],
-  "currentScene": "string — description of the current scene setting",
-  "relevantPlotPoints": ["string array — key plot points the writer should be aware of"]
+  "outline": "string",
+  "filteredContext": "string",
+  "activeCharacters": ["string"],
+  "currentScene": "string",
+  "relevantPlotPoints": ["string"]
 }`;
+
+/**
+ * Robustly extract JSON from LLM text response.
+ * Handles: markdown fences, leading/trailing text, raw JSON.
+ */
+function extractJson(text: string): unknown {
+  // Strategy 1: Try to find JSON inside markdown code fences
+  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) {
+    try { return JSON.parse(fenceMatch[1].trim()); } catch { /* fall through */ }
+  }
+
+  // Strategy 2: Find first { ... last } in the text
+  const firstBrace = text.indexOf('{');
+  const lastBrace = text.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try { return JSON.parse(text.slice(firstBrace, lastBrace + 1)); } catch { /* fall through */ }
+  }
+
+  // Strategy 3: Try parsing the whole text as-is
+  try { return JSON.parse(text.trim()); } catch { /* fall through */ }
+
+  throw new Error(`Failed to extract JSON from context agent response: ${text.slice(0, 200)}...`);
+}
 
 export async function runContextAgent(
   params: ContextAgentParams
@@ -167,7 +192,9 @@ ${isColdStart ? 'This is the very beginning of the story. No chapters have been 
 Based on the player's choice and the FULL story state above (including all items, special items, character stats, and world templates), produce the JSON context for the next chapter writer.
 `.trim();
 
-  // 6. Call generateText
+  // 6. Call generateText then parse JSON robustly
+  //    generateObject requires provider tool-calling support which custom/proxy endpoints often lack.
+  //    Instead we use generateText and extract JSON from the response.
   const { text } = await generateText({
     model,
     system: SYSTEM_PROMPT,
@@ -175,15 +202,25 @@ Based on the player's choice and the FULL story state above (including all items
     temperature: 0.3,
   });
 
-  // 7. Parse JSON result
-  const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-  const parsed = JSON.parse(cleaned) as ContextOutput;
+  // Robust JSON extraction: handle markdown fences, leading text, etc.
+  const parsed = extractJson(text);
+
+  // Validate with Zod for safety
+  const contextOutputSchema = z.object({
+    outline: z.string(),
+    filteredContext: z.string(),
+    activeCharacters: z.array(z.string()),
+    currentScene: z.string(),
+    relevantPlotPoints: z.array(z.string()),
+  });
+
+  const validated = contextOutputSchema.parse(parsed);
 
   return {
-    outline: parsed.outline ?? '',
-    filteredContext: parsed.filteredContext ?? '',
-    activeCharacters: parsed.activeCharacters ?? [],
-    currentScene: parsed.currentScene ?? '',
-    relevantPlotPoints: parsed.relevantPlotPoints ?? [],
+    outline: validated.outline ?? '',
+    filteredContext: validated.filteredContext ?? '',
+    activeCharacters: validated.activeCharacters ?? [],
+    currentScene: validated.currentScene ?? '',
+    relevantPlotPoints: validated.relevantPlotPoints ?? [],
   };
 }
