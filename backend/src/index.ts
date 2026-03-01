@@ -11,6 +11,7 @@ import playthroughsRouter from './routes/playthroughs';
 import charactersRouter from './routes/characters';
 import chaptersRouter from './routes/chapters';
 import supportRouter from './routes/support';
+import storyRouter from './routes/story';
 import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
@@ -54,6 +55,9 @@ app.use('/api', authMiddleware, chaptersRouter);
 
 // Support Routes (AI-assisted enrichment)
 app.use('/api/support', authMiddleware, supportRouter);
+
+// Story Routes (generation + state)
+app.use('/api', authMiddleware, storyRouter);
 
 // Start logic separated for testing
 if (require.main === module) {

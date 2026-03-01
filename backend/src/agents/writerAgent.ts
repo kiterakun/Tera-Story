@@ -17,6 +17,7 @@ export interface WriterAgentParams {
   model: LanguageModel;
   language: string;
   maxSteps?: number;
+  abortSignal?: AbortSignal;
 }
 
 const SYSTEM_PROMPT = `You are a master storyteller writing an immersive interactive novel. Write the next chapter based on the context provided.
@@ -43,6 +44,7 @@ export function runWriterAgent(
     model,
     language,
     maxSteps = 5,
+    abortSignal,
   } = params;
 
   // Build tools
@@ -85,6 +87,7 @@ Write the next chapter based on the context above. Remember to:
     prompt: userPrompt,
     tools,
     stopWhen: stepCountIs(maxSteps),
+    abortSignal,
   });
 
   return result;
