@@ -13,7 +13,7 @@ export function makeCreateSpecialItemTool(playthroughId: string, userId: string)
       description: z.string().describe('A brief description of the special item'),
       category: z
         .string()
-        .describe('The category of the special item (e.g. skill, technique, spiritual_root)'),
+        .describe('The category of the special item — MUST be in the same language as the story (e.g. skill, technique, spiritual_root for English; Kỹ năng, Công pháp, Linh căn for Vietnamese)'),
       rarity: z
         .enum(['common', 'uncommon', 'rare', 'epic', 'legendary'])
         .describe('The rarity tier of the special item'),

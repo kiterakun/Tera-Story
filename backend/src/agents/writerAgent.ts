@@ -38,6 +38,7 @@ CRITICAL CONSTRAINTS:
 - NEVER use createCharacter for a character that already exists in the EXISTING CHARACTERS list below. Reference them by name directly in the story.
 - Only use createCharacter for genuinely NEW characters appearing for the first time.
 - When using updateStats, the value must be appropriate for the stat type: numbers for 'number' type, 0-100 for 'progress' type, text for 'text' type.
+- When calling createSpecialItem, the 'category' field MUST be written in the story's language (specified below). For example, if writing in Vietnamese, use 'Kỹ năng' not 'Skill', 'Công pháp' not 'Technique'. Same applies to item names and character names — ALL tool arguments must match the story language.
 
 ENTITY MARKUP (REQUIRED):
 When mentioning characters, items, or special items in the story text, wrap them in special markup so the frontend can highlight them:
@@ -50,7 +51,7 @@ Only use this markup for entities that exist or are being created in this chapte
 Available tools:
 - createCharacter: Create a NEW NPC character (NEVER for existing characters)
 - createItem: Create a new physical item (weapon, potion, artifact, etc.) with rarity
-- createSpecialItem: Create a special item (skill, technique, spiritual root, ability, etc.) with category and rarity
+- createSpecialItem: Create a special item (skill, technique, spiritual root, ability, etc.) with category and rarity. The category name MUST be in the story's language.
 - updateStats: Update character statistics after events
 - summarizeArc: Mark an arc as complete with summary
 - generateChoices: REQUIRED — set reader choices at end of chapter`;
