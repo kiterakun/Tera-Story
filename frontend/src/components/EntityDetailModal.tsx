@@ -1,6 +1,7 @@
 import { X, UserRound, Package, Sparkles, Crown } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import type { Character, Item, SpecialItem, ItemRarity } from '../services/playthroughApi';
+import { getImageUrl } from '../utils/url';
 
 type EntityData =
   | { type: 'character'; data: Character }
@@ -30,7 +31,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
         {/* Header */}
         <div className="flex items-center gap-4">
           {char.imageUrl ? (
-            <img src={char.imageUrl} alt={char.name} className="w-20 h-20 rounded-2xl object-cover border-2 border-accent-400/30" />
+            <img src={getImageUrl(char.imageUrl)} alt={char.name} className="w-20 h-20 rounded-2xl object-cover border-2 border-accent-400/30" />
           ) : (
             <div className="w-20 h-20 rounded-2xl bg-ink-700/50 border border-ink-600 flex items-center justify-center">
               <UserRound size={32} className="text-ink-200/60" />
@@ -81,7 +82,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
       <div className="space-y-5">
         <div className="flex items-center gap-4">
           {item.imageUrl ? (
-            <img src={item.imageUrl} alt={item.name} className={`w-20 h-20 rounded-2xl object-cover border-2 ${rc.border}`} />
+            <img src={getImageUrl(item.imageUrl)} alt={item.name} className={`w-20 h-20 rounded-2xl object-cover border-2 ${rc.border}`} />
           ) : (
             <div className={`w-20 h-20 rounded-2xl bg-ink-700/50 border ${rc.border} flex items-center justify-center`}>
               <Package size={32} className="text-ink-200/60" />
@@ -120,7 +121,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
       <div className="space-y-5">
         <div className="flex items-center gap-4">
           {si.imageUrl ? (
-            <img src={si.imageUrl} alt={si.name} className={`w-20 h-20 rounded-2xl object-cover border-2 ${rc.border}`} />
+            <img src={getImageUrl(si.imageUrl)} alt={si.name} className={`w-20 h-20 rounded-2xl object-cover border-2 ${rc.border}`} />
           ) : (
             <div className={`w-20 h-20 rounded-2xl bg-purple-900/30 border ${rc.border} flex items-center justify-center`}>
               <Sparkles size={32} className="text-purple-400/60" />

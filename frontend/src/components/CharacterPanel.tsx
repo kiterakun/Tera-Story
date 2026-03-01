@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Swords, UserRound, Users, X } from 'lucide-react';
 import { useTranslation } from '../i18n';
+import { getImageUrl } from '../utils/url';
 
 export interface DynamicStat {
   k: string;
@@ -70,7 +71,7 @@ export function CharacterPanel({ protagonist, npcs, resourceTemplates }: Charact
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-4">
                 {protagonist.imageUrl ? (
-                  <img src={protagonist.imageUrl} alt={protagonist.name} className="w-14 h-14 rounded-xl object-cover border-2 border-accent-400/30" />
+                  <img src={getImageUrl(protagonist.imageUrl)} alt={protagonist.name} className="w-14 h-14 rounded-xl object-cover border-2 border-accent-400/30" />
                 ) : (
                   <div className="w-14 h-14 rounded-xl bg-ink-700/50 border border-ink-600 flex items-center justify-center"><UserRound size={24} className="text-ink-200/60" /></div>
                 )}
@@ -113,7 +114,7 @@ export function CharacterPanel({ protagonist, npcs, resourceTemplates }: Charact
                 {npcs.map(npc => (
                   <div key={npc._id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-ink-800/50 transition-colors">
                     {npc.imageUrl ? (
-                      <img src={npc.imageUrl} alt={npc.name} className="w-10 h-10 rounded-lg object-cover border border-ink-600" />
+                      <img src={getImageUrl(npc.imageUrl)} alt={npc.name} className="w-10 h-10 rounded-lg object-cover border border-ink-600" />
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-ink-700/50 border border-ink-600 flex items-center justify-center"><Users size={16} className="text-ink-200/60" /></div>
                     )}

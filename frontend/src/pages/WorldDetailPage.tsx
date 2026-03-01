@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useWorldStore } from '../stores/worldStore';
 import { useTranslation } from '../i18n';
-import { Search, BookOpen, Plus, ChevronLeft, Calendar, Play, X } from 'lucide-react';
+import { Search, BookOpen, Plus, ChevronLeft, Calendar, Play, X, Trash2 } from 'lucide-react';
 import * as playthroughApi from '../services/playthroughApi';
 import type { Playthrough } from '../services/playthroughApi';
 
@@ -57,6 +57,17 @@ export default function WorldDetailPage() {
       console.error('Failed to create playthrough:', error);
       alert(t.worldDetail.failedToCreatePlaythrough);
       setIsCreating(false);
+    }
+  };
+
+  const handleDeletePlaythrough = async (ptId: string, ptName: string) => {
+    if (!window.confirm(t.worldDetail.confirmDeletePlaythrough.replace('{name}', ptName))) return;
+    try {
+      await playthroughApi.deletePlaythrough(ptId);
+      if (id) loadPlaythroughs(id);
+    } catch (err) {
+      console.error('Failed to delete playthrough:', err);
+      alert(t.worldDetail.failedToDeletePlaythrough);
     }
   };
 
@@ -171,9 +182,22 @@ export default function WorldDetailPage() {
                         <p className="text-ink-200/40 text-xs">{new Date(pt.createdAt).toLocaleDateString()}</p>
                       </div>
                     </div>
-                    <span className={`text-[10px] uppercase tracking-wider font-medium px-2.5 py-1 rounded-lg border ${statusColor[pt.status] || statusColor.active}`}>
-                      {statusLabel[pt.status] || pt.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] uppercase tracking-wider font-medium px-2.5 py-1 rounded-lg border ${statusColor[pt.status] || statusColor.active}`}>
+                        {statusLabel[pt.status] || pt.status}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDeletePlaythrough(pt._id, pt.name);
+                        }}
+                        className="p-1.5 rounded-lg text-ink-200/30 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100"
+                        title={t.worldDetail.deletePlaythroughBtn}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </Link>
                 ))}
               </div>

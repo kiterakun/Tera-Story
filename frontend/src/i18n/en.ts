@@ -89,6 +89,9 @@ const en = {
     noSpecialItems: 'No special item templates defined.',
     categoryLabel: 'Category:',
     fieldsLabel: 'Fields:',
+    confirmDeletePlaythrough: 'Are you sure you want to delete playthrough "{name}"? All progress will be lost.',
+    failedToDeletePlaythrough: 'Failed to delete playthrough',
+    deletePlaythroughBtn: 'Delete playthrough',
   },
 
   worldCreate: {
@@ -138,6 +141,11 @@ const en = {
     addField: 'Add Field',
     removeCategory: 'Remove Category',
     noSpecialItems: 'No special item templates. AI will not generate special items.',
+    aiGenerateTitle: 'AI World Generator',
+    aiGenerateHint: 'Describe your world concept and AI will generate a complete world with resources and special items.',
+    aiPromptPlaceholder: 'e.g. A dark fantasy world with cultivation system, spirit beasts, and ancient artifacts...',
+    aiGenerateWorld: 'Generate World',
+    aiGenerating: 'Generating...',
   },
 
   playthrough: {
@@ -163,14 +171,20 @@ const en = {
     specialAbilities: 'Special Abilities',
     noSpecialItems: 'No special items acquired yet.',
     itemCount: 'items',
+    deletePlaythrough: 'Delete Playthrough',
+    deleteConfirmMsg: 'Are you sure you want to delete "{name}"? All story progress will be lost.',
+    deleteFailed: 'Failed to delete playthrough',
   },
 
   characterCreate: {
     backToPlaythrough: 'Back to Playthrough',
     title: 'Forge Character',
     subtitle: 'Breathe life into a new entity within your story.',
-    aiQuickCreate: 'AI Quick Create',
+    aiQuickCreate: 'AI Enrich',
     aiQuickCreateMsg: 'AI Quick Create: Coming soon',
+    aiEnriching: 'Enriching...',
+    aiNeedHint: 'Please enter a name or description first so AI can help.',
+    aiEnrichFailed: 'AI enrichment failed. Please try again.',
     name: 'Name',
     nameRequired: 'Name is required',
     namePlaceholder: 'E.g. Elara Vance',
@@ -231,6 +245,8 @@ const en = {
     whatWillYouDo: 'What will you do?',
     customPlaceholder: 'Or write your own choice...',
     go: 'Go',
+    enrichTooltip: 'AI will check your choice for story consistency and suggest improvements',
+    aiSuggestions: 'AI Suggestions',
   },
 
   storyNav: {

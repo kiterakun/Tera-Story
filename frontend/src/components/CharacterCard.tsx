@@ -1,5 +1,6 @@
 import type { Character } from '../services/playthroughApi';
 import { useTranslation } from '../i18n';
+import { getImageUrl } from '../utils/url';
 
 export default function CharacterCard({ character }: { character: Character }) {
   const t = useTranslation();
@@ -12,7 +13,7 @@ export default function CharacterCard({ character }: { character: Character }) {
         {/* Portrait */}
         <div className="w-14 h-14 rounded-xl bg-ink-950 flex-shrink-0 flex items-center justify-center overflow-hidden border border-ink-700">
           {character.imageUrl ? (
-            <img src={character.imageUrl} alt={character.name} className="w-full h-full object-cover" />
+            <img src={getImageUrl(character.imageUrl)} alt={character.name} className="w-full h-full object-cover" />
           ) : (
             <span className="text-lg font-display text-ink-500 font-bold">{initials}</span>
           )}

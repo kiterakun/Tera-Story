@@ -5,7 +5,7 @@ import { World } from '../models/World';
 import { Playthrough } from '../models/Playthrough';
 import { Chapter } from '../models/Chapter';
 import { createUserProviderRegistry } from '../providers/registry';
-import { enrichWorld, enrichCharacter, enrichChoices } from '../agents/supportAgent';
+import { enrichWorld, enrichCharacter, enrichChoices, enrichCustomChoice } from '../agents/supportAgent';
 
 const router = Router();
 
@@ -135,6 +135,68 @@ router.post('/enrich-choices', async (req: AuthRequest, res: Response): Promise<
   } catch (err) {
     console.error('Enrich choices error:', err);
     res.status(500).json({ error: 'Failed to enrich choices' });
+  }
+});
+
+// POST /api/support/enrich-custom-choice
+router.post('/enrich-custom-choice', async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const { playthroughId, customChoice, language } = req.body as {
+      playthroughId?: string;
+      customChoice?: string;
+      language?: string;
+    };
+
+    if (!playthroughId || !customChoice) {
+      res.status(400).json({ error: 'playthroughId and customChoice are required' });
+      return;
+    }
+
+    const settings = await UserSettings.findOne({ userId });
+    if (!settings) {
+      res.status(404).json({ error: 'User settings not found. Please configure AI settings first.' });
+      return;
+    }
+
+    const playthrough = await Playthrough.findOne({ _id: playthroughId, userId });
+    if (!playthrough) {
+      res.status(404).json({ error: 'Playthrough not found' });
+      return;
+    }
+
+    // Build story context from recent chapters
+    const recentChapters = await Chapter.find({ playthroughId })
+      .sort({ chapterIndex: -1 })
+      .limit(3)
+      .lean();
+
+    const storyContext = recentChapters
+      .reverse()
+      .map((ch) => ch.content)
+      .join('\n\n---\n\n');
+
+    if (!storyContext) {
+      res.status(400).json({ error: 'No chapters found — cannot evaluate choice without story context' });
+      return;
+    }
+
+    // Build world context
+    let worldContext = '';
+    const world = await World.findById(playthrough.worldId);
+    if (world) {
+      worldContext = `World: ${world.name}\nGenre: ${world.genre}\nDescription: ${world.description}`;
+    }
+
+    const registry = createUserProviderRegistry(settings.aiSettings);
+    const model = registry.getSupportModel();
+    const lang = language || settings.language || 'en';
+
+    const result = await enrichCustomChoice(customChoice, storyContext, worldContext, model, lang);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    console.error('Enrich custom choice error:', err);
+    res.status(500).json({ error: 'Failed to enrich custom choice' });
   }
 });
 

@@ -51,7 +51,7 @@ export function makeCreateSpecialItemTool(playthroughId: string, userId: string)
 
       // Fire-and-forget image generation
       queueImageGeneration(
-        `${name}: ${description}. Category: ${category}. ${rarity} rarity. Fantasy RPG ability/skill illustration, magical, detailed.`,
+        `Magical ability icon, centered glowing effect on dark background: ${name} — ${description}. Category: ${category}, ${rarity} tier. Ethereal digital art, mystical energy visualization, RPG skill icon style, no text, no watermark.`,
         'special-item',
         specialItem._id.toString(),
         userId

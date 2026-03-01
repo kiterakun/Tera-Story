@@ -41,7 +41,7 @@ export function makeCreateItemTool(playthroughId: string, userId: string) {
 
       // Fire-and-forget image generation
       queueImageGeneration(
-        `${name}: ${description}. ${rarity} rarity item. Fantasy RPG item illustration, detailed, high quality.`,
+        `Single item illustration, centered on dark background: ${name} — ${description}. ${rarity} tier quality. Detailed digital painting, RPG inventory icon style, dramatic lighting, no text, no watermark, no hands.`,
         'item',
         item._id.toString(),
         userId

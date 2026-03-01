@@ -1,14 +1,31 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useStoryStore } from '../stores/storyStore';
 import { useTranslation } from '../i18n';
 import CharacterCard from '../components/CharacterCard';
-import { Search, UserRound, Plus, ChevronLeft, Play, BookOpen } from 'lucide-react';
+import { Search, UserRound, Plus, ChevronLeft, Play, BookOpen, Trash2 } from 'lucide-react';
+import { getImageUrl } from '../utils/url';
+import * as playthroughApi from '../services/playthroughApi';
 
 export default function PlaythroughPage() {
   const t = useTranslation();
   const { worldId, id } = useParams<{ worldId: string, id: string }>();
   const navigate = useNavigate();
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeletePlaythrough = async () => {
+    if (!id || !currentPlaythrough) return;
+    if (!window.confirm(t.playthrough.deleteConfirmMsg.replace('{name}', currentPlaythrough.name))) return;
+    setIsDeleting(true);
+    try {
+      await playthroughApi.deletePlaythrough(id);
+      navigate(`/worlds/${worldId}`);
+    } catch (err) {
+      console.error('Failed to delete playthrough:', err);
+      alert(t.playthrough.deleteFailed);
+      setIsDeleting(false);
+    }
+  };
   
   const currentPlaythrough = useStoryStore(s => s.currentPlaythrough);
   const characters = useStoryStore(s => s.characters);
@@ -83,6 +100,14 @@ export default function PlaythroughPage() {
           <Play size={16} />
           {t.playthrough.continueStory}
         </Link>
+        <button
+          onClick={handleDeletePlaythrough}
+          disabled={isDeleting}
+          className="inline-flex items-center gap-2 border border-ink-700 hover:border-red-400/30 hover:bg-red-400/5 text-red-400/70 hover:text-red-400 px-4 py-3 rounded-xl font-medium transition-all duration-200 text-sm self-start disabled:opacity-50"
+        >
+          <Trash2 size={16} />
+          {t.playthrough.deletePlaythrough}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
@@ -155,7 +180,7 @@ export default function PlaythroughPage() {
                   <div key={item._id} className="bg-ink-800 border border-ink-700 rounded-xl p-3 flex items-center gap-3 hover:border-ink-600 transition-colors">
                     <div className="w-10 h-10 rounded-lg bg-ink-950 border border-ink-700 flex items-center justify-center overflow-hidden shrink-0">
                       {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                        <img src={getImageUrl(item.imageUrl)} alt={item.name} className="w-full h-full object-cover" />
                       ) : (
                         <span className="text-xs text-ink-500 font-bold">{item.name.substring(0, 2).toUpperCase()}</span>
                       )}

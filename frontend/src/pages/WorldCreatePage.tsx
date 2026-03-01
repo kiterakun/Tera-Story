@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useWorldStore } from '../stores/worldStore';
 import { useTranslation } from '../i18n';
 import type { ResourceTemplate, SpecialItemTemplate, SpecialItemFieldDefinition, World } from '../services/worldApi';
-
+import * as supportApi from '../services/supportApi';
+import { Sparkles, Loader2 } from 'lucide-react';
 export default function WorldCreatePage() {
   const t = useTranslation();
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ export default function WorldCreatePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [specialItemTemplates, setSpecialItemTemplates] = useState<SpecialItemTemplate[]>([]);
+  const [isEnrichingWorld, setIsEnrichingWorld] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
 
   const handleAddResource = () => {
     setResources([...resources, { key: `Res${resources.length + 1}`, type: 'number', defaultValue: 0 }]);
@@ -113,6 +116,40 @@ export default function WorldCreatePage() {
     }
   };
 
+  const handleAiGenerateWorld = async () => {
+    if (!aiPrompt.trim()) return;
+    setIsEnrichingWorld(true);
+    try {
+      const result = await supportApi.enrichWorld(aiPrompt.trim());
+      if (result.name) setName(result.name);
+      if (result.description) setDescription(result.description);
+      if (result.genre) {
+        const validGenres: World['genre'][] = ['fantasy', 'sci-fi', 'wuxia', 'modern', 'custom'];
+        setGenre(validGenres.includes(result.genre as World['genre']) ? result.genre as World['genre'] : 'custom');
+      }
+      if (result.resourceTemplates?.length) {
+        setResources(result.resourceTemplates.map(rt => ({
+          key: rt.key,
+          type: rt.type as ResourceTemplate['type'],
+          min: rt.min,
+          max: rt.max,
+          defaultValue: rt.defaultValue,
+        })));
+      }
+      if ((result as any).specialItemTemplates?.length) {
+        setSpecialItemTemplates((result as any).specialItemTemplates.map((sit: any) => ({
+          category: sit.category || '',
+          description: sit.description || '',
+          fields: (sit.fields || []).map((f: any) => ({ name: f.name || '', type: f.type || 'text' })),
+        })));
+      }
+    } catch (err) {
+      console.error('AI world generation failed:', err);
+    } finally {
+      setIsEnrichingWorld(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 animate-fade-in">
       <div className="mb-8">
@@ -122,6 +159,41 @@ export default function WorldCreatePage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* AI World Generation */}
+        <div className="bg-gradient-to-br from-accent-600/10 to-purple-600/10 border border-accent-400/20 rounded-2xl p-6">
+          <h2 className="text-lg font-display text-ink-100 mb-3 flex items-center gap-2">
+            <Sparkles size={18} className="text-accent-400" />
+            {t.worldCreate.aiGenerateTitle}
+          </h2>
+          <p className="text-xs text-ink-200/60 mb-4">{t.worldCreate.aiGenerateHint}</p>
+          <textarea
+            rows={3}
+            className="w-full bg-ink-950 border border-ink-700 rounded-xl px-4 py-3 text-ink-100 placeholder:text-ink-500 focus:border-accent-400 focus:ring-2 focus:ring-accent-400/20 outline-none transition-all resize-none text-sm mb-3"
+            placeholder={t.worldCreate.aiPromptPlaceholder}
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            disabled={isEnrichingWorld}
+          />
+          <button
+            type="button"
+            onClick={handleAiGenerateWorld}
+            disabled={isEnrichingWorld || !aiPrompt.trim()}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent-600 hover:bg-accent-500 text-white rounded-xl transition-all duration-200 font-medium text-sm shadow-sm disabled:opacity-50"
+          >
+            {isEnrichingWorld ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                {t.worldCreate.aiGenerating}
+              </>
+            ) : (
+              <>
+                <Sparkles size={16} />
+                {t.worldCreate.aiGenerateWorld}
+              </>
+            )}
+          </button>
+        </div>
+
         {/* Basic Info Card */}
         <div className="bg-ink-800 border border-ink-700 rounded-2xl p-6">
           <h2 className="text-lg font-display text-ink-100 mb-5 flex items-center gap-2">

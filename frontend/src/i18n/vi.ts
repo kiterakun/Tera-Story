@@ -91,6 +91,9 @@ const vi: Translations = {
     noSpecialItems: 'Chưa định nghĩa mẫu vật phẩm đặc biệt.',
     categoryLabel: 'Danh mục:',
     fieldsLabel: 'Trường:',
+    confirmDeletePlaythrough: 'Bạn có chắc muốn xóa lượt chơi "{name}"? Tất cả tiến trình sẽ bị mất.',
+    failedToDeletePlaythrough: 'Xóa lượt chơi thất bại',
+    deletePlaythroughBtn: 'Xóa lượt chơi',
   },
 
   worldCreate: {
@@ -140,6 +143,11 @@ const vi: Translations = {
     addField: 'Thêm trường',
     removeCategory: 'Xóa danh mục',
     noSpecialItems: 'Chưa có mẫu vật phẩm đặc biệt. AI sẽ không tạo vật phẩm đặc biệt.',
+    aiGenerateTitle: 'AI Tạo Thế Giới',
+    aiGenerateHint: 'Mô tả ý tưởng thế giới và AI sẽ tạo thế giới hoàn chỉnh với tài nguyên và vật phẩm đặc biệt.',
+    aiPromptPlaceholder: 'VD. Một thế giới tiên hiệp tối với hệ thống tu luyện, linh thú và cổ vật...',
+    aiGenerateWorld: 'Tạo thế giới',
+    aiGenerating: 'Đang tạo...',
   },
 
   playthrough: {
@@ -165,14 +173,20 @@ const vi: Translations = {
     specialAbilities: 'Năng lực đặc biệt',
     noSpecialItems: 'Chưa có vật phẩm đặc biệt nào.',
     itemCount: 'vật phẩm',
+    deletePlaythrough: 'Xóa lượt chơi',
+    deleteConfirmMsg: 'Bạn có chắc muốn xóa "{name}"? Tất cả tiến trình sẽ bị mất.',
+    deleteFailed: 'Xóa lượt chơi thất bại',
   },
 
   characterCreate: {
     backToPlaythrough: 'Quay lại lượt chơi',
     title: 'Tạo nhân vật',
     subtitle: 'Thổi hồn vào một thực thể mới trong câu chuyện.',
-    aiQuickCreate: 'AI Tạo nhanh',
+    aiQuickCreate: 'AI Làm giàu',
     aiQuickCreateMsg: 'AI Tạo nhanh: Sắp ra mắt',
+    aiEnriching: 'Đang làm giàu...',
+    aiNeedHint: 'Vui lòng nhập tên hoặc mô tả để AI có thể hỗ trợ.',
+    aiEnrichFailed: 'Làm giàu AI thất bại. Vui lòng thử lại.',
     name: 'Tên',
     nameRequired: 'Tên là bắt buộc',
     namePlaceholder: 'VD. Elara Vance',
@@ -233,6 +247,8 @@ const vi: Translations = {
     whatWillYouDo: 'Bạn sẽ làm gì?',
     customPlaceholder: 'Hoặc viết lựa chọn của bạn...',
     go: 'Đi',
+    enrichTooltip: 'AI sẽ kiểm tra lựa chọn của bạn có phù hợp với mạch truyện và đề xuất cải thiện',
+    aiSuggestions: 'Gợi ý từ AI',
   },
 
   storyNav: {

@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
 import { Character } from '../models/Character';
 import { initializeDynamicStats } from '../services/characterService';
+import { queueImageGeneration } from '../services/imageService';
 
 const router = Router();
 
@@ -100,6 +101,15 @@ router.post(
         userId,
         dynamicStats,
       });
+
+      // Fire-and-forget image generation
+      queueImageGeneration(
+        `Character portrait, close-up bust shot facing the viewer: ${name.trim()}. ${description || 'A mysterious character in a story world'}. Highly detailed digital painting, painterly style, dramatic lighting, RPG character illustration. No text, no watermark, no frame.`,
+        'character',
+        character._id.toString(),
+        userId
+      );
+
 
       res.status(201).json({ character });
     } catch (err) {

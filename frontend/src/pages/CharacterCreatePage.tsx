@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useStoryStore } from '../stores/storyStore';
 import { useTranslation } from '../i18n';
-import { ChevronLeft, Zap, XCircle, UserRound, Users, Info, Loader2 } from 'lucide-react';
+import { ChevronLeft, Zap, XCircle, UserRound, Users, Info, Loader2, Sparkles } from 'lucide-react';
+import * as supportApi from '../services/supportApi';
 
 export default function CharacterCreatePage() {
   const t = useTranslation();
@@ -15,6 +16,7 @@ export default function CharacterCreatePage() {
   const [role, setRole] = useState<'protagonist' | 'npc'>('protagonist');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEnriching, setIsEnriching] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,8 +37,27 @@ export default function CharacterCreatePage() {
     }
   };
 
-  const handleAiQuickCreate = () => {
-    alert(t.characterCreate.aiQuickCreateMsg);
+  const handleAiQuickCreate = async () => {
+    if (!description.trim() && !name.trim()) {
+      setError(t.characterCreate.aiNeedHint);
+      return;
+    }
+
+    setIsEnriching(true);
+    setError(null);
+
+    try {
+      const result = await supportApi.enrichCharacter(
+        description.trim() || name.trim(),
+        worldId,
+      );
+      if (result.characterName) setName(result.characterName);
+      if (result.characterDescription) setDescription(result.characterDescription);
+    } catch (err: any) {
+      setError(err.response?.data?.error || err.message || t.characterCreate.aiEnrichFailed);
+    } finally {
+      setIsEnriching(false);
+    }
   };
 
   return (
@@ -58,10 +79,11 @@ export default function CharacterCreatePage() {
         <div className="flex justify-end mb-6">
           <button 
             onClick={handleAiQuickCreate}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-accent-600/10 text-accent-400 border border-accent-600/20 rounded-xl text-sm font-medium hover:bg-accent-600/20 transition-all duration-200"
+            disabled={isEnriching}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-accent-600/10 text-accent-400 border border-accent-600/20 rounded-xl text-sm font-medium hover:bg-accent-600/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Zap size={16} />
-            {t.characterCreate.aiQuickCreate}
+            {isEnriching ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+            {isEnriching ? t.characterCreate.aiEnriching : t.characterCreate.aiQuickCreate}
           </button>
         </div>
 

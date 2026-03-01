@@ -5,11 +5,13 @@ import { useStoryStream } from '../hooks/useStoryStream';
 import { TypewriterText } from '../components/TypewriterText';
 import { StoryContent, type EntityRef } from '../components/StoryContent';
 import { EntityDetailModal, type EntityData } from '../components/EntityDetailModal';
+import { ChoiceCards } from '../components/ChoiceCards';
 import * as storyApi from '../services/storyApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useTranslation } from '../i18n';
 import { UserRound, Users, Package, Sparkles, Swords, X, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ItemRarity } from '../services/playthroughApi';
+import { getImageUrl } from '../utils/url';
 
 // Matches backend Chapter model
 interface Chapter {
@@ -209,7 +211,7 @@ export default function StoryReaderPage() {
             <div>
               <button onClick={() => setDetailEntity({ type: 'character', data: protagonist })} className="flex items-center gap-3 mb-3 w-full text-left hover:bg-ink-800/50 rounded-xl p-1.5 -m-1.5 transition-colors cursor-pointer">
                 {protagonist.imageUrl ? (
-                  <img src={protagonist.imageUrl} alt={protagonist.name} className="w-12 h-12 rounded-xl object-cover border-2 border-accent-400/30" />
+                  <img src={getImageUrl(protagonist.imageUrl)} alt={protagonist.name} className="w-12 h-12 rounded-xl object-cover border-2 border-accent-400/30" />
                 ) : (
                   <div className="w-12 h-12 rounded-xl bg-ink-700/50 border border-ink-600 flex items-center justify-center"><UserRound size={20} className="text-ink-200/60" /></div>
                 )}
@@ -243,7 +245,7 @@ export default function StoryReaderPage() {
                 {npcs.map(npc => (
                   <button key={npc._id} onClick={() => setDetailEntity({ type: 'character', data: npc })} className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-ink-800/50 transition-colors w-full text-left cursor-pointer">
                     {npc.imageUrl ? (
-                      <img src={npc.imageUrl} alt={npc.name} className="w-9 h-9 rounded-lg object-cover border border-ink-600" />
+                      <img src={getImageUrl(npc.imageUrl)} alt={npc.name} className="w-9 h-9 rounded-lg object-cover border border-ink-600" />
                     ) : (
                       <div className="w-9 h-9 rounded-lg bg-ink-700/50 border border-ink-600 flex items-center justify-center"><Users size={14} className="text-ink-200/60" /></div>
                     )}
@@ -270,7 +272,7 @@ export default function StoryReaderPage() {
             <button key={item._id} onClick={() => setDetailEntity({ type: 'item', data: item })} className="bg-ink-800/60 border border-ink-700 rounded-xl p-3 w-full text-left hover:bg-ink-800 hover:border-ink-600 transition-colors cursor-pointer">
               <div className="flex items-start gap-2.5">
                 {item.imageUrl ? (
-                  <img src={item.imageUrl} alt={item.name} className="w-9 h-9 rounded-lg object-cover border border-ink-600 shrink-0" />
+                  <img src={getImageUrl(item.imageUrl)} alt={item.name} className="w-9 h-9 rounded-lg object-cover border border-ink-600 shrink-0" />
                 ) : (
                   <div className="w-9 h-9 rounded-lg bg-ink-700/50 border border-ink-600 flex items-center justify-center shrink-0"><Package size={14} className="text-ink-200/60" /></div>
                 )}
@@ -294,7 +296,7 @@ export default function StoryReaderPage() {
             <button key={si._id} onClick={() => setDetailEntity({ type: 'special', data: si })} className="bg-ink-800/60 border border-ink-700 rounded-xl p-3 w-full text-left hover:bg-ink-800 hover:border-ink-600 transition-colors cursor-pointer">
               <div className="flex items-start gap-2.5">
                 {si.imageUrl ? (
-                  <img src={si.imageUrl} alt={si.name} className="w-9 h-9 rounded-lg object-cover border border-ink-600 shrink-0" />
+                  <img src={getImageUrl(si.imageUrl)} alt={si.name} className="w-9 h-9 rounded-lg object-cover border border-ink-600 shrink-0" />
                 ) : (
                   <div className="w-9 h-9 rounded-lg bg-purple-900/30 border border-purple-400/20 flex items-center justify-center shrink-0"><Sparkles size={14} className="text-purple-400/60" /></div>
                 )}
@@ -437,23 +439,16 @@ export default function StoryReaderPage() {
             </div>
           )}
 
+
           {/* Choice Cards — only on the latest chapter */}
           {showChoices && (
-            <div className="mt-16 md:mt-24 border-t border-ink-700 pt-8 animate-fade-in">
-              <h3 className="font-display text-lg text-ink-100 mb-6 text-center">{t.storyReader.whatDoYouDoNext}</h3>
-              <div className="flex flex-col gap-3">
-                {choices.map((choice, idx) => (
-                  <button 
-                    key={idx}
-                    onClick={() => handleChoiceSelect(choice.text)}
-                    className="group bg-ink-800/60 hover:bg-ink-800 border border-ink-700 hover:border-accent-400/40 text-left p-5 rounded-2xl transition-all duration-200 hover:shadow-lg hover:shadow-accent-400/5"
-                  >
-                    <span className="font-serif text-base text-ink-200 group-hover:text-ink-100 transition-colors leading-relaxed">
-                      {choice.text}
-                    </span>
-                  </button>
-                ))}
-              </div>
+            <div className="mt-16 md:mt-24 animate-fade-in">
+              <ChoiceCards
+                choices={choices}
+                isGenerating={isStreaming || isThinking}
+                playthroughId={playthroughId!}
+                onChoiceSelect={handleChoiceSelect}
+              />
             </div>
           )}
 
