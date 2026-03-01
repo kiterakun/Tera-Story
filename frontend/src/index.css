@@ -3,14 +3,12 @@
 @import "tailwindcss";
 @config "../tailwind.config.ts";
 
+@custom-variant dark (&.dark);
+
 :root {
   --bg-primary: #0F172A;
   --text-primary: #E2E8F0;
   --accent: #818CF8;
-}
-
-html {
-  @apply dark;
 }
 
 html.dark body {
