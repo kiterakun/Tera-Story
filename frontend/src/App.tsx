@@ -13,31 +13,47 @@ import StoryReaderPage from './pages/StoryReaderPage'
 import PlaythroughPage from './pages/PlaythroughPage'
 import StoryReaderPage from './pages/StoryReaderPage'
 import SettingsPage from './pages/SettingsPage'
+import { Layout } from './components/Layout'
 
 function App() {
   const loadUser = useAuthStore(s => s.loadUser)
 
   useEffect(() => {
     loadUser()
-  }, [loadUser])
 
+    const stored = localStorage.getItem('tera-story-ui');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed?.state?.theme === 'light') {
+        document.documentElement.classList.remove('dark');
+      } else {
+        document.documentElement.classList.add('dark');
+      }
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+  }, [loadUser])
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/worlds" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        
-        {/* Protected Routes */}
-        <Route path="/worlds" element={<ProtectedRoute><WorldListPage /></ProtectedRoute>} />
-        <Route path="/worlds/create" element={<ProtectedRoute><WorldCreatePage /></ProtectedRoute>} />
-        <Route path="/worlds/:id" element={<ProtectedRoute><WorldDetailPage /></ProtectedRoute>} />
-        <Route path="/worlds/:worldId/playthroughs/:id" element={<ProtectedRoute><PlaythroughPage /></ProtectedRoute>} />
-        <Route path="/worlds/:worldId/playthroughs/:playthroughId/characters/create" element={<ProtectedRoute><CharacterCreatePage /></ProtectedRoute>} />
-        <Route path="/play/:playthroughId" element={<ProtectedRoute><StoryReaderPage /></ProtectedRoute>} />
-        <Route path="/worlds/:worldId/playthroughs/:id" element={<ProtectedRoute><PlaythroughPage /></ProtectedRoute>} />
-        <Route path="/play/:playthroughId" element={<ProtectedRoute><StoryReaderPage /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+        <Route path="/*" element={
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Navigate to="/worlds" replace />} />
+              
+              {/* Protected Routes */}
+              <Route path="/worlds" element={<ProtectedRoute><WorldListPage /></ProtectedRoute>} />
+              <Route path="/worlds/create" element={<ProtectedRoute><WorldCreatePage /></ProtectedRoute>} />
+              <Route path="/worlds/:id" element={<ProtectedRoute><WorldDetailPage /></ProtectedRoute>} />
+              <Route path="/worlds/:worldId/playthroughs/:id" element={<ProtectedRoute><PlaythroughPage /></ProtectedRoute>} />
+              <Route path="/play/:playthroughId" element={<ProtectedRoute><StoryReaderPage /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+              <Route path="/worlds/:worldId/playthroughs/:playthroughId/characters/create" element={<ProtectedRoute><CharacterCreatePage /></ProtectedRoute>} />
+            </Routes>
+          </Layout>
+        } />
       </Routes>
     </BrowserRouter>
   )

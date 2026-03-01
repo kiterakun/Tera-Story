@@ -1,8 +1,12 @@
-// Stub API for Story management
-export async function getStoryState(playthroughId: string): Promise<any> {
-    return {};
+import { api } from './api';
+
+export async function getStoryState(playthroughId: string) {
+  const res = await api.get(`/story/${playthroughId}/state`);
+  return res.data;
 }
 
+// Streaming is done via fetch() in useStoryStream hook — not Axios
+// because Axios doesn't support streaming responses well
 export async function generateChapter(playthroughId: string, choice?: string): Promise<string> {
-    return '';
+    throw new Error('Use useStoryStream hook for generation');
 }
