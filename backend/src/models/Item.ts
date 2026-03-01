@@ -1,9 +1,12 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+
 export interface IItemDocument extends Document {
   name: string;
   description: string;
   imageUrl?: string;
+  rarity: ItemRarity;
   ownerId?: mongoose.Types.ObjectId;
   playthroughId: mongoose.Types.ObjectId;
   createdInChapterId?: mongoose.Types.ObjectId;
@@ -25,6 +28,11 @@ const ItemSchema = new Schema<IItemDocument>(
     },
     imageUrl: {
       type: String,
+    },
+    rarity: {
+      type: String,
+      enum: ['common', 'uncommon', 'rare', 'epic', 'legendary'],
+      default: 'common',
     },
     ownerId: {
       type: Schema.Types.ObjectId,

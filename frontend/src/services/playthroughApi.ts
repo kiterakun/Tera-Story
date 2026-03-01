@@ -12,9 +12,6 @@ export interface Character {
   description: string; 
   imageUrl?: string;
   role: 'protagonist' | 'npc'; 
-  level: number; 
-  health: number; 
-  mana: number;
   dynamicStats: DynamicStat[]; 
   playthroughId: string; 
   worldId: string;
@@ -75,4 +72,52 @@ export async function createCharacter(
 export async function listArcs(playthroughId: string): Promise<Arc[]> {
   const { data } = await api.get<{ arcs: Arc[] }>(`/playthroughs/${playthroughId}/arcs`);
   return data.arcs;
+}
+
+export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+
+export interface Item {
+  _id: string;
+  name: string;
+  description: string;
+  rarity: ItemRarity;
+  imageUrl?: string;
+  ownerId?: string;
+  playthroughId: string;
+  createdInChapterId?: string;
+  properties: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface SpecialItem {
+  _id: string;
+  name: string;
+  description: string;
+  category: string;
+  rarity: ItemRarity;
+  imageUrl?: string;
+  ownerId?: string;
+  playthroughId: string;
+  createdInChapterId?: string;
+  customFields: Record<string, unknown>;
+  createdAt: string;
+}
+
+
+// Item calls
+export async function listItems(playthroughId: string): Promise<Item[]> {
+  const { data } = await api.get<{ items: Item[] }>(`/playthroughs/${playthroughId}/items`);
+  return data.items;
+}
+
+// Special Item calls
+export async function listSpecialItems(playthroughId: string, category?: string): Promise<SpecialItem[]> {
+  const params = category ? `?category=${encodeURIComponent(category)}` : '';
+  const { data } = await api.get<{ specialItems: SpecialItem[] }>(`/playthroughs/${playthroughId}/special-items${params}`);
+  return data.specialItems;
+}
+
+export async function listSpecialItemsByOwner(playthroughId: string, characterId: string): Promise<SpecialItem[]> {
+  const { data } = await api.get<{ specialItems: SpecialItem[] }>(`/playthroughs/${playthroughId}/special-items/by-owner/${characterId}`);
+  return data.specialItems;
 }

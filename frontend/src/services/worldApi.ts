@@ -10,6 +10,19 @@ export interface ResourceTemplate {
   options?: string[];
 }
 
+export interface SpecialItemFieldDefinition {
+  name: string;
+  type: 'text' | 'number' | 'enum';
+  options?: string[];
+  required?: boolean;
+}
+
+export interface SpecialItemTemplate {
+  category: string;
+  description: string;
+  fields: SpecialItemFieldDefinition[];
+}
+
 export interface World {
   _id: string;
   name: string;
@@ -17,6 +30,7 @@ export interface World {
   genre: 'fantasy' | 'sci-fi' | 'wuxia' | 'modern' | 'custom';
   imageUrl?: string;
   resourceTemplates: ResourceTemplate[];
+  specialItemTemplates: SpecialItemTemplate[];
   createdAt: string;
   updatedAt: string;
 }

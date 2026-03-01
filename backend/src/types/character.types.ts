@@ -16,7 +16,6 @@ export interface ICharacter extends ICharacterBase {
   playthroughId: string;
   worldId: string;
   userId: string;
-  level: number;
   dynamicStats: IDynamicStat[];
   createdAt: Date;
   updatedAt: Date;

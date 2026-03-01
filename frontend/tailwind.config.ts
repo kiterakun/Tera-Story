@@ -6,25 +6,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Dark mode palette
+        // Theme-aware colors via CSS variables (swap in index.css)
         ink: {
-          950: '#0F172A',  // main bg
-          800: '#1E293B',  // card bg
-          700: '#334155',  // muted/borders
-          200: '#E2E8F0',  // main text
-          100: '#F1F5F9',  // bright text
+          950: 'var(--ink-950)',
+          900: 'var(--ink-900)',
+          800: 'var(--ink-800)',
+          700: 'var(--ink-700)',
+          600: 'var(--ink-600)',
+          500: 'var(--ink-500)',
+          200: 'var(--ink-200)',
+          100: 'var(--ink-100)',
         },
-        // Light mode palette
         parchment: {
-          50:  '#FDFBF7',  // main bg
-          100: '#F5F0E8',  // card bg
-          200: '#E8E0D0',  // borders
-          900: '#1A202C',  // main text
+          50:  'var(--parchment-50)',
+          100: 'var(--parchment-100)',
+          200: 'var(--parchment-200)',
+          900: 'var(--parchment-900)',
         },
-        // Accent colors
         accent: {
-          400: '#818CF8',  // dark mode accent (Indigo 400)
-          600: '#4F46E5',  // light mode accent (Indigo 600)
+          400: 'var(--accent-400)',
+          500: 'var(--accent-500)',
+          600: 'var(--accent-600)',
         },
       },
       fontFamily: {
@@ -38,6 +40,20 @@ export default {
       },
       lineHeight: {
         'story': '1.7',
+      },
+      keyframes: {
+        'fade-in': {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'slide-in-right': {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+      },
+      animation: {
+        'fade-in': 'fade-in 0.3s ease-out',
+        'slide-in-right': 'slide-in-right 0.3s ease-out',
       },
     },
   },

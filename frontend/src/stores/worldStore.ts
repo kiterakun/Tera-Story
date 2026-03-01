@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import * as worldApi from '../services/worldApi';
-import { World } from '../services/worldApi';
+import type { World } from '../services/worldApi';
 
 interface WorldState {
   worlds: World[];
@@ -14,7 +14,7 @@ interface WorldState {
   deleteWorld: (id: string) => Promise<void>;
 }
 
-export const useWorldStore = create<WorldState>()((set, get) => ({
+export const useWorldStore = create<WorldState>()((set, _get) => ({
   worlds: [],
   currentWorld: null,
   isLoading: false,

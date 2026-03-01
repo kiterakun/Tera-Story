@@ -9,9 +9,6 @@ export interface ICharacterDocument extends Document {
   playthroughId: mongoose.Types.ObjectId;
   worldId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
-  level: number;
-  health: number;
-  mana: number;
   dynamicStats: IDynamicStat[];
   createdAt: Date;
   updatedAt: Date;
@@ -59,18 +56,6 @@ const CharacterSchema = new Schema<ICharacterDocument>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-    },
-    level: {
-      type: Number,
-      default: 1,
-    },
-    health: {
-      type: Number,
-      default: 100,
-    },
-    mana: {
-      type: Number,
-      default: 0,
     },
     dynamicStats: {
       type: [DynamicStatSchema],

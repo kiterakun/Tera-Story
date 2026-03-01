@@ -1,50 +1,63 @@
-import { Character } from '../services/playthroughApi';
+import type { Character } from '../services/playthroughApi';
+import { useTranslation } from '../i18n';
 
 export default function CharacterCard({ character }: { character: Character }) {
+  const t = useTranslation();
   const isProtagonist = character.role === 'protagonist';
   const initials = character.name.substring(0, 2).toUpperCase();
 
   return (
-    <div className="bg-ink-800 border border-ink-700 rounded-xl p-4 flex flex-col gap-4">
-      <div className="flex items-center gap-4">
+    <div className="bg-ink-800 border border-ink-700 rounded-2xl p-4 flex flex-col gap-3 hover:border-ink-600 transition-all duration-200">
+      <div className="flex items-center gap-3">
         {/* Portrait */}
-        <div className="w-16 h-16 rounded-md bg-ink-950 flex-shrink-0 flex items-center justify-center overflow-hidden border border-ink-700">
+        <div className="w-14 h-14 rounded-xl bg-ink-950 flex-shrink-0 flex items-center justify-center overflow-hidden border border-ink-700">
           {character.imageUrl ? (
             <img src={character.imageUrl} alt={character.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-xl font-display text-ink-700 font-bold">{initials}</span>
+            <span className="text-lg font-display text-ink-500 font-bold">{initials}</span>
           )}
         </div>
         
         {/* Header Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="font-display text-ink-200 text-lg truncate pr-2">{character.name}</h3>
-            <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${isProtagonist ? 'bg-accent-600/20 text-accent-400 border border-accent-600/30' : 'bg-ink-700 text-ink-200'}`}>
-              {isProtagonist ? 'Protagonist' : 'NPC'}
+            <h3 className="font-display text-ink-100 text-base truncate pr-2">{character.name}</h3>
+            <span className={`text-xs px-2 py-0.5 rounded-lg whitespace-nowrap font-medium ${
+              isProtagonist 
+                ? 'bg-accent-600/10 text-accent-400 border border-accent-600/20' 
+                : 'bg-ink-700/50 text-ink-200/70'
+            }`}>
+              {isProtagonist ? t.characterCard.protagonist : t.characterCard.npc}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-             <span className="text-xs text-ink-200/70 font-sans">Lv. {character.level}</span>
-             <span className="text-xs border border-ink-700 px-1.5 py-0.5 rounded text-red-400">HP {character.health}</span>
-             <span className="text-xs border border-ink-700 px-1.5 py-0.5 rounded text-blue-400">MP {character.mana}</span>
-          </div>
+          {character.dynamicStats.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {character.dynamicStats.slice(0, 3).map((stat) => (
+                <span key={stat.k} className="text-xs bg-ink-700/50 text-ink-200/70 px-1.5 py-0.5 rounded-lg">
+                  {stat.k}: {stat.v}
+                </span>
+              ))}
+              {character.dynamicStats.length > 3 && (
+                <span className="text-xs text-ink-200/40">+{character.dynamicStats.length - 3}</span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {character.description && (
-        <p className="text-sm font-serif text-ink-200/80 line-clamp-2">
+        <p className="text-sm font-serif text-ink-200/70 line-clamp-2 leading-relaxed">
           {character.description}
         </p>
       )}
 
       {/* Dynamic Stats Grid */}
       {character.dynamicStats.length > 0 && (
-        <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+        <div className="grid grid-cols-2 gap-1.5 text-sm">
           {character.dynamicStats.map((stat) => (
-            <div key={stat.k} className="flex justify-between items-center bg-ink-950/50 rounded px-2 py-1">
-              <span className="text-ink-200/60 font-sans capitalize">{stat.k}</span>
-              <span className="text-ink-200 font-mono">{stat.v}</span>
+            <div key={stat.k} className="flex justify-between items-center bg-ink-950/50 rounded-lg px-2.5 py-1.5">
+              <span className="text-ink-200/50 text-xs capitalize">{stat.k}</span>
+              <span className="text-ink-100 font-mono text-xs">{stat.v}</span>
             </div>
           ))}
         </div>

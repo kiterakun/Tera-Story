@@ -9,12 +9,15 @@ export function makeCreateItemTool(playthroughId: string, userId: string) {
     inputSchema: z.object({
       name: z.string().describe('The item name'),
       description: z.string().describe('A brief description of the item'),
+      rarity: z
+        .enum(['common', 'uncommon', 'rare', 'epic', 'legendary'])
+        .describe('The rarity tier of the item'),
       ownerName: z
         .string()
         .optional()
         .describe('Name of the character who owns this item'),
     }),
-    execute: async ({ name, description, ownerName }) => {
+    execute: async ({ name, description, rarity, ownerName }) => {
       let ownerId: string | undefined;
 
       if (ownerName) {
@@ -30,6 +33,7 @@ export function makeCreateItemTool(playthroughId: string, userId: string) {
       const item = await Item.create({
         name,
         description,
+        rarity,
         playthroughId,
         ...(ownerId ? { ownerId } : {}),
       });

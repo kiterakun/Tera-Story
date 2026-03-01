@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
+import { useUIStore } from './stores/uiStore'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -15,22 +16,17 @@ import { Layout } from './components/Layout'
 
 function App() {
   const loadUser = useAuthStore(s => s.loadUser)
+  const theme = useUIStore(s => s.theme)
 
   useEffect(() => {
     loadUser()
-
-    const stored = localStorage.getItem('tera-story-ui');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed?.state?.theme === 'light') {
-        document.documentElement.classList.remove('dark');
-      } else {
-        document.documentElement.classList.add('dark');
-      }
-    } else {
-      document.documentElement.classList.add('dark');
-    }
   }, [loadUser])
+
+  // Sync theme class with uiStore
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+  }, [theme])
+
   return (
     <BrowserRouter>
       <Routes>

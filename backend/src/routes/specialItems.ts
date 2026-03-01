@@ -1,0 +1,109 @@
+import { Router, Response } from 'express';
+import mongoose from 'mongoose';
+import { AuthRequest } from '../middleware/auth';
+import { SpecialItem } from '../models/SpecialItem';
+
+const router = Router();
+
+// Safe model access for Playthrough
+function getPlaythroughModel() {
+  return (
+    mongoose.models['Playthrough'] ||
+    mongoose.model('Playthrough', new mongoose.Schema({}, { strict: false }))
+  );
+}
+
+// GET /api/playthroughs/:playthroughId/special-items — list all special items
+router.get(
+  '/playthroughs/:playthroughId/special-items',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.id;
+      const { playthroughId } = req.params;
+
+      const Playthrough = getPlaythroughModel();
+      const playthrough = await Playthrough.findById(playthroughId).lean();
+
+      if (!playthrough) {
+        res.status(404).json({ error: 'Playthrough not found' });
+        return;
+      }
+
+      if ((playthrough as Record<string, unknown>).userId?.toString() !== userId) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+
+      const { category } = req.query;
+      const filter: Record<string, unknown> = { playthroughId };
+      if (category && typeof category === 'string') {
+        filter.category = category;
+      }
+
+      const specialItems = await SpecialItem.find(filter).sort({ createdAt: -1 }).lean();
+      res.json({ specialItems });
+    } catch (err) {
+      console.error('List special items error:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+// GET /api/special-items/:id — get single special item
+router.get(
+  '/special-items/:id',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const specialItem = await SpecialItem.findById(id).lean();
+
+      if (!specialItem) {
+        res.status(404).json({ error: 'Special item not found' });
+        return;
+      }
+
+      res.json({ specialItem });
+    } catch (err) {
+      console.error('Get special item error:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+// GET /api/playthroughs/:playthroughId/special-items/by-owner/:characterId
+router.get(
+  '/playthroughs/:playthroughId/special-items/by-owner/:characterId',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.id;
+      const { playthroughId, characterId } = req.params;
+
+      const Playthrough = getPlaythroughModel();
+      const playthrough = await Playthrough.findById(playthroughId).lean();
+
+      if (!playthrough) {
+        res.status(404).json({ error: 'Playthrough not found' });
+        return;
+      }
+
+      if ((playthrough as Record<string, unknown>).userId?.toString() !== userId) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+
+      const specialItems = await SpecialItem.find({
+        playthroughId,
+        ownerId: characterId,
+      })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      res.json({ specialItems });
+    } catch (err) {
+      console.error('List special items by owner error:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+export default router;

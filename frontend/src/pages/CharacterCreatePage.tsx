@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useStoryStore } from '../stores/storyStore';
+import { useTranslation } from '../i18n';
+import { ChevronLeft, Zap, XCircle, UserRound, Users, Info, Loader2 } from 'lucide-react';
 
 export default function CharacterCreatePage() {
+  const t = useTranslation();
   const { worldId, playthroughId } = useParams<{ worldId: string, playthroughId: string }>();
   const navigate = useNavigate();
   const createCharacter = useStoryStore(state => state.createCharacter);
@@ -16,7 +19,7 @@ export default function CharacterCreatePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError('Name is required');
+      setError(t.characterCreate.nameRequired);
       return;
     }
 
@@ -27,121 +30,135 @@ export default function CharacterCreatePage() {
       await createCharacter(playthroughId!, { name, description, role });
       navigate(`/worlds/${worldId}/playthroughs/${playthroughId}`);
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to create character');
+      setError(err.response?.data?.message || err.message || t.characterCreate.failedToCreate);
       setIsSubmitting(false);
     }
   };
 
   const handleAiQuickCreate = () => {
-    alert("AI Quick Create: Coming soon (Wired in T18)");
+    alert(t.characterCreate.aiQuickCreateMsg);
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 md:p-8">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12 animate-fade-in">
       <div className="mb-8">
         <Link 
           to={`/worlds/${worldId}/playthroughs/${playthroughId}`} 
-          className="text-accent-400 hover:text-accent-600 text-sm font-sans mb-4 inline-block"
+          className="inline-flex items-center gap-1.5 text-ink-200/50 hover:text-accent-400 transition-colors text-sm font-medium mb-3"
         >
-          &larr; Back to Playthrough
+          <ChevronLeft size={16} />
+          {t.characterCreate.backToPlaythrough}
         </Link>
-        <h1 className="text-3xl font-display text-ink-100">Forge Character</h1>
-        <p className="text-ink-200/60 font-serif mt-2">Breathe life into a new entity within your story.</p>
+        <h1 className="text-3xl font-display text-ink-100">{t.characterCreate.title}</h1>
+        <p className="text-ink-200/60 font-serif mt-2 text-sm">{t.characterCreate.subtitle}</p>
+        <div className="mt-3 h-px bg-gradient-to-r from-accent-400/60 via-accent-600/30 to-transparent" />
       </div>
 
-      <div className="bg-ink-800 border border-ink-700 rounded-xl p-6 md:p-8">
+      <div className="bg-ink-800 border border-ink-700 rounded-2xl p-6 sm:p-8">
         <div className="flex justify-end mb-6">
-           <button 
-             onClick={handleAiQuickCreate}
-             className="px-4 py-2 bg-gradient-to-r from-accent-600/20 to-purple-600/20 text-accent-400 border border-accent-600/30 rounded-lg text-sm font-sans flex items-center gap-2 hover:from-accent-600/30 hover:to-purple-600/30 transition-colors"
-           >
-             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-             AI Quick Create
-           </button>
+          <button 
+            onClick={handleAiQuickCreate}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-accent-600/10 text-accent-400 border border-accent-600/20 rounded-xl text-sm font-medium hover:bg-accent-600/20 transition-all duration-200"
+          >
+            <Zap size={16} />
+            {t.characterCreate.aiQuickCreate}
+          </button>
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg mb-6 text-sm">
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-xl mb-6 text-sm flex items-center gap-2 animate-fade-in">
+            <XCircle size={16} className="shrink-0" />
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-ink-200 mb-1 font-sans">Name *</label>
+            <label className="block text-xs font-medium text-ink-200/80 mb-1.5">{t.characterCreate.name} <span className="text-red-400">*</span></label>
             <input
               type="text"
               required
               value={name}
               onChange={e => setName(e.target.value)}
-              className="w-full bg-ink-950 border border-ink-700 rounded-lg p-3 text-ink-100 placeholder-ink-200/30 focus:outline-none focus:border-accent-400 focus:ring-1 focus:ring-accent-400 font-sans"
-              placeholder="E.g. Elara Vance"
+              className="w-full bg-ink-950 border border-ink-700 rounded-xl p-3 text-ink-100 placeholder:text-ink-500 focus:border-accent-400 focus:ring-2 focus:ring-accent-400/20 outline-none transition-all text-sm"
+              placeholder={t.characterCreate.namePlaceholder}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-200 mb-1 font-sans">Role</label>
-            <div className="grid grid-cols-2 gap-4">
-              <label className={`cursor-pointer border rounded-lg p-4 flex flex-col items-center gap-2 transition-colors ${role === 'protagonist' ? 'bg-accent-600/10 border-accent-400 text-accent-400' : 'bg-ink-950 border-ink-700 text-ink-200/60 hover:bg-ink-900'}`}>
+            <label className="block text-xs font-medium text-ink-200/80 mb-1.5">{t.characterCreate.role}</label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className={`cursor-pointer border rounded-xl p-4 flex flex-col items-center gap-2 transition-all duration-200 ${
+                role === 'protagonist' 
+                  ? 'bg-accent-600/10 border-accent-400 text-accent-400 shadow-sm shadow-accent-400/10' 
+                  : 'bg-ink-950 border-ink-700 text-ink-200/60 hover:bg-ink-900 hover:border-ink-600'
+              }`}>
                 <input 
-                  type="radio" 
-                  name="role" 
-                  value="protagonist" 
+                  type="radio" name="role" value="protagonist" 
                   checked={role === 'protagonist'} 
                   onChange={() => setRole('protagonist')}
                   className="sr-only" 
                 />
-                <span className="font-display text-lg">Protagonist</span>
-                <span className="text-xs text-center px-2">The main character whose perspective drives the story.</span>
+                <UserRound size={24} className="text-accent-400" />
+                <span className="font-display text-base">{t.characterCreate.protagonist}</span>
+                <span className="text-xs text-center leading-relaxed opacity-70">{t.characterCreate.protagonistDesc}</span>
               </label>
-              <label className={`cursor-pointer border rounded-lg p-4 flex flex-col items-center gap-2 transition-colors ${role === 'npc' ? 'bg-ink-700 border-ink-500 text-ink-100' : 'bg-ink-950 border-ink-700 text-ink-200/60 hover:bg-ink-900'}`}>
+              <label className={`cursor-pointer border rounded-xl p-4 flex flex-col items-center gap-2 transition-all duration-200 ${
+                role === 'npc' 
+                  ? 'bg-ink-700/30 border-ink-500 text-ink-100 shadow-sm' 
+                  : 'bg-ink-950 border-ink-700 text-ink-200/60 hover:bg-ink-900 hover:border-ink-600'
+              }`}>
                 <input 
-                  type="radio" 
-                  name="role" 
-                  value="npc" 
+                  type="radio" name="role" value="npc" 
                   checked={role === 'npc'} 
                   onChange={() => setRole('npc')}
                   className="sr-only" 
                 />
-                <span className="font-display text-lg">NPC</span>
-                <span className="text-xs text-center px-2">A supporting character, ally, or antagonist.</span>
+                <Users size={24} className="text-ink-200/60" />
+                <span className="font-display text-base">{t.characterCreate.npc}</span>
+                <span className="text-xs text-center leading-relaxed opacity-70">{t.characterCreate.npcDesc}</span>
               </label>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-200 mb-1 font-sans">Description</label>
+            <label className="block text-xs font-medium text-ink-200/80 mb-1.5">{t.characterCreate.description}</label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              className="w-full bg-ink-950 border border-ink-700 rounded-lg p-3 text-ink-100 placeholder-ink-200/30 focus:outline-none focus:border-accent-400 focus:ring-1 focus:ring-accent-400 font-serif min-h-[120px] resize-y"
-              placeholder="Physical appearance, personality, backstory snippet..."
+              className="w-full bg-ink-950 border border-ink-700 rounded-xl p-3 text-ink-100 placeholder:text-ink-500 focus:border-accent-400 focus:ring-2 focus:ring-accent-400/20 outline-none transition-all font-serif min-h-[120px] resize-y text-sm"
+              placeholder={t.characterCreate.descriptionPlaceholder}
             />
           </div>
 
-          <div className="bg-ink-950/50 rounded-lg p-4 border border-ink-700/50">
+          <div className="bg-ink-950/50 rounded-xl p-4 border border-ink-700/50">
             <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 text-accent-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-              <p className="text-sm text-ink-200/70 font-sans leading-relaxed">
-                Stats (Health, Mana, Dynamics) will be automatically initialized by matching against the World's stat templates when the character is created.
+              <Info size={20} className="text-accent-400 mt-0.5 shrink-0" />
+              <p className="text-xs text-ink-200/60 leading-relaxed">
+                {t.characterCreate.statsNote}
               </p>
             </div>
           </div>
 
-          <div className="flex gap-4 pt-4 border-t border-ink-700">
+          <div className="flex gap-3 pt-4 border-t border-ink-700">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="flex-1 bg-ink-950 border border-ink-700 hover:bg-ink-900 text-ink-200 px-4 py-3 rounded-lg font-sans font-medium transition-colors"
+              className="flex-1 bg-ink-950/50 border border-ink-700 hover:bg-ink-900 text-ink-200 px-4 py-3 rounded-xl font-medium transition-all duration-200 text-sm"
             >
-              Cancel
+              {t.characterCreate.cancel}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 bg-accent-600 hover:bg-accent-500 disabled:bg-accent-600/50 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg font-sans font-medium transition-colors"
+              className="flex-1 bg-accent-600 hover:bg-accent-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 rounded-xl font-medium transition-all duration-200 text-sm shadow-sm hover:shadow-lg hover:shadow-accent-600/20"
             >
-              {isSubmitting ? 'Forging...' : 'Forge Character'}
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 size={16} className="animate-spin" />
+                  {t.characterCreate.forging}
+                </span>
+              ) : t.characterCreate.forgeCharacter}
             </button>
           </div>
         </form>

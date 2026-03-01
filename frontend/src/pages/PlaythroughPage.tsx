@@ -1,20 +1,27 @@
 import { useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useStoryStore } from '../stores/storyStore';
+import { useTranslation } from '../i18n';
 import CharacterCard from '../components/CharacterCard';
+import { Search, UserRound, Plus, ChevronLeft, Play, BookOpen } from 'lucide-react';
 
 export default function PlaythroughPage() {
+  const t = useTranslation();
   const { worldId, id } = useParams<{ worldId: string, id: string }>();
   const navigate = useNavigate();
   
-  const { currentPlaythrough, characters, arcs, isLoading, fetchPlaythrough, fetchCharacters, fetchArcs } = useStoryStore(state => ({
+  const { currentPlaythrough, characters, arcs, items, specialItems, isLoading, fetchPlaythrough, fetchCharacters, fetchArcs, fetchItems, fetchSpecialItems } = useStoryStore(state => ({
     currentPlaythrough: state.currentPlaythrough,
     characters: state.characters,
     arcs: state.arcs,
+    items: state.items,
+    specialItems: state.specialItems,
     isLoading: state.isLoading,
     fetchPlaythrough: state.fetchPlaythrough,
     fetchCharacters: state.fetchCharacters,
-    fetchArcs: state.fetchArcs
+    fetchArcs: state.fetchArcs,
+    fetchItems: state.fetchItems,
+    fetchSpecialItems: state.fetchSpecialItems,
   }));
 
   useEffect(() => {
@@ -22,61 +29,78 @@ export default function PlaythroughPage() {
       fetchPlaythrough(id);
       fetchCharacters(id);
       fetchArcs(id);
+      fetchItems(id);
+      fetchSpecialItems(id);
     }
-  }, [id, fetchPlaythrough, fetchCharacters, fetchArcs]);
+  }, [id, fetchPlaythrough, fetchCharacters, fetchArcs, fetchItems, fetchSpecialItems]);
 
   if (isLoading && !currentPlaythrough) {
-    return <div className="p-8 text-ink-200">Loading story data...</div>;
+    return (
+      <div className="max-w-7xl mx-auto p-8 text-center py-20">
+        <svg className="animate-spin w-8 h-8 mx-auto text-accent-400 mb-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+        <p className="text-ink-200/60">{t.playthrough.loading}</p>
+      </div>
+    );
   }
 
   if (!currentPlaythrough) {
-    return <div className="p-8 text-red-500">Playthrough not found</div>;
+    return (
+      <div className="max-w-7xl mx-auto p-8 text-center pt-24">
+        <div className="w-16 h-16 rounded-2xl bg-ink-700/50 flex items-center justify-center mx-auto mb-5"><Search size={28} className="text-ink-200/60" /></div>
+        <h2 className="text-2xl font-display text-ink-100 mb-4">{t.playthrough.notFound}</h2>
+      </div>
+    );
   }
 
   const protagonist = characters.find(c => c.role === 'protagonist');
   const npcs = characters.filter(c => c.role === 'npc');
 
+  const statusStyles: Record<string, string> = {
+    active: 'bg-green-500/10 text-green-400 border-green-500/20',
+    completed: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    paused: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+  };
+
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 animate-fade-in">
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <Link to={`/worlds/${worldId}`} className="text-accent-400 hover:text-accent-600 text-sm font-sans mb-2 inline-block">
-            &larr; Back to World
+          <Link to={`/worlds/${worldId}`} className="inline-flex items-center gap-1.5 text-ink-200/50 hover:text-accent-400 transition-colors text-sm font-medium mb-3">
+          <ChevronLeft size={16} />
+            {t.playthrough.backToWorld}
           </Link>
-          <div className="flex items-center gap-4">
-            <h1 className="text-3xl md:text-5xl font-display text-ink-100">{currentPlaythrough.name}</h1>
-            <span className={`px-2 py-1 rounded text-xs font-sans uppercase tracking-wider
-              ${currentPlaythrough.status === 'active' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 
-                currentPlaythrough.status === 'completed' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 
-                'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'}`}>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl sm:text-4xl font-display text-ink-100">{currentPlaythrough.name}</h1>
+            <span className={`px-2.5 py-1 rounded-lg text-xs font-medium uppercase tracking-wider border ${statusStyles[currentPlaythrough.status] || statusStyles.paused}`}>
               {currentPlaythrough.status}
             </span>
           </div>
-          <p className="text-ink-200/60 mt-1 font-sans text-sm">Created {new Date(currentPlaythrough.createdAt).toLocaleDateString()}</p>
+          <p className="text-ink-200/50 mt-1 text-sm">{t.playthrough.created} {new Date(currentPlaythrough.createdAt).toLocaleDateString()}</p>
         </div>
         
         <Link 
           to={`/play/${id}`}
-          className="bg-accent-600 hover:bg-accent-500 text-white px-6 py-3 rounded-lg font-sans font-medium transition-colors"
+          className="inline-flex items-center gap-2 bg-accent-600 hover:bg-accent-500 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-accent-600/20 text-sm self-start"
         >
-          Continue Story
+          <Play size={16} />
+          {t.playthrough.continueStory}
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-12">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
         {/* Left Column: Characters */}
-        <div className="lg:col-span-1 space-y-8">
+        <div className="lg:col-span-1 space-y-6">
           {/* Protagonist */}
           <section>
-            <div className="flex items-center justify-between mb-4 border-b border-ink-700 pb-2">
-              <h2 className="text-xl font-display text-ink-100">Protagonist</h2>
+            <div className="flex items-center justify-between mb-4 border-b border-ink-700 pb-3">
+              <h2 className="text-lg font-display text-ink-100">{t.playthrough.protagonist}</h2>
               {!protagonist && (
                 <Link
                   to={`/worlds/${worldId}/playthroughs/${id}/characters/create`}
-                  className="text-accent-400 hover:text-accent-500 text-sm flex items-center gap-1"
+                  className="inline-flex items-center gap-1 text-accent-400 hover:text-accent-500 text-sm transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-                  Create
+                  <Plus size={16} />
+                  {t.playthrough.create}
                 </Link>
               )}
             </div>
@@ -84,13 +108,14 @@ export default function PlaythroughPage() {
             {protagonist ? (
               <CharacterCard character={protagonist} />
             ) : (
-              <div className="bg-ink-800/50 border border-ink-700 border-dashed rounded-xl p-6 text-center">
-                <p className="text-ink-200/60 mb-3 text-sm font-sans">No protagonist defined.</p>
+              <div className="bg-ink-800/50 border border-dashed border-ink-700 rounded-2xl p-6 text-center">
+                <div className="mb-3"><UserRound size={28} className="mx-auto text-ink-200/40" /></div>
+                <p className="text-ink-200/50 mb-3 text-sm">{t.playthrough.noProtagonist}</p>
                 <Link
                   to={`/worlds/${worldId}/playthroughs/${id}/characters/create`}
-                  className="inline-block bg-ink-700 hover:bg-ink-700/80 text-ink-200 px-4 py-2 rounded-lg text-sm transition-colors"
+                  className="inline-block bg-ink-700/50 hover:bg-ink-700 text-ink-200 px-4 py-2 rounded-xl text-sm transition-all duration-200"
                 >
-                  Create Protagonist
+                  {t.playthrough.createProtagonist}
                 </Link>
               </div>
             )}
@@ -98,61 +123,135 @@ export default function PlaythroughPage() {
 
           {/* NPCs */}
           <section>
-             <div className="flex items-center justify-between mb-4 border-b border-ink-700 pb-2">
-              <h2 className="text-xl font-display text-ink-100">Key NPCs</h2>
+            <div className="flex items-center justify-between mb-4 border-b border-ink-700 pb-3">
+              <h2 className="text-lg font-display text-ink-100">{t.playthrough.keyNPCs}</h2>
               <Link
                 to={`/worlds/${worldId}/playthroughs/${id}/characters/create`}
-                className="text-accent-400 hover:text-accent-500 text-sm flex items-center gap-1"
+                className="inline-flex items-center gap-1 text-accent-400 hover:text-accent-500 text-sm transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-                Add
+                <Plus size={16} />
+                {t.playthrough.add}
               </Link>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-3">
               {npcs.length > 0 ? (
                 npcs.map(npc => (
                   <CharacterCard key={npc._id} character={npc} />
                 ))
               ) : (
-                <p className="text-ink-200/50 text-sm italic font-serif">No NPCs encountered yet.</p>
+                <p className="text-ink-200/40 text-sm italic font-serif">{t.playthrough.noNPCs}</p>
               )}
             </div>
           </section>
-        </div>
 
-        {/* Right Column: Arcs / Story Structure */}
-        <div className="lg:col-span-2">
+          {/* Inventory */}
           <section>
-            <h2 className="text-2xl font-display text-ink-100 mb-6 border-b border-ink-700 pb-2">Story Arcs</h2>
-            
-            {arcs.length > 0 ? (
-              <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-ink-700 before:to-transparent">
-                {arcs.map((arc, idx) => (
-                  <div key={arc._id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                    {/* Timeline dot */}
-                    <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 border-ink-950 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow
-                      ${arc.status === 'completed' ? 'bg-accent-600' : arc.status === 'active' ? 'bg-accent-400' : 'bg-ink-700'}`}>
-                      <span className="text-xs font-bold text-white">{idx + 1}</span>
+            <div className="flex items-center justify-between mb-4 border-b border-ink-700 pb-3">
+              <h2 className="text-lg font-display text-ink-100">{t.playthrough.inventory}</h2>
+              <span className="text-xs text-ink-200/50">{items.length} {t.playthrough.itemCount}</span>
+            </div>
+            {items.length > 0 ? (
+              <div className="space-y-2">
+                {items.map(item => (
+                  <div key={item._id} className="bg-ink-800 border border-ink-700 rounded-xl p-3 flex items-center gap-3 hover:border-ink-600 transition-colors">
+                    <div className="w-10 h-10 rounded-lg bg-ink-950 border border-ink-700 flex items-center justify-center overflow-hidden shrink-0">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xs text-ink-500 font-bold">{item.name.substring(0, 2).toUpperCase()}</span>
+                      )}
                     </div>
-                    {/* Card */}
-                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-ink-800 p-4 rounded-xl border border-ink-700">
-                      <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-display text-lg text-ink-100">{arc.title}</h3>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${arc.status === 'completed' ? 'bg-green-500/20 text-green-400' : 'bg-accent-400/20 text-accent-400'}`}>
-                          {arc.status}
-                        </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-ink-100 font-medium truncate">{item.name}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wider ${
+                          item.rarity === 'legendary' ? 'bg-amber-500/10 text-amber-400' :
+                          item.rarity === 'epic' ? 'bg-purple-500/10 text-purple-400' :
+                          item.rarity === 'rare' ? 'bg-blue-500/10 text-blue-400' :
+                          item.rarity === 'uncommon' ? 'bg-green-500/10 text-green-400' :
+                          'bg-ink-700/50 text-ink-200/60'
+                        }`}>{(t.rarity as Record<string, string>)[item.rarity] || item.rarity}</span>
                       </div>
-                      <p className="text-ink-200/70 text-sm font-serif">{arc.summary || 'The story unfolds...'}</p>
+                      <p className="text-xs text-ink-200/50 line-clamp-1">{item.description}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="bg-ink-800 border border-ink-700 rounded-xl p-8 text-center text-ink-200/60 font-serif">
-                The story has not begun. 
+              <p className="text-ink-200/40 text-sm italic font-serif">{t.playthrough.noItems}</p>
+            )}
+          </section>
+
+          {/* Special Items */}
+          <section>
+            <div className="flex items-center justify-between mb-4 border-b border-ink-700 pb-3">
+              <h2 className="text-lg font-display text-ink-100">{t.playthrough.specialAbilities}</h2>
+              <span className="text-xs text-ink-200/50">{specialItems.length} {t.playthrough.itemCount}</span>
+            </div>
+            {specialItems.length > 0 ? (
+              <div className="space-y-2">
+                {specialItems.map(si => (
+                  <div key={si._id} className="bg-ink-800 border border-ink-700 rounded-xl p-3 hover:border-ink-600 transition-colors">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm text-ink-100 font-medium">{si.name}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-medium uppercase tracking-wider">{si.category}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wider ${
+                        si.rarity === 'legendary' ? 'bg-amber-500/10 text-amber-400' :
+                        si.rarity === 'epic' ? 'bg-purple-500/10 text-purple-400' :
+                        si.rarity === 'rare' ? 'bg-blue-500/10 text-blue-400' :
+                        si.rarity === 'uncommon' ? 'bg-green-500/10 text-green-400' :
+                        'bg-ink-700/50 text-ink-200/60'
+                      }`}>{(t.rarity as Record<string, string>)[si.rarity] || si.rarity}</span>
+                    </div>
+                    <p className="text-xs text-ink-200/50 line-clamp-2">{si.description}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-ink-200/40 text-sm italic font-serif">{t.playthrough.noSpecialItems}</p>
+            )}
+          </section>
+        </div>
+
+        {/* Right Column: Arcs */}
+        <div className="lg:col-span-2">
+          <section>
+            <h2 className="text-xl font-display text-ink-100 mb-6 border-b border-ink-700 pb-3">{t.playthrough.storyArcs}</h2>
+            
+            {arcs.length > 0 ? (
+              <div className="space-y-4 relative before:absolute before:left-5 before:top-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-accent-400/30 before:via-ink-700 before:to-transparent">
+                {arcs.map((arc, idx) => (
+                  <div key={arc._id} className="relative flex gap-4 ml-0">
+                    {/* Timeline dot */}
+                    <div className={`flex items-center justify-center w-10 h-10 rounded-xl border-2 border-ink-800 shrink-0 z-10 shadow-sm ${
+                      arc.status === 'completed' ? 'bg-accent-600 text-white' : arc.status === 'active' ? 'bg-accent-400 text-white' : 'bg-ink-700 text-ink-200'
+                    }`}>
+                      <span className="text-xs font-bold">{idx + 1}</span>
+                    </div>
+                    {/* Card */}
+                    <div className="flex-1 bg-ink-800 p-5 rounded-2xl border border-ink-700 hover:border-ink-600 transition-colors">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-display text-base text-ink-100">{arc.title}</h3>
+                        <span className={`text-xs px-2 py-0.5 rounded-lg font-medium ${
+                          arc.status === 'completed' ? 'bg-green-500/10 text-green-400' : 'bg-accent-400/10 text-accent-400'
+                        }`}>
+                          {arc.status}
+                        </span>
+                      </div>
+                      <p className="text-ink-200/60 text-sm font-serif">{arc.summary || t.playthrough.storyUnfolds}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-ink-800 border border-ink-700 rounded-2xl p-10 text-center">
+                <div className="mb-3"><BookOpen size={28} className="mx-auto text-ink-200/40" /></div>
+                <p className="text-ink-200/50 font-serif">{t.playthrough.storyNotBegun}</p>
                 <div className="mt-4">
-                  <button onClick={() => navigate(`/play/${id}`)} className="text-accent-400 hover:text-accent-500 underline font-sans text-sm">Start first chapter</button>
+                  <button onClick={() => navigate(`/play/${id}`)} className="text-accent-400 hover:text-accent-500 text-sm font-medium transition-colors">
+                    {t.playthrough.startFirstChapter}
+                  </button>
                 </div>
               </div>
             )}

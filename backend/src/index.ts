@@ -12,6 +12,8 @@ import charactersRouter from './routes/characters';
 import chaptersRouter from './routes/chapters';
 import supportRouter from './routes/support';
 import storyRouter from './routes/story';
+import itemsRouter from './routes/items';
+import specialItemsRouter from './routes/specialItems';
 import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
@@ -53,6 +55,11 @@ app.use('/api', authMiddleware, charactersRouter);
 // Chapter/Arc Routes (nested under playthroughs, arcs, chapters)
 app.use('/api', authMiddleware, chaptersRouter);
 
+// Item Routes (nested under playthroughs + standalone)
+app.use('/api', authMiddleware, itemsRouter);
+
+// Special Item Routes (nested under playthroughs + standalone)
+app.use('/api', authMiddleware, specialItemsRouter);
 // Support Routes (AI-assisted enrichment)
 app.use('/api/support', authMiddleware, supportRouter);
 

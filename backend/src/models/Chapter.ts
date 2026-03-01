@@ -7,7 +7,8 @@ export interface IChapterDocument extends Document {
   chapterIndex: number;
   choices: Array<{ text: string; type: 'continue' | 'new_arc' | 'custom' }>;
   newCharacters: Array<{ name: string; description: string; role: string }>;
-  newItems: Array<{ name: string; description: string; ownerId?: mongoose.Types.ObjectId }>;
+  newItems: Array<{ name: string; description: string; rarity?: string; ownerId?: mongoose.Types.ObjectId }>;
+  newSpecialItems: Array<{ name: string; description: string; category: string; rarity?: string }>;
   metadata: {
     tokensUsed?: number;
     model?: string;
@@ -37,7 +38,18 @@ const NewItemSchema = new Schema(
   {
     name: { type: String },
     description: { type: String },
+    rarity: { type: String },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Character' },
+  },
+  { _id: false }
+);
+
+const NewSpecialItemSchema = new Schema(
+  {
+    name: { type: String },
+    description: { type: String },
+    category: { type: String },
+    rarity: { type: String },
   },
   { _id: false }
 );
@@ -81,6 +93,10 @@ const ChapterSchema = new Schema<IChapterDocument>(
     },
     newItems: {
       type: [NewItemSchema],
+      default: [],
+    },
+    newSpecialItems: {
+      type: [NewSpecialItemSchema],
       default: [],
     },
     metadata: {

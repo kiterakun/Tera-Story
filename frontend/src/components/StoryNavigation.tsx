@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Check, Play } from 'lucide-react';
+import { useTranslation } from '../i18n';
 
 interface Arc {
   _id: string;
@@ -22,6 +24,7 @@ interface StoryNavigationProps {
 }
 
 export function StoryNavigation({ arcs, chapters, currentChapterId, onChapterClick }: StoryNavigationProps) {
+  const t = useTranslation();
   const [expandedArcs, setExpandedArcs] = useState<Set<string>>(new Set());
 
   const toggleArc = (arcId: string) => {
@@ -36,9 +39,9 @@ export function StoryNavigation({ arcs, chapters, currentChapterId, onChapterCli
 
   return (
     <div className="w-64 shrink-0 hidden lg:block">
-      <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto p-4">
-        <h3 className="font-display text-sm text-ink-200 uppercase tracking-wide mb-3">Story Progress</h3>
-        <div className="space-y-2">
+      <div className="sticky top-20 max-h-[calc(100vh-5rem)] overflow-y-auto p-4">
+        <h3 className="font-display text-xs text-ink-200/60 uppercase tracking-wider mb-4">{t.storyNav.storyProgress}</h3>
+        <div className="space-y-1.5">
           {arcs.map(arc => {
             const arcChapters = getChaptersForArc(arc._id);
             const isExpanded = expandedArcs.has(arc._id) || arc.status === 'active';
@@ -46,30 +49,30 @@ export function StoryNavigation({ arcs, chapters, currentChapterId, onChapterCli
               <div key={arc._id}>
                 <button
                   onClick={() => toggleArc(arc._id)}
-                  className="w-full text-left flex items-center gap-2 text-parchment-50 hover:text-accent-400 transition-colors"
+                  className="w-full text-left flex items-center gap-2 text-ink-100 hover:text-accent-400 transition-colors py-1.5 px-2 rounded-lg hover:bg-ink-800/50"
                 >
-                  <span className={`text-xs ${arc.status === 'completed' ? 'text-green-400' : 'text-accent-400'}`}>
-                    {arc.status === 'completed' ? '✓' : '▶'}
+                  <span className={`${arc.status === 'completed' ? 'text-green-400' : 'text-accent-400'}`}>
+                    {arc.status === 'completed' ? <Check size={12} /> : <Play size={12} />}
                   </span>
                   <span className="font-display text-sm">{arc.title}</span>
-                  <span className="ml-auto text-xs text-ink-200">{arcChapters.length}</span>
+                  <span className="ml-auto text-xs text-ink-200/40">{arcChapters.length}</span>
                 </button>
 
                 {isExpanded && arc.summary && (
-                  <p className="text-xs text-ink-200 ml-4 mt-1 mb-2 leading-relaxed line-clamp-3">{arc.summary}</p>
+                  <p className="text-xs text-ink-200/50 ml-7 mt-0.5 mb-1.5 leading-relaxed line-clamp-3">{arc.summary}</p>
                 )}
 
                 {isExpanded && arcChapters.map(ch => (
                   <button
                     key={ch._id}
                     onClick={() => onChapterClick?.(ch._id)}
-                    className={`w-full text-left text-xs ml-4 py-1 px-2 rounded transition-colors ${
+                    className={`w-full text-left text-xs ml-7 py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
                       ch._id === currentChapterId
-                        ? 'bg-accent-600/30 text-accent-400'
-                        : 'text-ink-200 hover:text-parchment-50'
+                        ? 'bg-accent-600/15 text-accent-400 font-medium'
+                        : 'text-ink-200/60 hover:text-ink-100 hover:bg-ink-800/50'
                     }`}
                   >
-                    Chapter {ch.chapterIndex + 1}
+                    {t.storyNav.chapter} {ch.chapterIndex + 1}
                   </button>
                 ))}
               </div>

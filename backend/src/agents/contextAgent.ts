@@ -3,6 +3,8 @@ import type { LanguageModel } from 'ai';
 import { Chapter } from '../models/Chapter';
 import { Arc } from '../models/Arc';
 import { Character } from '../models/Character';
+import { Item } from '../models/Item';
+import { SpecialItem } from '../models/SpecialItem';
 import { Playthrough } from '../models/Playthrough';
 import { World } from '../models/World';
 import type { IContextOutput } from '../types/agent.types';
@@ -23,7 +25,7 @@ const SYSTEM_PROMPT = `You are a story intelligence analyst for an interactive n
 Output JSON schema:
 {
   "outline": "string — a brief outline of what should happen next based on the player's choice and story state",
-  "filteredContext": "string — the most relevant context the writer needs, distilled from chapters, characters, and world info",
+  "filteredContext": "string — the most relevant context the writer needs, distilled from chapters, characters, items, special items, and world info",
   "activeCharacters": ["string array — names of characters relevant to the next scene"],
   "currentScene": "string — description of the current scene setting",
   "relevantPlotPoints": ["string array — key plot points the writer should be aware of"]
@@ -41,11 +43,12 @@ export async function runContextAgent(
   const world = await World.findById(playthrough.worldId).lean();
   if (!world) throw new Error('World not found');
 
-  // 2. Fetch all characters in playthrough
-  const characters = await Character.find({ playthroughId }).lean();
-
-  const protagonist = characters.find((c) => c.role === 'protagonist');
-  const npcs = characters.filter((c) => c.role === 'npc');
+  // 2. Fetch all characters, items, and special items in parallel
+  const [characters, items, specialItems] = await Promise.all([
+    Character.find({ playthroughId }).lean(),
+    Item.find({ playthroughId }).lean(),
+    SpecialItem.find({ playthroughId }).lean(),
+  ]);
 
   // 3. Fetch recent chapters from current arc (limit 5 most recent)
   let recentChapters: Array<{ content: string; chapterIndex: number }> = [];
@@ -68,20 +71,25 @@ export async function runContextAgent(
     .select('title summary arcIndex')
     .lean();
 
-  // 5. Build user prompt
+  // 5. Build user prompt with ALL world data
   const isColdStart = recentChapters.length === 0;
 
+  // World info including resource templates AND special item templates
   const worldInfo = [
     `World: ${world.name}`,
     `Genre: ${world.genre}`,
     `Description: ${world.description}`,
     world.resourceTemplates.length > 0
-      ? `Resources: ${world.resourceTemplates.map((t) => t.key).join(', ')}`
+      ? `Resource Templates: ${world.resourceTemplates.map((t) => `${t.key} (${t.type})`).join(', ')}`
+      : '',
+    world.specialItemTemplates && world.specialItemTemplates.length > 0
+      ? `Special Item Categories: ${world.specialItemTemplates.map((t) => `${t.category} — ${t.description}`).join('; ')}`
       : '',
   ]
     .filter(Boolean)
     .join('\n');
 
+  // Character info with all dynamic stats
   const characterInfo = characters
     .map((c) => {
       const stats = c.dynamicStats
@@ -90,6 +98,32 @@ export async function runContextAgent(
       return `- ${c.name} (${c.role}): ${c.description}${stats ? ` [${stats}]` : ''}`;
     })
     .join('\n');
+
+  // Items info
+  const itemsInfo =
+    items.length > 0
+      ? items
+          .map((i) => {
+            const ownerChar = i.ownerId
+              ? characters.find((c) => c._id.toString() === i.ownerId?.toString())
+              : null;
+            return `- ${i.name} (${i.rarity ?? 'common'}): ${i.description}${ownerChar ? ` [owned by ${ownerChar.name}]` : ''}`;
+          })
+          .join('\n')
+      : 'No items yet.';
+
+  // Special items info
+  const specialItemsInfo =
+    specialItems.length > 0
+      ? specialItems
+          .map((si) => {
+            const ownerChar = si.ownerId
+              ? characters.find((c) => c._id.toString() === si.ownerId?.toString())
+              : null;
+            return `- ${si.name} [${si.category}] (${si.rarity}): ${si.description}${ownerChar ? ` [owned by ${ownerChar.name}]` : ''}`;
+          })
+          .join('\n')
+      : 'No special items yet.';
 
   const arcSummaries =
     previousArcs.length > 0
@@ -118,13 +152,19 @@ ${worldInfo}
 === CHARACTERS ===
 ${characterInfo || 'No characters yet.'}
 
+=== ITEMS (INVENTORY) ===
+${itemsInfo}
+
+=== SPECIAL ITEMS (SKILLS / TECHNIQUES / ETC.) ===
+${specialItemsInfo}
+
 === PREVIOUS ARC SUMMARIES ===
 ${arcSummaries}
 
 === RECENT CHAPTERS ===
 ${isColdStart ? 'This is the very beginning of the story. No chapters have been written yet.' : chapterTexts}
 
-Based on the player's choice and the story state above, produce the JSON context for the next chapter writer.
+Based on the player's choice and the FULL story state above (including all items, special items, character stats, and world templates), produce the JSON context for the next chapter writer.
 `.trim();
 
   // 6. Call generateText

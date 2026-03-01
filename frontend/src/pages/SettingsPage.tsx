@@ -1,18 +1,36 @@
 import { useEffect, useState } from 'react';
-import { useSettingsStore, AgentConfig, AISettings } from '../stores/settingsStore';
+import { useSettingsStore } from '../stores/settingsStore';
+import { useUIStore } from '../stores/uiStore';
+import { useTranslation, persistLanguage } from '../i18n';
+import type { AgentConfig, AISettings } from '../stores/settingsStore';
+import { Brain, PenTool, Sparkles, Image, Globe } from 'lucide-react';
 
-const agentLabels: Record<keyof AISettings, { title: string, icon: string, desc: string }> = {
-  contextAgent: { title: 'Context Agent', icon: '🧠', desc: 'Maintains story world consistency.' },
-  writerAgent: { title: 'Writer Agent', icon: '🖋️', desc: 'Generates narrative prose.' },
-  supportAgent: { title: 'Support Agent', icon: '✨', desc: 'Generates suggestions and ideas.' },
-  imageAgent: { title: 'Image Agent', icon: '🖼️', desc: 'Generates scene and character art.' }
+const agentIcons: Record<keyof AISettings, React.FC<React.SVGProps<SVGSVGElement> & { size?: number }>> = {
+  contextAgent: Brain,
+  writerAgent: PenTool,
+  supportAgent: Sparkles,
+  imageAgent: Image,
 };
 
 const providers = ['openai', 'anthropic', 'google', 'custom'];
 
+const languageOptions = [
+  { value: 'en', label: 'English' },
+  { value: 'vi', label: 'Tiếng Việt' },
+];
+
+
+const providerDefaultUrls: Record<string, string> = {
+  openai: 'https://api.openai.com/v1',
+  anthropic: 'https://api.anthropic.com',
+  google: 'https://generativelanguage.googleapis.com',
+  custom: 'https://your-api.example.com/v1',
+};
+
 function AgentConfigCard({ agentKey }: { agentKey: keyof AISettings }) {
   const { settings, updateAIConfig } = useSettingsStore();
   const config = settings?.aiSettings?.[agentKey] || { provider: 'openai', model: '' };
+  const t = useTranslation();
 
   const [localConfig, setLocalConfig] = useState<Partial<AgentConfig>>({
     provider: config.provider,
@@ -42,12 +60,11 @@ function AgentConfigCard({ agentKey }: { agentKey: keyof AISettings }) {
     setSaveSuccess(false);
     try {
       const payload = { ...localConfig };
-      // Prevent sending masked API keys
       if (payload.apiKey && payload.apiKey.startsWith('sk-****')) {
         delete payload.apiKey;
       }
       if (!payload.apiKey && !config.apiKey) {
-          delete payload.apiKey; // Do not send empty string if there wasn't a key before
+        delete payload.apiKey;
       }
       
       await updateAIConfig(agentKey, payload);
@@ -60,26 +77,32 @@ function AgentConfigCard({ agentKey }: { agentKey: keyof AISettings }) {
     }
   };
 
-  const info = agentLabels[agentKey];
+  const IconComponent = agentIcons[agentKey];
+  const agentTitleKey = `${agentKey}` as keyof typeof t.settings;
+  const agentDescKey = `${agentKey}Desc` as keyof typeof t.settings;
+  const title = t.settings[agentTitleKey] || agentKey;
+  const desc = t.settings[agentDescKey] || '';
 
   return (
-    <div className="bg-ink-800/50 border border-ink-700 rounded-xl p-6">
-      <div className="flex items-center gap-3 mb-4">
-        <span className="text-2xl">{info.icon}</span>
+    <div className="group bg-ink-800 border border-ink-700 rounded-2xl p-6 hover:border-accent-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-accent-400/5">
+      <div className="flex items-center gap-3 mb-5">
+        <span className="w-10 h-10 flex items-center justify-center bg-accent-600/10 text-accent-400 rounded-xl">
+          <IconComponent size={20} />
+        </span>
         <div>
-          <h3 className="font-display text-xl text-parchment-50">{info.title}</h3>
-          <p className="text-ink-200 text-sm">{info.desc}</p>
+          <h3 className="font-display text-lg text-ink-100">{title}</h3>
+          <p className="text-ink-200/70 text-xs">{desc}</p>
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div>
-          <label className="block text-sm text-ink-200 mb-1">Provider</label>
+          <label className="block text-xs font-medium text-ink-200/80 mb-1.5">{t.settings.provider}</label>
           <select
             name="provider"
             value={localConfig.provider}
             onChange={handleChange}
-            className="w-full bg-ink-900 border border-ink-700 text-parchment-50 p-2 rounded focus:border-accent-400 outline-none"
+            className="w-full bg-ink-950 border border-ink-700 text-ink-100 p-2.5 rounded-xl text-sm focus:border-accent-400 focus:ring-1 focus:ring-accent-400/30 outline-none transition-all"
           >
             {providers.map(p => (
               <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
@@ -88,51 +111,53 @@ function AgentConfigCard({ agentKey }: { agentKey: keyof AISettings }) {
         </div>
 
         <div>
-          <label className="block text-sm text-ink-200 mb-1">Model Name</label>
+          <label className="block text-xs font-medium text-ink-200/80 mb-1.5">{t.settings.modelName}</label>
           <input
             type="text"
             name="model"
             value={localConfig.model}
             onChange={handleChange}
             placeholder="e.g. gpt-4o"
-            className="w-full bg-ink-900 border border-ink-700 text-parchment-50 p-2 rounded focus:border-accent-400 outline-none"
+            className="w-full bg-ink-950 border border-ink-700 text-ink-100 p-2.5 rounded-xl text-sm focus:border-accent-400 focus:ring-1 focus:ring-accent-400/30 outline-none transition-all placeholder:text-ink-500"
           />
         </div>
 
-        {localConfig.provider === 'custom' && (
-          <div>
-            <label className="block text-sm text-ink-200 mb-1">API URL (Custom Provider)</label>
-            <input
-              type="text"
-              name="baseUrl"
-              value={localConfig.baseUrl}
-              onChange={handleChange}
-              placeholder="https://api.custom.com/v1"
-              className="w-full bg-ink-900 border border-ink-700 text-parchment-50 p-2 rounded focus:border-accent-400 outline-none"
-            />
-          </div>
-        )}
+        <div>
+          <label className="block text-xs font-medium text-ink-200/80 mb-1.5 flex items-center gap-1.5">
+            <Globe size={12} className="text-ink-200/50" />
+            {t.settings.apiUrl}
+          </label>
+          <input
+            type="text"
+            name="baseUrl"
+            value={localConfig.baseUrl}
+            onChange={handleChange}
+            placeholder={providerDefaultUrls[localConfig.provider || 'openai']}
+            className="w-full bg-ink-950 border border-ink-700 text-ink-100 p-2.5 rounded-xl text-sm focus:border-accent-400 focus:ring-1 focus:ring-accent-400/30 outline-none transition-all placeholder:text-ink-500"
+          />
+          <p className="text-[10px] text-ink-200/40 mt-1">{t.settings.apiUrlHint}</p>
+        </div>
 
         <div>
-          <label className="block text-sm text-ink-200 mb-1">API Key</label>
+          <label className="block text-xs font-medium text-ink-200/80 mb-1.5">{t.settings.apiKey}</label>
           <input
             type="password"
             name="apiKey"
             value={localConfig.apiKey}
             onChange={handleChange}
             placeholder="••••••••••••••••"
-            className="w-full bg-ink-900 border border-ink-700 text-parchment-50 p-2 rounded focus:border-accent-400 outline-none"
+            className="w-full bg-ink-950 border border-ink-700 text-ink-100 p-2.5 rounded-xl text-sm focus:border-accent-400 focus:ring-1 focus:ring-accent-400/30 outline-none transition-all placeholder:text-ink-500"
           />
         </div>
 
-        <div className="pt-2 flex justify-end items-center gap-4">
-          {saveSuccess && <span className="text-green-400 text-sm">Saved!</span>}
+        <div className="pt-3 flex justify-end items-center gap-3">
+          {saveSuccess && <span className="text-green-500 text-xs font-medium animate-fade-in">{t.settings.saved}</span>}
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="px-4 py-2 bg-accent-600 hover:bg-accent-400 text-white rounded transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-accent-600 hover:bg-accent-500 text-white text-sm rounded-xl transition-all duration-200 disabled:opacity-50 font-medium shadow-sm hover:shadow-md"
           >
-            {isSaving ? 'Saving...' : 'Apply Details'}
+            {isSaving ? t.settings.saving : t.settings.applyDetails}
           </button>
         </div>
       </div>
@@ -141,7 +166,9 @@ function AgentConfigCard({ agentKey }: { agentKey: keyof AISettings }) {
 }
 
 export default function SettingsPage() {
+  const t = useTranslation();
   const { settings, isLoading, fetchSettings, updateSettings } = useSettingsStore();
+  const { theme, toggleTheme } = useUIStore();
   const [generalSettings, setGeneralSettings] = useState({ language: 'en', theme: 'dark' as 'dark' | 'light' });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -155,8 +182,19 @@ export default function SettingsPage() {
     }
   }, [settings]);
 
-  const handleGeneralChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setGeneralSettings(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  // Sync theme changes to uiStore immediately
+  const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newTheme = e.target.value as 'dark' | 'light';
+    setGeneralSettings(prev => ({ ...prev, theme: newTheme }));
+    if (newTheme !== theme) {
+      toggleTheme();
+    }
+  };
+
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newLang = e.target.value;
+    setGeneralSettings(prev => ({ ...prev, language: newLang }));
+    persistLanguage(newLang);
   };
 
   const saveGeneral = async () => {
@@ -170,9 +208,9 @@ export default function SettingsPage() {
 
   if (isLoading && !settings) {
     return (
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <h1 className="font-display text-3xl text-parchment-50 mb-8">Settings</h1>
-        <div className="text-center py-12 text-ink-200">Loading settings...</div>
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        <h1 className="font-display text-3xl text-ink-100 mb-8">{t.settings.title}</h1>
+        <div className="text-center py-16 text-ink-200/60">{t.settings.loading}</div>
       </div>
     );
   }
@@ -180,42 +218,53 @@ export default function SettingsPage() {
   const agentKeys: (keyof AISettings)[] = ['contextAgent', 'writerAgent', 'supportAgent', 'imageAgent'];
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
-      <h1 className="font-display text-3xl text-parchment-50 mb-8 border-b border-ink-700 pb-4">Settings</h1>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 animate-fade-in">
+      <div className="mb-10">
+        <h1 className="font-display text-3xl sm:text-4xl text-ink-100">{t.settings.title}</h1>
+        <div className="mt-3 h-px bg-gradient-to-r from-accent-400/60 via-accent-600/30 to-transparent" />
+      </div>
       
       {/* General Section */}
       <section className="mb-12">
-        <h2 className="font-display text-2xl text-parchment-50 mb-4">General</h2>
-        <div className="bg-ink-800/50 border border-ink-700 rounded-xl p-6 space-y-4">
-          <div>
-            <label className="block text-sm text-ink-200 mb-1">Language</label>
-            <input
-              type="text"
-              name="language"
-              value={generalSettings.language}
-              onChange={handleGeneralChange}
-              className="w-full max-w-sm bg-ink-900 border border-ink-700 text-parchment-50 p-2 rounded focus:border-accent-400 outline-none"
-            />
+        <h2 className="font-display text-xl text-ink-100 mb-5 flex items-center gap-2">
+          <span className="w-1.5 h-5 bg-accent-400 rounded-full" />
+          {t.settings.general}
+        </h2>
+        <div className="bg-ink-800 border border-ink-700 rounded-2xl p-6 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-medium text-ink-200/80 mb-1.5">{t.settings.language}</label>
+              <select
+                name="language"
+                value={generalSettings.language}
+                onChange={handleLanguageChange}
+                className="w-full bg-ink-950 border border-ink-700 text-ink-100 p-2.5 rounded-xl text-sm focus:border-accent-400 focus:ring-1 focus:ring-accent-400/30 outline-none transition-all"
+              >
+                {languageOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-200/80 mb-1.5">{t.settings.theme}</label>
+              <select
+                name="theme"
+                value={generalSettings.theme}
+                onChange={handleThemeChange}
+                className="w-full bg-ink-950 border border-ink-700 text-ink-100 p-2.5 rounded-xl text-sm focus:border-accent-400 focus:ring-1 focus:ring-accent-400/30 outline-none transition-all"
+              >
+                <option value="dark">{t.settings.themeDark}</option>
+                <option value="light">{t.settings.themeLight}</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm text-ink-200 mb-1">Theme</label>
-            <select
-              name="theme"
-              value={generalSettings.theme}
-              onChange={handleGeneralChange}
-              className="w-full max-w-sm bg-ink-900 border border-ink-700 text-parchment-50 p-2 rounded focus:border-accent-400 outline-none"
-            >
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
-            </select>
-          </div>
-          <div className="pt-2">
+          <div className="pt-2 flex justify-end">
             <button
               onClick={saveGeneral}
               disabled={isSaving}
-              className="px-4 py-2 bg-accent-600 hover:bg-accent-400 text-white rounded transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 bg-accent-600 hover:bg-accent-500 text-white text-sm rounded-xl transition-all duration-200 disabled:opacity-50 font-medium shadow-sm hover:shadow-md"
             >
-              {isSaving ? 'Saving...' : 'Save General Settings'}
+              {isSaving ? t.settings.saving : t.settings.saveGeneral}
             </button>
           </div>
         </div>
@@ -223,12 +272,15 @@ export default function SettingsPage() {
 
       {/* AI Configuration Section */}
       <section>
-        <h2 className="font-display text-2xl text-parchment-50 mb-2">AI Configuration</h2>
-        <p className="text-ink-200 text-sm mb-6 pb-2 border-b border-ink-700/50">
-          Configure AI models for each agent independently.
+        <h2 className="font-display text-xl text-ink-100 mb-2 flex items-center gap-2">
+          <span className="w-1.5 h-5 bg-accent-400 rounded-full" />
+          {t.settings.aiConfig}
+        </h2>
+        <p className="text-ink-200/60 text-sm mb-6 ml-4">
+          {t.settings.aiConfigDesc}
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {agentKeys.map((agent) => (
             <AgentConfigCard key={agent} agentKey={agent} />
           ))}

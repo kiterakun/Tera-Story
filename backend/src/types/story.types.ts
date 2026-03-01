@@ -11,7 +11,8 @@ export interface IChapter {
   chapterIndex: number;
   choices: IChoice[];
   newCharacters: Array<{ name: string; description: string; role: 'npc' }>;
-  newItems: Array<{ name: string; description: string; ownerId?: string }>;
+  newItems: Array<{ name: string; description: string; rarity?: string; ownerId?: string }>;
+  newSpecialItems: Array<{ name: string; description: string; category: string; rarity?: string }>;
   metadata: {
     tokensUsed?: number;
     model?: string;
@@ -36,4 +37,33 @@ export interface IStoryState {
   recentChapters: IChapter[];
   choices: IChoice[];
   protagonist: import('./character.types').ICharacter | null;
+}
+
+export interface ISpecialItem {
+  _id: string;
+  name: string;
+  description: string;
+  category: string;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  imageUrl?: string;
+  ownerId?: string;
+  playthroughId: string;
+  createdInChapterId?: string;
+  customFields: Record<string, unknown>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IItem {
+  _id: string;
+  name: string;
+  description: string;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  imageUrl?: string;
+  ownerId?: string;
+  playthroughId: string;
+  createdInChapterId?: string;
+  properties: Record<string, unknown>;
+  createdAt: Date;
+  updatedAt: Date;
 }

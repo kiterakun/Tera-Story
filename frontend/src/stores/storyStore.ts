@@ -1,22 +1,29 @@
 import { create } from 'zustand';
 import * as playthroughApi from '../services/playthroughApi';
-import { Playthrough, Character, Arc } from '../services/playthroughApi';
+import type { Playthrough, Character, Arc, Item, SpecialItem } from '../services/playthroughApi';
 
 interface StoryState {
   currentPlaythrough: Playthrough | null;
   characters: Character[];
   arcs: Arc[];
+  items: Item[];
+  specialItems: SpecialItem[];
   isLoading: boolean;
   fetchPlaythrough: (id: string) => Promise<void>;
   fetchCharacters: (playthroughId: string) => Promise<void>;
   fetchArcs: (playthroughId: string) => Promise<void>;
+  fetchItems: (playthroughId: string) => Promise<void>;
+  fetchSpecialItems: (playthroughId: string, category?: string) => Promise<void>;
   createCharacter: (playthroughId: string, data: { name: string; description: string; role: 'protagonist' | 'npc' }) => Promise<Character>;
+  refreshAll: (playthroughId: string) => Promise<void>;
 }
 
 export const useStoryStore = create<StoryState>((set) => ({
   currentPlaythrough: null,
   characters: [],
   arcs: [],
+  items: [],
+  specialItems: [],
   isLoading: false,
 
   fetchPlaythrough: async (id: string) => {
@@ -52,6 +59,24 @@ export const useStoryStore = create<StoryState>((set) => ({
     }
   },
 
+  fetchItems: async (playthroughId: string) => {
+    try {
+      const items = await playthroughApi.listItems(playthroughId);
+      set({ items });
+    } catch (error) {
+      console.error('Failed to fetch items:', error);
+    }
+  },
+
+  fetchSpecialItems: async (playthroughId: string, category?: string) => {
+    try {
+      const specialItems = await playthroughApi.listSpecialItems(playthroughId, category);
+      set({ specialItems });
+    } catch (error) {
+      console.error('Failed to fetch special items:', error);
+    }
+  },
+
   createCharacter: async (playthroughId: string, data) => {
     set({ isLoading: true });
     try {
@@ -65,5 +90,22 @@ export const useStoryStore = create<StoryState>((set) => ({
       set({ isLoading: false });
       throw error;
     }
-  }
+  },
+
+  refreshAll: async (playthroughId: string) => {
+    set({ isLoading: true });
+    try {
+      const [playthrough, characters, arcs, items, specialItems] = await Promise.all([
+        playthroughApi.getPlaythrough(playthroughId),
+        playthroughApi.listCharacters(playthroughId),
+        playthroughApi.listArcs(playthroughId),
+        playthroughApi.listItems(playthroughId),
+        playthroughApi.listSpecialItems(playthroughId),
+      ]);
+      set({ currentPlaythrough: playthrough, characters, arcs, items, specialItems, isLoading: false });
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
+  },
 }));

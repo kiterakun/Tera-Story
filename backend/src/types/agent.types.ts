@@ -10,7 +10,8 @@ export interface IWriterOutput {
   content: string;
   choices: import('./story.types').IChoice[];
   newCharacters: Array<{ name: string; description: string; stats?: Record<string, string | number> }>;
-  newItems: Array<{ name: string; description: string; ownerName?: string }>;
+  newItems: Array<{ name: string; description: string; rarity?: string; ownerName?: string }>;
+  newSpecialItems: Array<{ name: string; description: string; category: string; rarity?: string; ownerName?: string }>;
   statUpdates: Array<{ characterName: string; statKey: string; value: string | number }>;
 }
 

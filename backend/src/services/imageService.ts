@@ -4,7 +4,7 @@ import { createUserProviderRegistry } from '../providers/registry';
 
 interface ImageJob {
   description: string;
-  entityType: 'character' | 'item';
+  entityType: 'character' | 'item' | 'special-item';
   entityId: string;
   userId: string;
 }
@@ -17,7 +17,7 @@ let processing = false;
  */
 export function queueImageGeneration(
   description: string,
-  entityType: 'character' | 'item',
+  entityType: 'character' | 'item' | 'special-item',
   entityId: string,
   userId: string
 ): void {
