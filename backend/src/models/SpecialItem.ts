@@ -5,9 +5,11 @@ export type SpecialItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legen
 export interface ISpecialItemDocument extends Document {
   name: string;
   description: string;
-  category: string;          // maps to World.specialItemTemplates[].category
+  category: string;          // maps to SpecialItemTemplate.category
   rarity: SpecialItemRarity;
+  status: 'active' | 'sealed' | 'lost' | 'consumed';
   imageUrl?: string;
+  templateId?: mongoose.Types.ObjectId; // FK to SpecialItemTemplate
   ownerId?: mongoose.Types.ObjectId;   // Character who owns/learned this
   playthroughId: mongoose.Types.ObjectId;
   createdInChapterId?: mongoose.Types.ObjectId;
@@ -36,8 +38,17 @@ const SpecialItemSchema = new Schema<ISpecialItemDocument>(
       enum: ['common', 'uncommon', 'rare', 'epic', 'legendary'],
       default: 'common',
     },
+    status: {
+      type: String,
+      enum: ['active', 'sealed', 'lost', 'consumed'],
+      default: 'active',
+    },
     imageUrl: {
       type: String,
+    },
+    templateId: {
+      type: Schema.Types.ObjectId,
+      ref: 'SpecialItemTemplate',
     },
     ownerId: {
       type: Schema.Types.ObjectId,

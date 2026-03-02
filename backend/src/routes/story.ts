@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { generateChapter } from '../services/storyOrchestrator';
+import { generateChapter, retryChapter } from '../services/storyOrchestrator';
 import { Arc } from '../models/Arc';
 import { Chapter } from '../models/Chapter';
 import { Character } from '../models/Character';
@@ -11,7 +11,7 @@ const router = Router();
 // In-memory concurrency guard
 const activeGenerations = new Set<string>();
 
-// POST /api/story/generate
+// POST /api/story/generate — full JSON response (no streaming)
 router.post(
   '/story/generate',
   async (req: AuthRequest, res: Response): Promise<void> => {
@@ -30,30 +30,51 @@ router.post(
       return;
     }
 
-    const abortController = new AbortController();
-    // Abort when CLIENT disconnects (res 'close'), NOT when request body is consumed (req 'close').
-    res.on('close', () => { if (!res.writableFinished) abortController.abort(); });
-
     activeGenerations.add(playthroughId);
     try {
-      const { stream } = await generateChapter(
+      const result = await generateChapter(
         playthroughId,
         choice,
-        userId,
-        abortController.signal
+        userId
       );
-      stream.pipeTextStreamToResponse(res);
-      // CRITICAL: await stream completion so async errors are caught by this try/catch.
-      // Without this, pipeTextStreamToResponse returns void immediately and the
-      // try block exits — any provider/streaming error is silently swallowed.
-      await stream.text;
+
+      res.json({
+        success: true,
+        chapter: result.chapter,
+        content: result.content,
+      });
     } catch (err: any) {
       console.error('[Story] Generation error:', err);
-      if (!res.headersSent) {
-        res.status(500).json({ error: err.message || 'Generation failed' });
-      }
+      res.status(500).json({ error: err.message || 'Generation failed' });
     } finally {
       activeGenerations.delete(playthroughId);
+    }
+  }
+);
+
+// POST /api/story/retry — retry a failed chapter generation
+router.post(
+  '/story/retry',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const { chapterId } = req.body;
+    const userId = req.user!.id;
+
+    if (!chapterId) {
+      res.status(400).json({ error: 'chapterId is required' });
+      return;
+    }
+
+    try {
+      const result = await retryChapter(chapterId, userId);
+
+      res.json({
+        success: true,
+        chapter: result.chapter,
+        content: result.content,
+      });
+    } catch (err: any) {
+      console.error('[Story] Retry error:', err);
+      res.status(500).json({ error: err.message || 'Retry failed' });
     }
   }
 );
@@ -76,7 +97,6 @@ router.get(
         return;
       }
 
-
       // Current active arc
       const currentArc = await Arc.findOne({
         playthroughId,
@@ -86,6 +106,7 @@ router.get(
         .lean();
 
       // ALL chapters for this playthrough (for chapter navigation)
+      // Only show completed chapters (not generating/failed ones unless it's the latest)
       const chapters = await Chapter.find({ playthroughId })
         .sort({ chapterIndex: 1 })
         .lean();

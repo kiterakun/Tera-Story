@@ -8,6 +8,7 @@ import { Item } from '../models/Item';
 import { SpecialItem } from '../models/SpecialItem';
 import { Playthrough } from '../models/Playthrough';
 import { World } from '../models/World';
+import { SpecialItemTemplate } from '../models/SpecialItemTemplate';
 import type { IContextOutput } from '../types/agent.types';
 
 export interface ContextAgentParams {
@@ -69,10 +70,11 @@ export async function runContextAgent(
   if (!world) throw new Error('World not found');
 
   // 2. Fetch all characters, items, and special items in parallel
-  const [characters, items, specialItems] = await Promise.all([
+  const [characters, items, specialItems, specialItemTemplates] = await Promise.all([
     Character.find({ playthroughId }).lean(),
     Item.find({ playthroughId }).lean(),
     SpecialItem.find({ playthroughId }).lean(),
+    SpecialItemTemplate.find({ worldId: playthrough.worldId }).lean(),
   ]);
 
   // 3. Fetch recent chapters from current arc (limit 5 most recent)
@@ -107,24 +109,25 @@ export async function runContextAgent(
     world.resourceTemplates.length > 0
       ? `Resource Templates: ${world.resourceTemplates.map((t) => `${t.key} (${t.type})`).join(', ')}`
       : '',
-    world.specialItemTemplates && world.specialItemTemplates.length > 0
-      ? `Special Item Categories: ${world.specialItemTemplates.map((t) => `${t.category} — ${t.description}`).join('; ')}`
+    specialItemTemplates.length > 0
+      ? `Special Item Categories: ${specialItemTemplates.map((t) => `${t.category} — ${t.description}`).join('; ')}`
       : '',
   ]
     .filter(Boolean)
     .join('\n');
 
-  // Character info with all dynamic stats
+  // Character info with all dynamic stats + status
   const characterInfo = characters
     .map((c) => {
       const stats = c.dynamicStats
         .map((s) => `${s.k}=${s.v}`)
         .join(', ');
-      return `- ${c.name} (${c.role}): ${c.description}${stats ? ` [${stats}]` : ''}`;
+      const statusTag = (c as any).status && (c as any).status !== 'active' ? ` [STATUS: ${(c as any).status.toUpperCase()}]` : '';
+      return `- ${c.name} (${c.role}${statusTag}): ${c.description}${stats ? ` [${stats}]` : ''}`;
     })
     .join('\n');
 
-  // Items info
+  // Items info with status
   const itemsInfo =
     items.length > 0
       ? items
@@ -132,12 +135,13 @@ export async function runContextAgent(
             const ownerChar = i.ownerId
               ? characters.find((c) => c._id.toString() === i.ownerId?.toString())
               : null;
-            return `- ${i.name} (${i.rarity ?? 'common'}): ${i.description}${ownerChar ? ` [owned by ${ownerChar.name}]` : ''}`;
+            const statusTag = (i as any).status && (i as any).status !== 'active' ? ` [STATUS: ${(i as any).status.toUpperCase()}]` : '';
+            return `- ${i.name} (${i.rarity ?? 'common'}${statusTag}): ${i.description}${ownerChar ? ` [owned by ${ownerChar.name}]` : ''}`;
           })
           .join('\n')
       : 'No items yet.';
 
-  // Special items info
+  // Special items info with status
   const specialItemsInfo =
     specialItems.length > 0
       ? specialItems
@@ -145,7 +149,8 @@ export async function runContextAgent(
             const ownerChar = si.ownerId
               ? characters.find((c) => c._id.toString() === si.ownerId?.toString())
               : null;
-            return `- ${si.name} [${si.category}] (${si.rarity}): ${si.description}${ownerChar ? ` [owned by ${ownerChar.name}]` : ''}`;
+            const statusTag = (si as any).status && (si as any).status !== 'active' ? ` [STATUS: ${(si as any).status.toUpperCase()}]` : '';
+            return `- ${si.name} [${si.category}] (${si.rarity}${statusTag}): ${si.description}${ownerChar ? ` [owned by ${ownerChar.name}]` : ''}`;
           })
           .join('\n')
       : 'No special items yet.';
@@ -224,6 +229,7 @@ Based on the player's choice and the FULL story state above (including all items
     return {
       name: i.name,
       rarity: i.rarity ?? 'common',
+      status: (i as any).status ?? 'active',
       owner: ownerChar?.name,
     };
   });
@@ -235,6 +241,7 @@ Based on the player's choice and the FULL story state above (including all items
     return {
       name: si.name,
       rarity: si.rarity ?? 'common',
+      status: (si as any).status ?? 'active',
       category: si.category,
       owner: ownerChar?.name,
     };
@@ -246,6 +253,10 @@ Based on the player's choice and the FULL story state above (including all items
     activeCharacters: validated.activeCharacters ?? [],
     existingItems,
     existingSpecialItems,
+    specialItemTemplateCategories: specialItemTemplates.map((t) => ({
+      category: t.category,
+      description: t.description,
+    })),
     currentScene: validated.currentScene ?? '',
     relevantPlotPoints: validated.relevantPlotPoints ?? [],
   };

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { AuthRequest } from '../middleware/auth';
 import { World } from '../models/World';
 import { Playthrough } from '../models/Playthrough';
+import { SpecialItemTemplate } from '../models/SpecialItemTemplate';
 import { WORLD_TEMPLATES } from '../seeds/worldTemplates';
 import playthroughsRouter from './playthroughs';
 
@@ -23,18 +24,6 @@ const resourceTemplateSchema = z.object({
   options: z.array(z.string()).optional(),
 });
 
-const specialItemFieldSchema = z.object({
-  name: z.string().min(1),
-  type: z.enum(['text', 'number', 'enum']),
-  options: z.array(z.string()).optional(),
-  required: z.boolean().optional(),
-});
-
-const specialItemTemplateSchema = z.object({
-  category: z.string().min(1),
-  description: z.string().optional(),
-  fields: z.array(specialItemFieldSchema).optional(),
-});
 
 const createWorldSchema = z.object({
   name: z.string().min(1, 'Name is required').trim(),
@@ -42,7 +31,6 @@ const createWorldSchema = z.object({
   genre: z.enum(['fantasy', 'sci-fi', 'wuxia', 'modern', 'custom']),
   imageUrl: z.string().url().optional(),
   resourceTemplates: z.array(resourceTemplateSchema).optional(),
-  specialItemTemplates: z.array(specialItemTemplateSchema).optional(),
 });
 
 const updateWorldSchema = z.object({
@@ -51,7 +39,6 @@ const updateWorldSchema = z.object({
   genre: z.enum(['fantasy', 'sci-fi', 'wuxia', 'modern', 'custom']).optional(),
   imageUrl: z.string().url().nullable().optional(),
   resourceTemplates: z.array(resourceTemplateSchema).optional(),
-  specialItemTemplates: z.array(specialItemTemplateSchema).optional(),
 });
 
 // --- Routes ---
@@ -77,7 +64,20 @@ router.post('/from-template/:templateId', async (req: AuthRequest, res: Response
       resourceTemplates: template.resourceTemplates,
     });
 
-    res.status(201).json({ world });
+    // Create special item templates as separate documents if template has them
+    if (template.specialItemTemplates && template.specialItemTemplates.length > 0) {
+      const templateDocs = template.specialItemTemplates.map((t) => ({
+        worldId: world._id,
+        category: t.category,
+        description: t.description,
+        fields: t.fields || [],
+      }));
+      await SpecialItemTemplate.insertMany(templateDocs);
+    }
+
+    // Return world with templates
+    const specialItemTemplates = await SpecialItemTemplate.find({ worldId: world._id }).lean();
+    res.status(201).json({ world, specialItemTemplates });
   } catch (err) {
     console.error('Create world from template error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -116,7 +116,9 @@ router.get('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
       return;
     }
 
-    res.json({ world });
+    // Return world with its special item templates
+    const specialItemTemplates = await SpecialItemTemplate.find({ worldId: id }).lean();
+    res.json({ world, specialItemTemplates });
   } catch (err) {
     console.error('Get world error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -137,12 +139,25 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
       return;
     }
 
+    const { specialItemTemplates: sitData, ...worldData } = req.body;
     const world = await World.create({
       ...parsed.data,
       userId,
     });
 
-    res.status(201).json({ world });
+    // If specialItemTemplates were sent alongside (from enrichWorld flow), create them
+    if (Array.isArray(sitData) && sitData.length > 0) {
+      const templateDocs = sitData.map((t: any) => ({
+        worldId: world._id,
+        category: t.category,
+        description: t.description || '',
+        fields: t.fields || [],
+      }));
+      await SpecialItemTemplate.insertMany(templateDocs);
+    }
+
+    const specialItemTemplates = await SpecialItemTemplate.find({ worldId: world._id }).lean();
+    res.status(201).json({ world, specialItemTemplates });
   } catch (err) {
     console.error('Create world error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -208,8 +223,11 @@ router.delete('/:id', async (req: AuthRequest, res: Response): Promise<void> => 
       return;
     }
 
-    // Cascade delete playthroughs belonging to this world
-    await Playthrough.deleteMany({ worldId: id });
+    // Cascade delete playthroughs and special item templates belonging to this world
+    await Promise.all([
+      Playthrough.deleteMany({ worldId: id }),
+      SpecialItemTemplate.deleteMany({ worldId: id }),
+    ]);
 
     await World.findByIdAndDelete(id);
 

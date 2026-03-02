@@ -1,3 +1,5 @@
+export type CharacterStatus = 'active' | 'dead' | 'injured' | 'missing';
+
 export interface IDynamicStat {
   k: string;   // key — matches world resourceTemplate.key
   v: string | number | boolean; // value
@@ -9,6 +11,7 @@ export interface ICharacterBase {
   description: string;
   imageUrl?: string;
   role: 'protagonist' | 'npc';
+  status: CharacterStatus;
 }
 
 export interface ICharacter extends ICharacterBase {

@@ -7,6 +7,7 @@ export interface IItemDocument extends Document {
   description: string;
   imageUrl?: string;
   rarity: ItemRarity;
+  status: 'active' | 'destroyed' | 'lost' | 'consumed';
   ownerId?: mongoose.Types.ObjectId;
   playthroughId: mongoose.Types.ObjectId;
   createdInChapterId?: mongoose.Types.ObjectId;
@@ -33,6 +34,11 @@ const ItemSchema = new Schema<IItemDocument>(
       type: String,
       enum: ['common', 'uncommon', 'rare', 'epic', 'legendary'],
       default: 'common',
+    },
+    status: {
+      type: String,
+      enum: ['active', 'destroyed', 'lost', 'consumed'],
+      default: 'active',
     },
     ownerId: {
       type: Schema.Types.ObjectId,

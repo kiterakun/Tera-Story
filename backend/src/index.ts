@@ -15,6 +15,7 @@ import storyRouter from './routes/story';
 import itemsRouter from './routes/items';
 import specialItemsRouter from './routes/specialItems';
 import imagesRouter from './routes/images';
+import specialItemTemplatesRouter from './routes/specialItemTemplates';
 import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
@@ -61,6 +62,9 @@ app.use('/api', authMiddleware, itemsRouter);
 
 // Special Item Routes (nested under playthroughs + standalone)
 app.use('/api', authMiddleware, specialItemsRouter);
+
+// Special Item Template Routes (CRUD for world templates)
+app.use('/api', authMiddleware, specialItemTemplatesRouter);
 
 // Image Routes (regeneration)
 app.use('/api/images', authMiddleware, imagesRouter);

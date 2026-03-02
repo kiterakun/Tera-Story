@@ -1,6 +1,7 @@
 export interface IEntityRef {
   name: string;
   rarity: string;
+  status?: string;
   category?: string;
   owner?: string;
 }
@@ -11,6 +12,7 @@ export interface IContextOutput {
   activeCharacters: string[];
   existingItems: IEntityRef[];
   existingSpecialItems: IEntityRef[];
+  specialItemTemplateCategories: Array<{ category: string; description: string }>;
   currentScene: string;
   relevantPlotPoints: string[];
 }

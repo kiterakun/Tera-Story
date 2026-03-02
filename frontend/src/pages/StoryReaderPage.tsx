@@ -1,15 +1,14 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { useStoryStream } from '../hooks/useStoryStream';
-import { TypewriterText } from '../components/TypewriterText';
+import { useChapterGeneration } from '../hooks/useChapterGeneration';
 import { StoryContent, type EntityRef } from '../components/StoryContent';
 import { EntityDetailModal, type EntityData } from '../components/EntityDetailModal';
 import { ChoiceCards } from '../components/ChoiceCards';
 import * as storyApi from '../services/storyApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useTranslation } from '../i18n';
-import { UserRound, Users, Package, Sparkles, Swords, X, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
+import { UserRound, Users, Package, Sparkles, Swords, X, BookOpen, ChevronLeft, ChevronRight, Skull, RefreshCw, AlertTriangle } from 'lucide-react';
 import type { ItemRarity } from '../services/playthroughApi';
 import { getImageUrl } from '../utils/url';
 
@@ -19,6 +18,8 @@ interface Chapter {
   content: string;
   chapterIndex: number;
   choices: Choice[];
+  status?: 'generating' | 'completed' | 'failed';
+  playerChoice?: string;
 }
 
 // Matches backend ChoiceSchema (_id: false)
@@ -45,12 +46,12 @@ export default function StoryReaderPage() {
   const [choices, setChoices] = useState<Choice[]>([]);
   const [isLoadingState, setIsLoadingState] = useState(true);
   const [isNewGame, setIsNewGame] = useState(false);
-  const [currentChapterIdx, setCurrentChapterIdx] = useState(-1); // -1 = latest/streaming
+  const [currentChapterIdx, setCurrentChapterIdx] = useState(-1); // -1 = latest
   const [rpgTab, setRpgTab] = useState<'stats' | 'inventory' | 'abilities'>('stats');
   const [rpgOpen, setRpgOpen] = useState(false);
   const [detailEntity, setDetailEntity] = useState<EntityData | null>(null);
   
-  const { streamedText, isStreaming, isThinking, startStream, skipToEnd } = useStoryStream();
+  const { isGenerating, error, generateChapter, retryChapter, clearError } = useChapterGeneration();
   
   // Individual selectors to avoid getSnapshot infinite loop
   const characters = useStoryStore(s => s.characters);
@@ -62,6 +63,9 @@ export default function StoryReaderPage() {
   
   const protagonist = characters.find(c => c.role === 'protagonist') || null;
   const npcs = characters.filter(c => c.role === 'npc');
+  const sortedNpcs = [...npcs].sort((a, b) => ((a.status || 'active') === 'active' ? 0 : 1) - ((b.status || 'active') === 'active' ? 0 : 1));
+  const sortedItems = [...items].sort((a, b) => ((a.status || 'active') === 'active' ? 0 : 1) - ((b.status || 'active') === 'active' ? 0 : 1));
+  const sortedSpecialItems = [...specialItems].sort((a, b) => ((a.status || 'active') === 'active' ? 0 : 1) - ((b.status || 'active') === 'active' ? 0 : 1));
 
   const tabLabels = {
     stats: t.storyReader.statsTab,
@@ -75,7 +79,9 @@ export default function StoryReaderPage() {
   const totalChapters = chapters.length;
   const isOnLatest = currentChapterIdx === -1 || currentChapterIdx >= totalChapters - 1;
   const activeChapter = isOnLatest ? chapters[totalChapters - 1] : chapters[currentChapterIdx];
-  const showChoices = isOnLatest && !isStreaming && !isThinking && choices.length > 0;
+  const latestChapter = chapters.length > 0 ? chapters[totalChapters - 1] : null;
+  const isLatestFailed = latestChapter?.status === 'failed';
+  const showChoices = isOnLatest && !isGenerating && !isLatestFailed && choices.length > 0;
 
   const goToChapter = useCallback((idx: number) => {
     if (idx >= 0 && idx < totalChapters) {
@@ -87,13 +93,14 @@ export default function StoryReaderPage() {
     setCurrentChapterIdx(-1);
   }, []);
 
-  // Auto-scroll
+  // Auto-scroll when generating
   useEffect(() => {
-    if (isStreaming || isThinking) {
+    if (isGenerating) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [streamedText, isStreaming, isThinking]);
+  }, [isGenerating]);
 
+  // Initial load
   useEffect(() => {
     if (playthroughId) {
       loadStoryState();
@@ -102,17 +109,6 @@ export default function StoryReaderPage() {
       fetchSpecialItems(playthroughId).catch(console.error);
     }
   }, [playthroughId]);
-  
-  useEffect(() => {
-    if (!isStreaming && streamedText && playthroughId) {
-       loadStoryState();
-       fetchCharacters(playthroughId).catch(console.error);
-       fetchItems(playthroughId).catch(console.error);
-       fetchSpecialItems(playthroughId).catch(console.error);
-       // Jump to latest chapter after stream ends
-       setCurrentChapterIdx(-1);
-    }
-  }, [isStreaming]);
 
   const loadStoryState = async () => {
     try {
@@ -136,28 +132,45 @@ export default function StoryReaderPage() {
     }
   };
 
+  const reloadAfterGeneration = async () => {
+    if (!playthroughId) return;
+    await Promise.all([
+      loadStoryState(),
+      fetchCharacters(playthroughId),
+      fetchItems(playthroughId),
+      fetchSpecialItems(playthroughId),
+    ]);
+    setCurrentChapterIdx(-1);
+  };
+
   const handleChoiceSelect = async (choiceText: string) => {
     if (!playthroughId || !token) return;
-    try {
-        await startStream(playthroughId, choiceText, token);
-        setChoices([]);
-        setIsNewGame(false);
-        setCurrentChapterIdx(-1);
-    } catch (e) {
-        console.error("Stream failed to start", e);
-    }
+    clearError();
+    setChoices([]);
+    setIsNewGame(false);
+    setCurrentChapterIdx(-1);
+
+    await generateChapter(playthroughId, choiceText);
+    await reloadAfterGeneration();
   };
 
   const handleBeginStory = async () => {
     if (!playthroughId || !token) return;
-    try {
-      await startStream(playthroughId, 'Begin the story', token);
-      setIsNewGame(false);
-      setChoices([]);
-      setCurrentChapterIdx(-1);
-    } catch (e) {
-      console.error("Failed to begin story", e);
-    }
+    clearError();
+    setIsNewGame(false);
+    setChoices([]);
+    setCurrentChapterIdx(-1);
+
+    await generateChapter(playthroughId, 'Begin the story');
+    await reloadAfterGeneration();
+  };
+
+  const handleRetry = async () => {
+    if (!latestChapter || !playthroughId) return;
+    clearError();
+
+    await retryChapter(latestChapter._id);
+    await reloadAfterGeneration();
   };
 
   // Handle entity clicks from story content or sidebar
@@ -217,7 +230,16 @@ export default function StoryReaderPage() {
                 )}
                 <div>
                   <h4 className="font-display text-sm text-ink-100">{protagonist.name}</h4>
-                  <span className="text-[10px] text-accent-400 uppercase tracking-wide font-medium">{t.characterPanel.protagonist}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-accent-400 uppercase tracking-wide font-medium">{t.characterPanel.protagonist}</span>
+                    {protagonist.status && protagonist.status !== 'active' && (
+                      <span className={`text-[9px] px-1 py-0.5 rounded font-medium ${
+                        protagonist.status === 'dead' ? 'bg-red-500/10 text-red-400' :
+                        protagonist.status === 'injured' ? 'bg-amber-500/10 text-amber-400' :
+                        'bg-gray-500/10 text-gray-400'
+                      }`}>{t.entityStatus[protagonist.status]}</span>
+                    )}
+                  </div>
                 </div>
               </button>
               <div className="space-y-1.5">
@@ -242,19 +264,33 @@ export default function StoryReaderPage() {
             <div>
               <h4 className="font-display text-xs text-ink-200/60 uppercase tracking-wider mb-2">{t.characterPanel.storyCharacters}</h4>
               <div className="space-y-1">
-                {npcs.map(npc => (
-                  <button key={npc._id} onClick={() => setDetailEntity({ type: 'character', data: npc })} className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-ink-800/50 transition-colors w-full text-left cursor-pointer">
-                    {npc.imageUrl ? (
-                      <img src={getImageUrl(npc.imageUrl)} alt={npc.name} className="w-9 h-9 rounded-lg object-cover border border-ink-600" />
-                    ) : (
-                      <div className="w-9 h-9 rounded-lg bg-ink-700/50 border border-ink-600 flex items-center justify-center"><Users size={14} className="text-ink-200/60" /></div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-ink-100 text-sm truncate">{npc.name}</p>
-                      <p className="text-ink-200/50 text-xs truncate">{npc.description}</p>
-                    </div>
-                  </button>
-                ))}
+                {sortedNpcs.map(npc => {
+                  const isInactive = npc.status && npc.status !== 'active';
+                  return (
+                    <button key={npc._id} onClick={() => setDetailEntity({ type: 'character', data: npc })} className={`flex items-center gap-2.5 p-2 rounded-xl hover:bg-ink-800/50 transition-colors w-full text-left cursor-pointer ${isInactive ? 'opacity-50' : ''}`}>
+                      {npc.imageUrl ? (
+                        <img src={getImageUrl(npc.imageUrl)} alt={npc.name} className={`w-9 h-9 rounded-lg object-cover border border-ink-600 ${npc.status === 'dead' ? 'grayscale' : ''}`} />
+                      ) : (
+                        <div className="w-9 h-9 rounded-lg bg-ink-700/50 border border-ink-600 flex items-center justify-center">
+                          {npc.status === 'dead' ? <Skull size={14} className="text-red-400/60" /> : <Users size={14} className="text-ink-200/60" />}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className={`text-sm truncate ${npc.status === 'dead' ? 'text-ink-200/50 line-through' : 'text-ink-100'}`}>{npc.name}</p>
+                          {isInactive && (
+                            <span className={`text-[9px] px-1 py-0.5 rounded font-medium shrink-0 ${
+                              npc.status === 'dead' ? 'bg-red-500/10 text-red-400' :
+                              npc.status === 'injured' ? 'bg-amber-500/10 text-amber-400' :
+                              'bg-gray-500/10 text-gray-400'
+                            }`}>{t.entityStatus[npc.status]}</span>
+                          )}
+                        </div>
+                        <p className="text-ink-200/50 text-xs truncate">{npc.description}</p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -268,22 +304,34 @@ export default function StoryReaderPage() {
       {/* Inventory Tab */}
       {rpgTab === 'inventory' && (
         <div className="space-y-2 overflow-y-auto flex-1">
-          {items.length > 0 ? items.map(item => (
-            <button key={item._id} onClick={() => setDetailEntity({ type: 'item', data: item })} className="bg-ink-800/60 border border-ink-700 rounded-xl p-3 w-full text-left hover:bg-ink-800 hover:border-ink-600 transition-colors cursor-pointer">
-              <div className="flex items-start gap-2.5">
-                {item.imageUrl ? (
-                  <img src={getImageUrl(item.imageUrl)} alt={item.name} className="w-9 h-9 rounded-lg object-cover border border-ink-600 shrink-0" />
-                ) : (
-                  <div className="w-9 h-9 rounded-lg bg-ink-700/50 border border-ink-600 flex items-center justify-center shrink-0"><Package size={14} className="text-ink-200/60" /></div>
-                )}
-                <div className="min-w-0">
-                  <p className="text-ink-100 text-sm font-medium truncate">{item.name}</p>
-                  <span className={`text-[10px] uppercase tracking-wide font-medium ${rarityColor[item.rarity]}`}>{t.rarity[item.rarity]}</span>
+          {sortedItems.length > 0 ? sortedItems.map(item => {
+            const isInactive = item.status && item.status !== 'active';
+            return (
+              <button key={item._id} onClick={() => setDetailEntity({ type: 'item', data: item })} className={`bg-ink-800/60 border border-ink-700 rounded-xl p-3 w-full text-left hover:bg-ink-800 hover:border-ink-600 transition-colors cursor-pointer ${isInactive ? 'opacity-50' : ''}`}>
+                <div className="flex items-start gap-2.5">
+                  {item.imageUrl ? (
+                    <img src={getImageUrl(item.imageUrl)} alt={item.name} className={`w-9 h-9 rounded-lg object-cover border border-ink-600 shrink-0 ${isInactive ? 'grayscale' : ''}`} />
+                  ) : (
+                    <div className="w-9 h-9 rounded-lg bg-ink-700/50 border border-ink-600 flex items-center justify-center shrink-0"><Package size={14} className="text-ink-200/60" /></div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className={`text-sm font-medium truncate ${isInactive ? 'text-ink-200/50 line-through' : 'text-ink-100'}`}>{item.name}</p>
+                      {isInactive && (
+                        <span className={`text-[9px] px-1 py-0.5 rounded font-medium shrink-0 ${
+                          item.status === 'destroyed' ? 'bg-red-500/10 text-red-400' :
+                          item.status === 'consumed' ? 'bg-amber-500/10 text-amber-400' :
+                          'bg-gray-500/10 text-gray-400'
+                        }`}>{t.entityStatus[item.status]}</span>
+                      )}
+                    </div>
+                    <span className={`text-[10px] uppercase tracking-wide font-medium ${rarityColor[item.rarity]}`}>{t.rarity[item.rarity]}</span>
+                  </div>
                 </div>
-              </div>
-              <p className="text-ink-200/60 text-xs mt-1.5 line-clamp-2">{item.description}</p>
-            </button>
-          )) : (
+                <p className="text-ink-200/60 text-xs mt-1.5 line-clamp-2">{item.description}</p>
+              </button>
+            );
+          }) : (
             <p className="text-ink-200/40 text-sm italic">{t.characterPanel.noItems}</p>
           )}
         </div>
@@ -292,25 +340,37 @@ export default function StoryReaderPage() {
       {/* Abilities Tab */}
       {rpgTab === 'abilities' && (
         <div className="space-y-2 overflow-y-auto flex-1">
-          {specialItems.length > 0 ? specialItems.map(si => (
-            <button key={si._id} onClick={() => setDetailEntity({ type: 'special', data: si })} className="bg-ink-800/60 border border-ink-700 rounded-xl p-3 w-full text-left hover:bg-ink-800 hover:border-ink-600 transition-colors cursor-pointer">
-              <div className="flex items-start gap-2.5">
-                {si.imageUrl ? (
-                  <img src={getImageUrl(si.imageUrl)} alt={si.name} className="w-9 h-9 rounded-lg object-cover border border-ink-600 shrink-0" />
-                ) : (
-                  <div className="w-9 h-9 rounded-lg bg-purple-900/30 border border-purple-400/20 flex items-center justify-center shrink-0"><Sparkles size={14} className="text-purple-400/60" /></div>
-                )}
-                <div className="min-w-0">
-                  <p className="text-ink-100 text-sm font-medium truncate">{si.name}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-[10px] text-purple-400/80 bg-purple-400/10 px-1.5 py-0.5 rounded">{si.category}</span>
-                    <span className={`text-[10px] uppercase tracking-wide font-medium ${rarityColor[si.rarity]}`}>{t.rarity[si.rarity]}</span>
+          {sortedSpecialItems.length > 0 ? sortedSpecialItems.map(si => {
+            const isInactive = si.status && si.status !== 'active';
+            return (
+              <button key={si._id} onClick={() => setDetailEntity({ type: 'special', data: si })} className={`bg-ink-800/60 border border-ink-700 rounded-xl p-3 w-full text-left hover:bg-ink-800 hover:border-ink-600 transition-colors cursor-pointer ${isInactive ? 'opacity-50' : ''}`}>
+                <div className="flex items-start gap-2.5">
+                  {si.imageUrl ? (
+                    <img src={getImageUrl(si.imageUrl)} alt={si.name} className={`w-9 h-9 rounded-lg object-cover border border-ink-600 shrink-0 ${isInactive ? 'grayscale' : ''}`} />
+                  ) : (
+                    <div className="w-9 h-9 rounded-lg bg-purple-900/30 border border-purple-400/20 flex items-center justify-center shrink-0"><Sparkles size={14} className="text-purple-400/60" /></div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className={`text-sm font-medium truncate ${isInactive ? 'text-ink-200/50 line-through' : 'text-ink-100'}`}>{si.name}</p>
+                      {isInactive && (
+                        <span className={`text-[9px] px-1 py-0.5 rounded font-medium shrink-0 ${
+                          si.status === 'sealed' ? 'bg-red-500/10 text-red-400' :
+                          si.status === 'consumed' ? 'bg-amber-500/10 text-amber-400' :
+                          'bg-gray-500/10 text-gray-400'
+                        }`}>{t.entityStatus[si.status]}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[10px] text-purple-400/80 bg-purple-400/10 px-1.5 py-0.5 rounded">{si.category}</span>
+                      <span className={`text-[10px] uppercase tracking-wide font-medium ${rarityColor[si.rarity]}`}>{t.rarity[si.rarity]}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <p className="text-ink-200/60 text-xs mt-1.5 line-clamp-2">{si.description}</p>
-            </button>
-          )) : (
+                <p className="text-ink-200/60 text-xs mt-1.5 line-clamp-2">{si.description}</p>
+              </button>
+            );
+          }) : (
             <p className="text-ink-200/40 text-sm italic">{t.characterPanel.noSpecialItems}</p>
           )}
         </div>
@@ -336,7 +396,10 @@ export default function StoryReaderPage() {
                   : 'text-ink-200/70 hover:bg-ink-800/50 hover:text-ink-100'
               }`}
             >
-              {t.storyNav.chapter} {ch.chapterIndex + 1}
+              <span className="flex items-center gap-2">
+                {t.storyNav.chapter} {ch.chapterIndex + 1}
+                {ch.status === 'failed' && <AlertTriangle size={12} className="text-red-400" />}
+              </span>
             </button>
           ))}
           {chapters.length === 0 && (
@@ -357,7 +420,7 @@ export default function StoryReaderPage() {
         <article className="max-w-[65ch] mx-auto font-serif text-ink-100 leading-[1.8] text-lg py-8 px-4 md:py-16">
 
           {/* Begin Story — fresh playthrough with no chapters */}
-          {isNewGame && chapters.length === 0 && !isStreaming && !isThinking && (
+          {isNewGame && chapters.length === 0 && !isGenerating && (
             <div className="text-center py-16 animate-fade-in">
               <div className="mb-6">
                 <BookOpen size={48} className="mx-auto text-accent-400/60" />
@@ -403,7 +466,7 @@ export default function StoryReaderPage() {
           )}
           
           {/* Current chapter content (with entity highlighting) */}
-          {activeChapter && !isStreaming && !isThinking && (
+          {activeChapter && !isGenerating && activeChapter.status !== 'failed' && (
             <div className="text-ink-200/90 animate-fade-in">
               <StoryContent
                 text={activeChapter.content}
@@ -412,40 +475,63 @@ export default function StoryReaderPage() {
             </div>
           )}
 
-          {/* Current Chapter Stream */}
-          {(isStreaming || isThinking) && (
-            <div className="border-l-2 border-accent-400/30 pl-5 py-3 mt-4 bg-accent-400/[0.03] rounded-r-2xl animate-fade-in">
-              <div className="text-ink-200/90">
-                <TypewriterText text={streamedText} isActive={isStreaming} className="whitespace-pre-wrap" />
-              </div>
-               
-              {isThinking && (
-                <div className="flex items-center gap-2 text-ink-200/50 py-4">
-                  <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce" />
-                  <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce [animation-delay:0.15s]" />
-                  <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce [animation-delay:0.3s]" />
-                  <span className="text-sm ml-1 font-sans">{t.storyReader.weavingStory}</span>
+          {/* Generating state — loading overlay */}
+          {isGenerating && (
+            <div className="border-l-2 border-accent-400/30 pl-5 py-6 mt-4 bg-accent-400/[0.03] rounded-r-2xl animate-fade-in">
+              <div className="flex items-center gap-3 text-ink-200/60">
+                <svg className="animate-spin w-5 h-5 text-accent-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-sans font-medium text-ink-100">{t.storyReader.generatingChapter}</p>
+                  <p className="text-xs font-sans text-ink-200/50 mt-0.5">{t.storyReader.generatingHint}</p>
                 </div>
-              )}
-
-              {isStreaming && !isThinking && (
-                <button 
-                  onClick={skipToEnd} 
-                  className="text-ink-200/50 text-sm hover:text-accent-400 mt-4 font-sans transition-colors"
-                >
-                  {t.storyReader.skipToEnd}
-                </button>
-              )}
+              </div>
+              <div className="flex gap-1.5 mt-4">
+                <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce" />
+                <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce [animation-delay:0.15s]" />
+                <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce [animation-delay:0.3s]" />
+              </div>
             </div>
           )}
 
+          {/* Failed chapter — error + retry */}
+          {isOnLatest && isLatestFailed && !isGenerating && (
+            <div className="border-l-2 border-red-400/30 pl-5 py-6 mt-4 bg-red-400/[0.03] rounded-r-2xl animate-fade-in">
+              <div className="flex items-start gap-3">
+                <AlertTriangle size={20} className="text-red-400 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-sans font-medium text-red-300">{t.storyReader.generationFailed}</p>
+                  <p className="text-xs font-sans text-ink-200/50 mt-1">{error || t.storyReader.generationFailedHint}</p>
+                  <button
+                    onClick={handleRetry}
+                    className="inline-flex items-center gap-2 mt-4 bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 px-4 py-2 rounded-xl text-sm font-sans font-medium transition-colors border border-red-500/20 hover:border-red-500/30"
+                  >
+                    <RefreshCw size={14} />
+                    {t.storyReader.retryGeneration}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Generation error (non-failed-chapter errors, e.g. network) */}
+          {error && !isLatestFailed && !isGenerating && (
+            <div className="border-l-2 border-amber-400/30 pl-5 py-4 mt-4 bg-amber-400/[0.03] rounded-r-2xl animate-fade-in">
+              <div className="flex items-center gap-2 text-amber-300">
+                <AlertTriangle size={16} />
+                <p className="text-sm font-sans">{error}</p>
+              </div>
+            </div>
+          )}
 
           {/* Choice Cards — only on the latest chapter */}
           {showChoices && (
             <div className="mt-16 md:mt-24 animate-fade-in">
               <ChoiceCards
                 choices={choices}
-                isGenerating={isStreaming || isThinking}
+                isGenerating={isGenerating}
                 playthroughId={playthroughId!}
                 onChoiceSelect={handleChoiceSelect}
               />

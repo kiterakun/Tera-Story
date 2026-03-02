@@ -16,7 +16,7 @@ export default function WorldDetailPage() {
   const t = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { currentWorld, isLoading, fetchWorld, deleteWorld } = useWorldStore();
+  const { currentWorld, currentWorldTemplates, isLoading, fetchWorld, deleteWorld } = useWorldStore();
 
   const [playthroughs, setPlaythroughs] = useState<Playthrough[]>([]);
   const [isLoadingPlaythroughs, setIsLoadingPlaythroughs] = useState(false);
@@ -267,12 +267,12 @@ export default function WorldDetailPage() {
           <div className="bg-ink-800 border border-ink-700 rounded-2xl p-6">
             <h3 className="text-base font-display text-ink-100 border-b border-ink-700 pb-4 mb-4">{t.worldDetail.specialItemTemplates}</h3>
             
-            {(!currentWorld.specialItemTemplates || currentWorld.specialItemTemplates.length === 0) ? (
+            {currentWorldTemplates.length === 0 ? (
               <p className="text-sm text-ink-200/50">{t.worldDetail.noSpecialItems}</p>
             ) : (
               <ul className="space-y-3">
-                {currentWorld.specialItemTemplates.map((tmpl, i) => (
-                  <li key={i} className="bg-ink-950/50 p-3 rounded-xl border border-purple-400/10 text-sm">
+                {currentWorldTemplates.map((tmpl, i) => (
+                  <li key={tmpl._id || i} className="bg-ink-950/50 p-3 rounded-xl border border-purple-400/10 text-sm">
                     <div className="font-semibold text-ink-100">{tmpl.category}</div>
                     {tmpl.description && (
                       <p className="text-xs text-ink-200/60 mt-1">{tmpl.description}</p>

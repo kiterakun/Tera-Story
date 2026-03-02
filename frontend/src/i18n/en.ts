@@ -207,8 +207,6 @@ const en = {
     navigationPanel: 'Navigation panel',
     backToPlaythrough: 'Back to Playthrough',
     loading: 'Loading story...',
-    weavingStory: 'Weaving the story...',
-    skipToEnd: 'Skip to end \u2192',
     whatDoYouDoNext: 'What do you do next?',
     impact: 'Impact:',
     activeCharacters: 'Active Characters',
@@ -226,6 +224,12 @@ const en = {
     // Chapter navigation
     prevChapter: 'Previous chapter',
     nextChapter: 'Next chapter',
+    // Generation states
+    generatingChapter: 'Generating chapter...',
+    generatingHint: 'The AI is crafting the next part of your story. This may take a moment.',
+    generationFailed: 'Chapter generation failed',
+    generationFailedHint: 'Something went wrong while generating this chapter. You can retry with the same choice.',
+    retryGeneration: 'Retry Generation',
   },
 
   characterPanel: {
@@ -305,6 +309,21 @@ const en = {
     acquiredIn: 'Acquired in',
     properties: 'Properties',
     close: 'Close',
+  },
+
+  // Entity status labels
+  entityStatus: {
+    // Character
+    active: 'Active',
+    dead: 'Dead',
+    injured: 'Injured',
+    missing: 'Missing',
+    // Item
+    destroyed: 'Destroyed',
+    lost: 'Lost',
+    consumed: 'Consumed',
+    // Special Item
+    sealed: 'Sealed',
   },
 
   // Common

@@ -209,8 +209,6 @@ const vi: Translations = {
     navigationPanel: 'Bảng điều hướng',
     backToPlaythrough: 'Quay lại lượt chơi',
     loading: 'Đang tải câu chuyện...',
-    weavingStory: 'Đang dệt câu chuyện...',
-    skipToEnd: 'Bỏ qua \u2192',
     whatDoYouDoNext: 'Bạn sẽ làm gì tiếp theo?',
     impact: 'Tác động:',
     activeCharacters: 'Nhân vật đang hoạt động',
@@ -228,6 +226,12 @@ const vi: Translations = {
     // Chapter navigation
     prevChapter: 'Chương trước',
     nextChapter: 'Chương tiếp',
+    // Generation states
+    generatingChapter: 'Đang tạo chương...',
+    generatingHint: 'AI đang viết phần tiếp theo của câu chuyện. Quá trình này có thể mất một lúc.',
+    generationFailed: 'Tạo chương thất bại',
+    generationFailedHint: 'Đã xảy ra lỗi khi tạo chương này. Bạn có thể thử lại với cùng lựa chọn.',
+    retryGeneration: 'Thử lại',
   },
 
   characterPanel: {
@@ -307,6 +311,21 @@ const vi: Translations = {
     acquiredIn: 'Nhận được tại',
     properties: 'Thuộc tính',
     close: 'Đóng',
+  },
+
+  // Entity status labels
+  entityStatus: {
+    // Character
+    active: 'Hoạt động',
+    dead: 'Đã chết',
+    injured: 'Bị thương',
+    missing: 'Mất tích',
+    // Item
+    destroyed: 'Đã phá hủy',
+    lost: 'Đã mất',
+    consumed: 'Đã tiêu thụ',
+    // Special Item
+    sealed: 'Bị phong ấn',
   },
 
   // Common

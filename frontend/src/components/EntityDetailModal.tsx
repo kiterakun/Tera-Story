@@ -1,6 +1,6 @@
-import { X, UserRound, Package, Sparkles, Crown } from 'lucide-react';
+import { X, UserRound, Package, Sparkles, Crown, Skull, AlertTriangle, HelpCircle, ShieldOff, Ban } from 'lucide-react';
 import { useTranslation } from '../i18n';
-import type { Character, Item, SpecialItem, ItemRarity } from '../services/playthroughApi';
+import type { Character, Item, SpecialItem, ItemRarity, CharacterStatus, ItemStatus, SpecialItemStatus } from '../services/playthroughApi';
 import { getImageUrl } from '../utils/url';
 import { RetryImageButton } from './RetryImageButton';
 
@@ -20,6 +20,27 @@ const RARITY_CONFIG: Record<ItemRarity, { border: string; bg: string; text: stri
   rare: { border: 'border-blue-500/40', bg: 'bg-blue-500/5', text: 'text-blue-400', glow: 'shadow-[0_0_15px_rgba(96,165,250,0.15)]', icon: '◆' },
   epic: { border: 'border-purple-500/40', bg: 'bg-purple-500/5', text: 'text-purple-400', glow: 'shadow-[0_0_20px_rgba(192,132,252,0.2)]', icon: '★' },
   legendary: { border: 'border-amber-500/40', bg: 'bg-amber-500/5', text: 'text-amber-400', glow: 'shadow-[0_0_25px_rgba(251,191,36,0.25)]', icon: '✦' },
+};
+
+const CHARACTER_STATUS_CONFIG: Record<CharacterStatus, { text: string; bg: string; icon: typeof Skull }> = {
+  active: { text: 'text-green-400', bg: 'bg-green-500/10', icon: UserRound },
+  dead: { text: 'text-red-400', bg: 'bg-red-500/10', icon: Skull },
+  injured: { text: 'text-amber-400', bg: 'bg-amber-500/10', icon: AlertTriangle },
+  missing: { text: 'text-gray-400', bg: 'bg-gray-500/10', icon: HelpCircle },
+};
+
+const ITEM_STATUS_CONFIG: Record<ItemStatus, { text: string; bg: string }> = {
+  active: { text: 'text-green-400', bg: 'bg-green-500/10' },
+  destroyed: { text: 'text-red-400', bg: 'bg-red-500/10' },
+  lost: { text: 'text-gray-400', bg: 'bg-gray-500/10' },
+  consumed: { text: 'text-amber-400', bg: 'bg-amber-500/10' },
+};
+
+const SPECIAL_STATUS_CONFIG: Record<SpecialItemStatus, { text: string; bg: string }> = {
+  active: { text: 'text-green-400', bg: 'bg-green-500/10' },
+  sealed: { text: 'text-red-400', bg: 'bg-red-500/10' },
+  lost: { text: 'text-gray-400', bg: 'bg-gray-500/10' },
+  consumed: { text: 'text-amber-400', bg: 'bg-amber-500/10' },
 };
 
 export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
@@ -44,6 +65,11 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
             <span className="text-xs text-accent-400 uppercase tracking-wide font-medium">
               {char.role === 'protagonist' ? t.characterPanel.protagonist : 'NPC'}
             </span>
+            {char.status && char.status !== 'active' && (
+              <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ml-1 ${CHARACTER_STATUS_CONFIG[char.status].text} ${CHARACTER_STATUS_CONFIG[char.status].bg}`}>
+                {(t.entityStatus as any)[char.status]}
+              </span>
+            )}
           </div>
         </div>
 
@@ -97,7 +123,11 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
               <span className={`text-xs uppercase tracking-wide font-bold ${rc.text}`}>
                 {rc.icon} {t.rarity[item.rarity]}
               </span>
-            </div>
+              {item.status && item.status !== 'active' && (
+                <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${ITEM_STATUS_CONFIG[item.status].text} ${ITEM_STATUS_CONFIG[item.status].bg}`}>
+                  {(t.entityStatus as any)[item.status]}
+                </span>
+              )}
           </div>
         </div>
         <p className="text-ink-200/80 text-sm leading-relaxed">{item.description}</p>
@@ -138,7 +168,11 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
               <span className={`text-xs uppercase tracking-wide font-bold ${rc.text}`}>
                 {rc.icon} {t.rarity[si.rarity]}
               </span>
-            </div>
+              {si.status && si.status !== 'active' && (
+                <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${SPECIAL_STATUS_CONFIG[si.status].text} ${SPECIAL_STATUS_CONFIG[si.status].bg}`}>
+                  {(t.entityStatus as any)[si.status]}
+                </span>
+              )}
           </div>
         </div>
         <p className="text-ink-200/80 text-sm leading-relaxed">{si.description}</p>

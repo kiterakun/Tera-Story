@@ -1,14 +1,15 @@
 import { create } from 'zustand';
 import * as worldApi from '../services/worldApi';
-import type { World } from '../services/worldApi';
+import type { World, SpecialItemTemplate } from '../services/worldApi';
 
 interface WorldState {
   worlds: World[];
   currentWorld: World | null;
+  currentWorldTemplates: SpecialItemTemplate[];
   isLoading: boolean;
   fetchWorlds: () => Promise<void>;
   fetchWorld: (id: string) => Promise<void>;
-  createWorld: (data: Partial<World>) => Promise<World>;
+  createWorld: (data: Partial<World> & { specialItemTemplates?: SpecialItemTemplate[] }) => Promise<World>;
   createFromTemplate: (templateId: string, name: string) => Promise<World>;
   updateWorld: (id: string, data: Partial<World>) => Promise<World>;
   deleteWorld: (id: string) => Promise<void>;
@@ -17,6 +18,7 @@ interface WorldState {
 export const useWorldStore = create<WorldState>()((set, _get) => ({
   worlds: [],
   currentWorld: null,
+  currentWorldTemplates: [],
   isLoading: false,
 
   fetchWorlds: async () => {
@@ -33,18 +35,18 @@ export const useWorldStore = create<WorldState>()((set, _get) => ({
   fetchWorld: async (id: string) => {
     set({ isLoading: true });
     try {
-      const world = await worldApi.getWorld(id);
-      set({ currentWorld: world, isLoading: false });
+      const { world, specialItemTemplates } = await worldApi.getWorld(id);
+      set({ currentWorld: world, currentWorldTemplates: specialItemTemplates, isLoading: false });
     } catch (error) {
       set({ isLoading: false });
       throw error;
     }
   },
 
-  createWorld: async (data: Partial<World>) => {
+  createWorld: async (data: Partial<World> & { specialItemTemplates?: SpecialItemTemplate[] }) => {
     set({ isLoading: true });
     try {
-      const newWorld = await worldApi.createWorld(data);
+      const { world: newWorld } = await worldApi.createWorld(data);
       set((state) => ({ 
         worlds: [...state.worlds, newWorld],
         isLoading: false 
@@ -59,7 +61,7 @@ export const useWorldStore = create<WorldState>()((set, _get) => ({
   createFromTemplate: async (templateId: string, name: string) => {
     set({ isLoading: true });
     try {
-      const newWorld = await worldApi.createFromTemplate(templateId, name);
+      const { world: newWorld } = await worldApi.createFromTemplate(templateId, name);
       set((state) => ({ 
         worlds: [...state.worlds, newWorld],
         isLoading: false 
@@ -94,6 +96,7 @@ export const useWorldStore = create<WorldState>()((set, _get) => ({
       set((state) => ({
         worlds: state.worlds.filter((w) => w._id !== id),
         currentWorld: state.currentWorld?._id === id ? null : state.currentWorld,
+        currentWorldTemplates: state.currentWorld?._id === id ? [] : state.currentWorldTemplates,
         isLoading: false
       }));
     } catch (error) {

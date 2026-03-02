@@ -6,12 +6,17 @@ export interface DynamicStat {
   t: string; 
 }
 
+export type CharacterStatus = 'active' | 'dead' | 'injured' | 'missing';
+export type ItemStatus = 'active' | 'destroyed' | 'lost' | 'consumed';
+export type SpecialItemStatus = 'active' | 'sealed' | 'lost' | 'consumed';
+
 export interface Character {
   _id: string; 
   name: string; 
   description: string; 
   imageUrl?: string;
   role: 'protagonist' | 'npc'; 
+  status: CharacterStatus;
   dynamicStats: DynamicStat[]; 
   playthroughId: string; 
   worldId: string;
@@ -81,6 +86,7 @@ export interface Item {
   name: string;
   description: string;
   rarity: ItemRarity;
+  status: ItemStatus;
   imageUrl?: string;
   ownerId?: string;
   playthroughId: string;
@@ -95,6 +101,7 @@ export interface SpecialItem {
   description: string;
   category: string;
   rarity: ItemRarity;
+  status: SpecialItemStatus;
   imageUrl?: string;
   ownerId?: string;
   playthroughId: string;

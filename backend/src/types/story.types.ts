@@ -45,6 +45,7 @@ export interface ISpecialItem {
   description: string;
   category: string;
   rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  status: 'active' | 'sealed' | 'lost' | 'consumed';
   imageUrl?: string;
   ownerId?: string;
   playthroughId: string;
@@ -59,6 +60,7 @@ export interface IItem {
   name: string;
   description: string;
   rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  status: 'active' | 'destroyed' | 'lost' | 'consumed';
   imageUrl?: string;
   ownerId?: string;
   playthroughId: string;

@@ -29,7 +29,6 @@ export interface IWorld {
   userId: string;
   imageUrl?: string;
   resourceTemplates: IResourceTemplate[];
-  specialItemTemplates: ISpecialItemTemplate[];
   createdAt: Date;
   updatedAt: Date;
 }

@@ -6,6 +6,7 @@ export interface ICharacterDocument extends Document {
   description: string;
   imageUrl?: string;
   role: 'protagonist' | 'npc';
+  status: 'active' | 'dead' | 'injured' | 'missing';
   playthroughId: mongoose.Types.ObjectId;
   worldId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
@@ -41,6 +42,11 @@ const CharacterSchema = new Schema<ICharacterDocument>(
       type: String,
       enum: ['protagonist', 'npc'],
       required: true,
+    },
+    status: {
+      type: String,
+      enum: ['active', 'dead', 'injured', 'missing'],
+      default: 'active',
     },
     playthroughId: {
       type: Schema.Types.ObjectId,
