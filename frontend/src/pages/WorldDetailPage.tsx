@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useWorldStore } from '../stores/worldStore';
 import { useTranslation } from '../i18n';
-import { Search, BookOpen, Plus, ChevronLeft, Calendar, Play, X, Trash2 } from 'lucide-react';
+import { Search, BookOpen, Plus, ChevronLeft, Calendar, Play, X, Trash2, ImageIcon } from 'lucide-react';
 import * as playthroughApi from '../services/playthroughApi';
 import type { Playthrough } from '../services/playthroughApi';
+import { RetryImageButton } from '../components/RetryImageButton';
+import { getImageUrl } from '../utils/url';
 
 const statusColor: Record<string, string> = {
   active: 'bg-green-400/10 text-green-400 border-green-400/20',
@@ -127,19 +129,36 @@ export default function WorldDetailPage() {
         {/* Main Content (2 cols) */}
         <div className="lg:col-span-2 space-y-6">
           {/* Header Info */}
-          <div className="bg-ink-800 border border-ink-700 rounded-2xl p-6 sm:p-8">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
-              <div>
-                <h1 className="text-3xl sm:text-4xl font-display text-ink-100 mb-3">{currentWorld.name}</h1>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-ink-700/50 text-xs uppercase tracking-wider text-ink-200/70 rounded-lg font-medium">
-                  {currentWorld.genre}
-                </span>
-              </div>
+          <div className="bg-ink-800 border border-ink-700 rounded-2xl overflow-hidden">
+            {/* World Image Banner */}
+            <div className="relative w-full h-48 sm:h-64 bg-ink-900">
+              {currentWorld.imageUrl ? (
+                <img src={getImageUrl(currentWorld.imageUrl)} alt={currentWorld.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-ink-800 to-ink-900">
+                  <ImageIcon size={40} className="text-ink-200/20" />
+                  <RetryImageButton entityType="world" entityId={currentWorld._id} showLabel className="mt-1" />
+                </div>
+              )}
+              {currentWorld.imageUrl && (
+                <div className="absolute bottom-3 right-3">
+                  <RetryImageButton entityType="world" entityId={currentWorld._id} className="bg-black/50 backdrop-blur-sm rounded-lg p-1.5" />
+                </div>
+              )}
             </div>
-            
-            <p className="text-ink-200/80 leading-relaxed text-base whitespace-pre-wrap">
-              {currentWorld.description || t.worldDetail.noDescription}
-            </p>
+            <div className="p-6 sm:p-8">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
+                <div>
+                  <h1 className="text-3xl sm:text-4xl font-display text-ink-100 mb-3">{currentWorld.name}</h1>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-ink-700/50 text-xs uppercase tracking-wider text-ink-200/70 rounded-lg font-medium">
+                    {currentWorld.genre}
+                  </span>
+                </div>
+              </div>
+              <p className="text-ink-200/80 leading-relaxed text-base whitespace-pre-wrap">
+                {currentWorld.description || t.worldDetail.noDescription}
+              </p>
+            </div>
           </div>
           
           {/* Playthroughs */}

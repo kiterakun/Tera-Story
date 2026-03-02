@@ -12,7 +12,7 @@ export interface IContextOutput {
   activeCharacters: string[];
   existingItems: IEntityRef[];
   existingSpecialItems: IEntityRef[];
-  specialItemTemplateCategories: Array<{ category: string; description: string }>;
+  specialItemTemplateCategories: Array<{ category: string; description: string; fields: Array<{ name: string; type: string; options?: string[]; required?: boolean }> }>;
   currentScene: string;
   relevantPlotPoints: string[];
 }

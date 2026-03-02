@@ -4,7 +4,7 @@ import { api } from '../services/api';
 import { useTranslation } from '../i18n';
 
 interface RetryImageButtonProps {
-  entityType: 'character' | 'item' | 'special-item';
+  entityType: 'character' | 'item' | 'special-item' | 'world';
   entityId: string;
   showLabel?: boolean;
   className?: string;

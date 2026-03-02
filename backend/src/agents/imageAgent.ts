@@ -9,6 +9,7 @@ const UPLOADS_BASE = path.join(__dirname, "../../uploads/images");
 fs.mkdirSync(path.join(UPLOADS_BASE, "character"), { recursive: true });
 fs.mkdirSync(path.join(UPLOADS_BASE, "item"), { recursive: true });
 fs.mkdirSync(path.join(UPLOADS_BASE, "special-item"), { recursive: true });
+fs.mkdirSync(path.join(UPLOADS_BASE, "world"), { recursive: true });
 
 /**
  * Generate an image via DALL-E compatible API (fire-and-forget).
@@ -16,7 +17,7 @@ fs.mkdirSync(path.join(UPLOADS_BASE, "special-item"), { recursive: true });
  */
 export async function generateImage(
   description: string,
-  entityType: "character" | "item" | "special-item",
+  entityType: "character" | "item" | "special-item" | "world",
   entityId: string,
   imageConfig: IAgentConfig,
 ): Promise<void> {
@@ -82,6 +83,9 @@ export async function generateImage(
     } else if (entityType === "special-item") {
       const { SpecialItem } = await import("../models/SpecialItem");
       await SpecialItem.findByIdAndUpdate(entityId, { imageUrl: relativeUrl });
+    } else if (entityType === "world") {
+      const { World } = await import("../models/World");
+      await World.findByIdAndUpdate(entityId, { imageUrl: relativeUrl });
     }
 
     console.log(

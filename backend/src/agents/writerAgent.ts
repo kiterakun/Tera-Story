@@ -110,9 +110,20 @@ export async function runWriterAgent(
     ? contextOutput.existingSpecialItems.map(si => `- ${si.name} [${si.category}] (${si.rarity})${si.owner ? ` [owned by ${si.owner}]` : ''}`).join('\n')
     : 'No special items yet.';
 
-  // Build available template categories block
+  // Build available template categories block WITH field definitions
   const templateCategoriesBlock = contextOutput.specialItemTemplateCategories.length > 0
-    ? contextOutput.specialItemTemplateCategories.map(t => `- ${t.category}: ${t.description}`).join('\n')
+    ? contextOutput.specialItemTemplateCategories.map(t => {
+        const fieldsDesc = t.fields.length > 0
+          ? `\n    Fields: ${t.fields.map(f => {
+              let desc = `${f.name} (${f.type}`;
+              if (f.options && f.options.length > 0) desc += `, options: ${f.options.join('|')}`;
+              if (f.required) desc += ', required';
+              desc += ')';
+              return desc;
+            }).join(', ')}`
+          : '';
+        return `- ${t.category}: ${t.description}${fieldsDesc}`;
+      }).join('\n')
     : 'No special item categories defined.';
 
   const userPrompt = `
@@ -149,7 +160,7 @@ Write the next chapter based on the context above. Remember to:
 2. NEVER use createItem for items that already exist above. Reference them by name using [[item:Name:rarity]] with the EXACT rarity listed above
 3. NEVER use createSpecialItem for special items that already exist above. Reference them using [[special:Name:rarity]] with the EXACT rarity listed above
 4. Create NEW items (weapons, potions, artifacts) using createItem with appropriate rarity
-5. Create NEW special items using createSpecialItem \u2014 the category MUST be one of the AVAILABLE SPECIAL ITEM CATEGORIES listed above
+5. Create NEW special items using createSpecialItem — the category MUST be one of the AVAILABLE SPECIAL ITEM CATEGORIES listed above. You MUST provide customFields matching the Fields defined for that category (e.g. if category has fields "Power (number, required), Element (enum, options: Fire|Ice|Thunder)", pass customFields: { "Power": 50, "Element": "Fire" })
 6. Update character stats if story events warrant it using updateStats \u2014 values must match data types
 7. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]] markup when mentioning entities in the story text
 8. Call generateChoices at the end with 3-4 meaningful options

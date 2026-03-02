@@ -4,6 +4,7 @@ import { useWorldStore } from '../stores/worldStore';
 import { useTranslation } from '../i18n';
 import { Castle, Rocket, Swords, Building2, Wand2, Globe, Plus, Calendar } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { getImageUrl } from '../utils/url';
 
 const genreIcons: Record<string, LucideIcon> = {
   fantasy: Castle,
@@ -78,32 +79,37 @@ export default function WorldListPage() {
             <Link
               key={world._id}
               to={`/worlds/${world._id}`}
-              className="group block bg-ink-800 border border-ink-700 rounded-2xl p-6 hover:border-accent-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-accent-400/5"
+              className="group block bg-ink-800 border border-ink-700 rounded-2xl overflow-hidden hover:border-accent-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-accent-400/5"
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-lg bg-accent-600/10 flex items-center justify-center">
+              {/* World image thumbnail */}
+              <div className="w-full h-32 bg-ink-900">
+                {world.imageUrl ? (
+                  <img src={getImageUrl(world.imageUrl)} alt={world.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-ink-800 to-ink-900">
                     <GenreIcon genre={world.genre} />
-                  </span>
+                  </div>
+                )}
+              </div>
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
                   <h2 className="text-xl font-display text-ink-100 group-hover:text-accent-400 transition-colors">
                     {world.name}
                   </h2>
+                  <span className="px-2.5 py-1 bg-ink-700/50 text-xs uppercase tracking-wider text-ink-200/70 rounded-lg font-medium shrink-0 ml-2">
+                    {world.genre}
+                  </span>
                 </div>
-                <span className="px-2.5 py-1 bg-ink-700/50 text-xs uppercase tracking-wider text-ink-200/70 rounded-lg font-medium">
-                  {world.genre}
-                </span>
-              </div>
-              
-              <p className="text-ink-200/60 mb-6 line-clamp-3 text-sm leading-relaxed">
-                {world.description || t.worldDetail.noDescription}
-              </p>
-
-              <div className="flex justify-between items-center text-xs text-ink-200/40 pt-4 border-t border-ink-700/50">
-                <span className="flex items-center gap-1">
-                  <Calendar size={12} />
-                  {new Date(world.createdAt).toLocaleDateString()}
-                </span>
-                <span>{world.resourceTemplates?.length || 0} {t.worldList.resources}</span>
+                <p className="text-ink-200/60 mb-6 line-clamp-3 text-sm leading-relaxed">
+                  {world.description || t.worldDetail.noDescription}
+                </p>
+                <div className="flex justify-between items-center text-xs text-ink-200/40 pt-4 border-t border-ink-700/50">
+                  <span className="flex items-center gap-1">
+                    <Calendar size={12} />
+                    {new Date(world.createdAt).toLocaleDateString()}
+                  </span>
+                  <span>{world.resourceTemplates?.length || 0} {t.worldList.resources}</span>
+                </div>
               </div>
             </Link>
           ))}

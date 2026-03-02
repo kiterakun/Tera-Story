@@ -4,6 +4,7 @@ import { Character } from '../models/Character';
 import { Item } from '../models/Item';
 import { SpecialItem } from '../models/SpecialItem';
 import { Playthrough } from '../models/Playthrough';
+import { World } from '../models/World';
 import { queueImageGeneration } from '../services/imageService';
 
 const router = Router();
@@ -21,7 +22,7 @@ router.post(
         return;
       }
 
-      if (!['character', 'item', 'special-item'].includes(entityType)) {
+      if (!['character', 'item', 'special-item', 'world'].includes(entityType)) {
         res.status(400).json({ error: 'Invalid entityType' });
         return;
       }
@@ -39,6 +40,11 @@ router.post(
         const pt = await Playthrough.findById(item.playthroughId).lean();
         if (!pt || pt.userId.toString() !== userId) { res.status(403).json({ error: 'Forbidden' }); return; }
         prompt = `Single item illustration, centered on dark background: ${item.name} — ${item.description}. ${item.rarity || 'common'} tier quality. Detailed digital painting, RPG inventory icon style, dramatic lighting, no text, no watermark, no hands.`;
+      } else if (entityType === 'world') {
+        const world = await World.findById(entityId).lean();
+        if (!world) { res.status(404).json({ error: 'World not found' }); return; }
+        if (world.userId.toString() !== userId) { res.status(403).json({ error: 'Forbidden' }); return; }
+        prompt = `Fantasy world landscape illustration, panoramic vista: ${world.name}. ${world.description || 'A mysterious world'}. Genre: ${world.genre}. Epic scale, sweeping scenery, atmospheric lighting, concept art style, highly detailed digital painting, cinematic composition. No text, no watermark, no UI elements.`;
       } else {
         // special-item
         const si = await SpecialItem.findById(entityId).lean();

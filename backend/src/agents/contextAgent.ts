@@ -256,6 +256,12 @@ Based on the player's choice and the FULL story state above (including all items
     specialItemTemplateCategories: specialItemTemplates.map((t) => ({
       category: t.category,
       description: t.description,
+      fields: (t.fields || []).map((f) => ({
+        name: f.name,
+        type: f.type,
+        ...(f.options && f.options.length > 0 ? { options: f.options } : {}),
+        ...(f.required ? { required: f.required } : {}),
+      })),
     })),
     currentScene: validated.currentScene ?? '',
     relevantPlotPoints: validated.relevantPlotPoints ?? [],

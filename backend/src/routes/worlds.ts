@@ -6,6 +6,7 @@ import { Playthrough } from '../models/Playthrough';
 import { SpecialItemTemplate } from '../models/SpecialItemTemplate';
 import { WORLD_TEMPLATES } from '../seeds/worldTemplates';
 import playthroughsRouter from './playthroughs';
+import { queueImageGeneration } from '../services/imageService';
 
 const router = Router();
 
@@ -77,6 +78,11 @@ router.post('/from-template/:templateId', async (req: AuthRequest, res: Response
 
     // Return world with templates
     const specialItemTemplates = await SpecialItemTemplate.find({ worldId: world._id }).lean();
+
+    // Queue world image generation
+    const imgPrompt = `Fantasy world landscape illustration, panoramic vista: ${world.name}. ${template.description || 'A mysterious world'}. Genre: ${template.genre}. Epic scale, sweeping scenery, atmospheric lighting, concept art style, highly detailed digital painting, cinematic composition. No text, no watermark, no UI elements.`;
+    queueImageGeneration(imgPrompt, 'world', world._id.toString(), userId);
+
     res.status(201).json({ world, specialItemTemplates });
   } catch (err) {
     console.error('Create world from template error:', err);
@@ -157,6 +163,11 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
     }
 
     const specialItemTemplates = await SpecialItemTemplate.find({ worldId: world._id }).lean();
+
+    // Queue world image generation
+    const imgPrompt = `Fantasy world landscape illustration, panoramic vista: ${world.name}. ${parsed.data.description || 'A mysterious world'}. Genre: ${parsed.data.genre}. Epic scale, sweeping scenery, atmospheric lighting, concept art style, highly detailed digital painting, cinematic composition. No text, no watermark, no UI elements.`;
+    queueImageGeneration(imgPrompt, 'world', world._id.toString(), userId);
+
     res.status(201).json({ world, specialItemTemplates });
   } catch (err) {
     console.error('Create world error:', err);
