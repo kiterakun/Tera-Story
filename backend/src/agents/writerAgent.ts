@@ -23,6 +23,23 @@ export interface WriterAgentParams {
 
 const SYSTEM_PROMPT = `You are a master storyteller writing an immersive interactive novel. Write the next chapter based on the context provided.
 
+EXECUTION WORKFLOW (CRITICAL — follow this exact order):
+You work in TWO distinct phases. NEVER mix them.
+
+Phase 1 — TOOL CALLS ONLY (no prose, no story text):
+  - Analyze the story context and decide what entities need to be created/updated
+  - Call createCharacter, createItem, createSpecialItem, updateStats, updateEntityStatus, summarizeArc as needed
+  - During this phase, output ZERO story text. Only make tool calls.
+  - Each tool call step should contain ONLY the tool call, nothing else.
+
+Phase 2 — WRITE THE CHAPTER (no more tool calls except generateChoices):
+  - After ALL entity/stat tool calls are complete, write the full chapter prose in one continuous block
+  - Reference all created/existing entities using [[markup]] notation
+  - At the very end, call generateChoices with 3-4 meaningful options
+  - The story text goes here and ONLY here
+
+WHY: If you mix tool calls with prose, the prose gets fragmented and lost between tool execution steps. Keep them strictly separated.
+
 Rules:
 - Write vivid, engaging prose that draws the reader into the story
 - Use your tools to create new characters and items as the story demands
@@ -64,7 +81,7 @@ Examples: "[[char:Vương Quân]] drew the [[item:Flame Sword:epic]] and channel
 Only use this markup for entities that exist or are being created in this chapter. Do NOT markup generic nouns.
 
 Available tools:
-- createCharacter: Create a NEW NPC character (NEVER for existing characters)
+- createCharacter: Create a NEW NPC character (NEVER for existing characters). You MUST provide dynamicStats with meaningful values based on the character's role, strength, and story context. See RESOURCE TEMPLATES below for available stats.
 - createItem: Create a new physical item (weapon, potion, artifact, etc.) with rarity
 - createSpecialItem: Create a special item (skill, technique, spiritual root, ability, etc.) with category and rarity. The category MUST match one of the world's defined template categories.
 - updateStats: Update character statistics after events
@@ -126,6 +143,19 @@ export async function runWriterAgent(
       }).join('\n')
     : 'No special item categories defined.';
 
+  // Build resource templates block for character stat assignment
+  const resourceTemplatesBlock = contextOutput.resourceTemplates.length > 0
+    ? contextOutput.resourceTemplates.map(rt => {
+        let desc = `- ${rt.key} (${rt.type}`;
+        if (rt.min !== undefined) desc += `, min: ${rt.min}`;
+        if (rt.max !== undefined) desc += `, max: ${rt.max}`;
+        if (rt.defaultValue !== undefined) desc += `, default: ${rt.defaultValue}`;
+        if (rt.options && rt.options.length > 0) desc += `, options: ${rt.options.join('|')}`;
+        desc += ')';
+        return desc;
+      }).join('\n')
+    : 'No resource templates defined.';
+
   const userPrompt = `
 Write the next chapter in ${language}.
 
@@ -154,16 +184,20 @@ ${existingSpecialItemsBlock}
 === AVAILABLE SPECIAL ITEM CATEGORIES (MUST use one of these when calling createSpecialItem) ===
 ${templateCategoriesBlock}
 
+=== RESOURCE TEMPLATES / CHARACTER STATS (MUST provide when calling createCharacter) ===
+${resourceTemplatesBlock}
+
 === INSTRUCTIONS ===
 Write the next chapter based on the context above. Remember to:
 1. ONLY use createCharacter for genuinely NEW characters. NEVER call createCharacter for: ${existingCharacters.join(', ') || 'N/A'}
-2. NEVER use createItem for items that already exist above. Reference them by name using [[item:Name:rarity]] with the EXACT rarity listed above
-3. NEVER use createSpecialItem for special items that already exist above. Reference them using [[special:Name:rarity]] with the EXACT rarity listed above
-4. Create NEW items (weapons, potions, artifacts) using createItem with appropriate rarity
-5. Create NEW special items using createSpecialItem — the category MUST be one of the AVAILABLE SPECIAL ITEM CATEGORIES listed above. You MUST provide customFields matching the Fields defined for that category (e.g. if category has fields "Power (number, required), Element (enum, options: Fire|Ice|Thunder)", pass customFields: { "Power": 50, "Element": "Fire" })
-6. Update character stats if story events warrant it using updateStats \u2014 values must match data types
-7. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]] markup when mentioning entities in the story text
-8. Call generateChoices at the end with 3-4 meaningful options
+2. When calling createCharacter, you MUST provide dynamicStats — an object with keys matching the RESOURCE TEMPLATES above and values that are MEANINGFUL for the character. For example, if templates include "HP (number, min:0, max:100)", a strong warrior might have HP=85 while a frail scholar might have HP=30. Consider the character's role, background, and story context when assigning values.
+3. NEVER use createItem for items that already exist above. Reference them by name using [[item:Name:rarity]] with the EXACT rarity listed above
+4. NEVER use createSpecialItem for special items that already exist above. Reference them using [[special:Name:rarity]] with the EXACT rarity listed above
+5. Create NEW items (weapons, potions, artifacts) using createItem with appropriate rarity
+6. Create NEW special items using createSpecialItem — the category MUST be one of the AVAILABLE SPECIAL ITEM CATEGORIES listed above. You MUST provide customFields matching the Fields defined for that category (e.g. if category has fields "Power (number, required), Element (enum, options: Fire|Ice|Thunder)", pass customFields: { "Power": 50, "Element": "Fire" })
+7. Update character stats if story events warrant it using updateStats \u2014 values must match data types
+8. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]] markup when mentioning entities in the story text
+9. Call generateChoices at the end with 3-4 meaningful options
 `.trim();
 
   // Use streamText + await full result — streaming API calls are more compatible

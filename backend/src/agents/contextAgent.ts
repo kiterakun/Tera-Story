@@ -221,6 +221,17 @@ Based on the player's choice and the FULL story state above (including all items
 
   const validated = contextOutputSchema.parse(parsed);
 
+  // Filter activeCharacters against actual DB records to prevent hallucinated names.
+  // The LLM may return character names that don't exist in the database yet.
+  const dbCharacterNames = new Set(characters.map((c) => c.name));
+  const verifiedActiveCharacters = (validated.activeCharacters ?? []).filter((name) => dbCharacterNames.has(name));
+
+  // If LLM missed some DB characters that are active, ensure they're included
+  const allActiveDbCharacters = characters
+    .filter((c) => (c as any).status === 'active' || !(c as any).status)
+    .map((c) => c.name);
+  const mergedActiveCharacters = Array.from(new Set([...verifiedActiveCharacters, ...allActiveDbCharacters]));
+
   // Build structured entity refs directly from DB (authoritative, not LLM-summarized)
   const existingItems = items.map((i) => {
     const ownerChar = i.ownerId
@@ -250,7 +261,7 @@ Based on the player's choice and the FULL story state above (including all items
   return {
     outline: validated.outline ?? '',
     filteredContext: validated.filteredContext ?? '',
-    activeCharacters: validated.activeCharacters ?? [],
+    activeCharacters: mergedActiveCharacters,
     existingItems,
     existingSpecialItems,
     specialItemTemplateCategories: specialItemTemplates.map((t) => ({
@@ -262,6 +273,14 @@ Based on the player's choice and the FULL story state above (including all items
         ...(f.options && f.options.length > 0 ? { options: f.options } : {}),
         ...(f.required ? { required: f.required } : {}),
       })),
+    })),
+    resourceTemplates: (world.resourceTemplates || []).map((t) => ({
+      key: t.key,
+      type: t.type,
+      ...(t.min !== undefined ? { min: t.min } : {}),
+      ...(t.max !== undefined ? { max: t.max } : {}),
+      ...(t.defaultValue !== undefined ? { defaultValue: t.defaultValue } : {}),
+      ...(t.options && t.options.length > 0 ? { options: t.options } : {}),
     })),
     currentScene: validated.currentScene ?? '',
     relevantPlotPoints: validated.relevantPlotPoints ?? [],

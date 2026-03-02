@@ -15,6 +15,7 @@ export interface IContextOutput {
   specialItemTemplateCategories: Array<{ category: string; description: string; fields: Array<{ name: string; type: string; options?: string[]; required?: boolean }> }>;
   currentScene: string;
   relevantPlotPoints: string[];
+  resourceTemplates: Array<{ key: string; type: string; min?: number; max?: number; defaultValue?: string | number; options?: string[] }>;
 }
 
 export interface IWriterOutput {
