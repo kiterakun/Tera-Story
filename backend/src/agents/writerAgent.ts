@@ -21,69 +21,79 @@ export interface WriterAgentParams {
   maxSteps?: number;
 }
 
-const SYSTEM_PROMPT = `You are a master storyteller writing an immersive interactive novel. Write the next chapter based on the context provided.
+// ────────────────────────────────────────────────────────────────────────────
+// Pass 1 — WRITE: Pure prose, no tools. Lean prompt focused on storytelling.
+// ────────────────────────────────────────────────────────────────────────────
 
-WORKFLOW:
-You write the chapter naturally. You may freely combine prose and tool calls in any order:
-- Write story prose whenever you want
-- Call tools (createCharacter, createItem, etc.) inline as the story demands — e.g. when a new character appears, create them right at that moment
-- Call updateStats / updateEntityStatus after the story events that trigger them
-- You MUST call generateChoices at the very end with 3-4 meaningful options based on everything you just wrote
+const WRITER_SYSTEM_PROMPT = `You are a master storyteller writing an immersive interactive novel. Write the next chapter as a single, complete piece of prose.
 
-You are free to:
-- Write prose only (no tool calls needed if no new entities/changes)
-- Call tools only (if the step only requires data changes)
-- Mix prose and tool calls in any combination
-- Spread your work across multiple steps — the system collects ALL your text automatically
-
-Rules:
+WRITING RULES:
 - Write vivid, engaging prose that draws the reader into the story
-- Use your tools to create new characters and items as the story demands
-- Use createSpecialItem to grant skills, techniques, abilities, or other special items to characters when the story warrants it
-- Assign appropriate rarity tiers: common (basic), uncommon (notable), rare (powerful), epic (extraordinary), legendary (mythical)
-- Use updateStats when story events affect character attributes — values MUST match the stat's data type (number for number stats, string for text stats, 0-100 for progress stats)
-- Use updateEntityStatus when story events change an entity's state (character dies/injured/goes missing, item destroyed/lost/consumed, ability sealed/lost/consumed)
-- Use summarizeArc ONLY when a major story arc has concluded
-- You MUST call generateChoices at the end with 3-4 meaningful options for the reader
-- Each choice should lead to a genuinely different narrative path
 - Keep the chapter between 800-1500 words
+- Write the ENTIRE chapter in one continuous block — do not split or summarize
+- Write naturally as a novel — no meta-commentary, no instructions to yourself
 
-CRITICAL CONSTRAINTS:
-- NEVER use createCharacter for a character that already exists in the EXISTING CHARACTERS list below. Reference them by name directly in the story.
-- Only use createCharacter for genuinely NEW characters appearing for the first time.
-- When using updateStats, the value must be appropriate for the stat type: numbers for 'number' type, 0-100 for 'progress' type, text for 'text' type.
-- When calling createSpecialItem, the 'category' field MUST match one of the AVAILABLE SPECIAL ITEM CATEGORIES listed in the prompt below. Do NOT invent new categories. The category name MUST be in the story's language (specified below). ALL tool arguments must match the story language.
-- Characters with status 'dead' MUST NOT appear alive in the story. Characters with status 'injured' should reflect their injuries. Characters with status 'missing' are absent from the scene.
+CHARACTER & ENTITY CONSISTENCY:
+- Characters with status 'dead' MUST NOT appear alive. Characters with status 'injured' should reflect their injuries. Characters with status 'missing' are absent from the scene.
 - Items/special items with status 'destroyed', 'consumed', 'lost', or 'sealed' MUST NOT be used as if they still exist. Reference them only in past tense or memories.
-
-ENTITY STATUS MANAGEMENT:
-- When a character DIES in the story → call updateEntityStatus('character', name, 'dead')
-- When a character is SERIOUSLY INJURED → call updateEntityStatus('character', name, 'injured')
-- When a character DISAPPEARS/GOES MISSING → call updateEntityStatus('character', name, 'missing')
-- When an injured/missing character RECOVERS → call updateEntityStatus('character', name, 'active')
-- When an item is DESTROYED → call updateEntityStatus('item', name, 'destroyed')
-- When an item is LOST → call updateEntityStatus('item', name, 'lost')
-- When an item is CONSUMED/USED UP → call updateEntityStatus('item', name, 'consumed')
-- When a special ability is SEALED/BLOCKED → call updateEntityStatus('special-item', name, 'sealed')
-- When a special ability is LOST → call updateEntityStatus('special-item', name, 'lost')
-- When a special ability is CONSUMED → call updateEntityStatus('special-item', name, 'consumed')
+- You may introduce NEW characters, items, or abilities in the prose — they will be registered in the game system automatically after you finish writing.
 
 ENTITY MARKUP (REQUIRED):
-When mentioning characters, items, or special items in the story text, wrap them in special markup so the frontend can highlight them:
+When mentioning characters, items, or special items in the story text, wrap them in special markup:
 - Characters: [[char:CharacterName]]
 - Items: [[item:ItemName:rarity]]  (rarity = common|uncommon|rare|epic|legendary)
 - Special Items: [[special:ItemName:rarity]]
 Examples: "[[char:Vương Quân]] drew the [[item:Flame Sword:epic]] and channeled his [[special:Dragon Breath:legendary]] technique."
-Only use this markup for entities that exist or are being created in this chapter. Do NOT markup generic nouns.
+- Use this markup for EXISTING entities (listed below) and any NEW entities you introduce in the chapter.
+- Use the EXACT rarity listed for existing entities. For new entities, assign appropriate rarity: common (basic), uncommon (notable), rare (powerful), epic (extraordinary), legendary (mythical).
+- Do NOT markup generic nouns — only named entities.`;
 
-Available tools:
-- createCharacter: Create a NEW NPC character (NEVER for existing characters). You MUST provide dynamicStats with meaningful values based on the character's role, strength, and story context. See RESOURCE TEMPLATES below for available stats.
-- createItem: Create a new physical item (weapon, potion, artifact, etc.) with rarity
-- createSpecialItem: Create a special item (skill, technique, spiritual root, ability, etc.) with category and rarity. The category MUST match one of the world's defined template categories.
-- updateStats: Update character statistics after events
-- updateEntityStatus: Update an entity's status when story events change their state (death, destruction, loss, etc.)
-- summarizeArc: Mark an arc as complete with summary
-- generateChoices: REQUIRED — set reader choices at end of chapter`;
+// ────────────────────────────────────────────────────────────────────────────
+// Pass 2 — TOOLS: Read the finished chapter, execute all game-state changes.
+// ────────────────────────────────────────────────────────────────────────────
+
+const TOOLS_SYSTEM_PROMPT = `You are a game master analyzing a chapter that was just written for an interactive novel. Your job is to update the game state by calling the appropriate tools based on what happened in the chapter.
+
+Read the chapter content carefully and call ALL necessary tools in a SINGLE step. Do NOT output any prose or story text — ONLY call tools.
+
+TOOL CALLING RULES:
+
+1. createCharacter — For each NEW character that appeared in the chapter (not in the EXISTING CHARACTERS list):
+   - Provide name, description, role='npc'
+   - MUST provide dynamicStats with meaningful values based on the character's role and strength in the story
+   - NEVER create characters that already exist in EXISTING CHARACTERS
+
+2. createItem — For each NEW item that appeared in the chapter (not in EXISTING ITEMS):
+   - Provide name, description, rarity matching the [[item:Name:rarity]] markup used in the chapter
+
+3. createSpecialItem — For each NEW special item/ability/skill that appeared (not in EXISTING SPECIAL ITEMS):
+   - The category MUST match one of the AVAILABLE SPECIAL ITEM CATEGORIES
+   - Provide customFields matching the category's field definitions
+   - Category name MUST be in the story's language
+
+4. updateStats — For each character whose stats changed during the chapter:
+   - Reference CURRENT stat values and calculate realistic NEW values based on story events
+   - Values must match data types: numbers for 'number'/'progress' type, strings for 'text'/'enum' type
+
+5. updateEntityStatus — For state changes:
+   - Character DIES → ('character', name, 'dead')
+   - Character SERIOUSLY INJURED → ('character', name, 'injured')
+   - Character DISAPPEARS → ('character', name, 'missing')
+   - Character RECOVERS → ('character', name, 'active')
+   - Item DESTROYED → ('item', name, 'destroyed')
+   - Item LOST → ('item', name, 'lost')
+   - Item CONSUMED → ('item', name, 'consumed')
+   - Ability SEALED → ('special-item', name, 'sealed')
+   - Ability LOST → ('special-item', name, 'lost')
+   - Ability CONSUMED → ('special-item', name, 'consumed')
+
+6. summarizeArc — ONLY if a major story arc has clearly concluded in this chapter
+
+7. generateChoices (REQUIRED) — You MUST call this with 3-4 meaningful choices for the reader based on the chapter content. Each choice should lead to a genuinely different narrative path.
+
+Call ALL applicable tools. If nothing changed (no new entities, no stat changes, no status changes), just call generateChoices.`;
+
+// ────────────────────────────────────────────────────────────────────────────
 
 export async function runWriterAgent(
   params: WriterAgentParams
@@ -100,22 +110,11 @@ export async function runWriterAgent(
     maxSteps = 10,
   } = params;
 
-  // Build tools
-  const tools = {
-    createCharacter: makeCreateCharacterTool(playthroughId, worldId, userId),
-    createItem: makeCreateItemTool(playthroughId, userId),
-    createSpecialItem: makeCreateSpecialItemTool(playthroughId, userId),
-    updateStats: makeUpdateStatsTool(playthroughId, userId),
-    updateEntityStatus: makeUpdateEntityStatusTool(playthroughId),
-    summarizeArc: makeSummarizeArcTool(),
-    generateChoices: makeGenerateChoicesTool(chapterId),
-  };
+  // ── Shared context blocks ──
 
-  // Format context for prompt — full character data for accurate tool calls
   const existingCharacters = contextOutput.activeCharacters;
   const existingCharacterNames = existingCharacters.map(c => c.name);
 
-  // Build detailed character block with stats, status, description
   const existingCharactersBlock = existingCharacters.length > 0
     ? existingCharacters.map(c => {
         const statsStr = Object.entries(c.dynamicStats).length > 0
@@ -124,8 +123,8 @@ export async function runWriterAgent(
         const statusTag = c.status && c.status !== 'active' ? ` [STATUS: ${c.status.toUpperCase()}]` : '';
         return `- ${c.name} (${c.role}${statusTag}): ${c.description}${statsStr}`;
       }).join('\n')
-    : 'No characters yet \u2014 you may create new ones.';
-  // Build structured item reference for accurate markup
+    : 'No characters yet — you may create new ones.';
+
   const existingItemsBlock = contextOutput.existingItems.length > 0
     ? contextOutput.existingItems.map(i => `- ${i.name} (${i.rarity})${i.owner ? ` [owned by ${i.owner}]` : ''}`).join('\n')
     : 'No items yet.';
@@ -134,7 +133,6 @@ export async function runWriterAgent(
     ? contextOutput.existingSpecialItems.map(si => `- ${si.name} [${si.category}] (${si.rarity})${si.owner ? ` [owned by ${si.owner}]` : ''}`).join('\n')
     : 'No special items yet.';
 
-  // Build available template categories block WITH field definitions
   const templateCategoriesBlock = contextOutput.specialItemTemplateCategories.length > 0
     ? contextOutput.specialItemTemplateCategories.map(t => {
         const fieldsDesc = t.fields.length > 0
@@ -150,7 +148,6 @@ export async function runWriterAgent(
       }).join('\n')
     : 'No special item categories defined.';
 
-  // Build resource templates block for character stat assignment
   const resourceTemplatesBlock = contextOutput.resourceTemplates.length > 0
     ? contextOutput.resourceTemplates.map(rt => {
         let desc = `- ${rt.key} (${rt.type}`;
@@ -163,7 +160,11 @@ export async function runWriterAgent(
       }).join('\n')
     : 'No resource templates defined.';
 
-  const userPrompt = `
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // PASS 1 — WRITE the chapter (no tools, pure prose)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  const writePrompt = `
 Write the next chapter in ${language}.
 
 === STORY CONTEXT ===
@@ -179,59 +180,98 @@ ${contextOutput.relevantPlotPoints.map((p) => `- ${p}`).join('\n') || '- None'}
 Filtered Context:
 ${contextOutput.filteredContext}
 
-=== EXISTING CHARACTERS (DO NOT recreate with createCharacter) ===
+=== EXISTING CHARACTERS ===
 ${existingCharactersBlock}
 
-=== EXISTING ITEMS (USE EXACT rarity when mentioning with [[item:Name:rarity]] markup) ===
+=== EXISTING ITEMS (USE EXACT rarity in [[item:Name:rarity]] markup) ===
 ${existingItemsBlock}
 
-=== EXISTING SPECIAL ITEMS (USE EXACT rarity when mentioning with [[special:Name:rarity]] markup) ===
+=== EXISTING SPECIAL ITEMS (USE EXACT rarity in [[special:Name:rarity]] markup) ===
 ${existingSpecialItemsBlock}
 
-=== AVAILABLE SPECIAL ITEM CATEGORIES (MUST use one of these when calling createSpecialItem) ===
+Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]] markup for all entities.`.trim();
+
+  console.log(`[Writer] Pass 1 — Writing chapter content for chapter=${chapterId}`);
+
+  const writeStream = streamText({
+    model,
+    system: `${WRITER_SYSTEM_PROMPT}\nWrite in ${language}.`,
+    prompt: writePrompt,
+  });
+
+  const chapterContent = await writeStream.text;
+
+  // Save content immediately so the user can start reading
+  const { Chapter } = await import('../models/Chapter');
+  await Chapter.findByIdAndUpdate(chapterId, {
+    content: chapterContent,
+    status: 'completed',
+  });
+
+  console.log(`[Writer] Pass 1 complete — ${chapterContent.length} chars written, saved to DB`);
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // PASS 2 — TOOLS: Analyze chapter, update game state, generate choices
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  const tools = {
+    createCharacter: makeCreateCharacterTool(playthroughId, worldId, userId),
+    createItem: makeCreateItemTool(playthroughId, userId),
+    createSpecialItem: makeCreateSpecialItemTool(playthroughId, userId),
+    updateStats: makeUpdateStatsTool(playthroughId, userId),
+    updateEntityStatus: makeUpdateEntityStatusTool(playthroughId),
+    summarizeArc: makeSummarizeArcTool(),
+    generateChoices: makeGenerateChoicesTool(chapterId),
+  };
+
+  const toolsPrompt = `
+Analyze the following chapter and call ALL necessary tools to update the game state.
+Language: ${language}. ALL tool arguments must be in ${language}.
+
+=== CHAPTER CONTENT ===
+${chapterContent}
+
+=== EXISTING CHARACTERS (DO NOT recreate these — they already exist) ===
+${existingCharactersBlock}
+
+=== EXISTING ITEMS (DO NOT recreate these) ===
+${existingItemsBlock}
+
+=== EXISTING SPECIAL ITEMS (DO NOT recreate these) ===
+${existingSpecialItemsBlock}
+
+=== AVAILABLE SPECIAL ITEM CATEGORIES (MUST use one when calling createSpecialItem) ===
 ${templateCategoriesBlock}
 
-=== RESOURCE TEMPLATES / CHARACTER STATS (MUST provide when calling createCharacter) ===
+=== RESOURCE TEMPLATES / CHARACTER STATS (MUST provide dynamicStats when calling createCharacter) ===
 ${resourceTemplatesBlock}
 
 === INSTRUCTIONS ===
-Write the next chapter based on the context above. Remember to:
-1. ONLY use createCharacter for genuinely NEW characters. NEVER call createCharacter for: ${existingCharacterNames.join(', ') || 'N/A'}
-2. When calling createCharacter, you MUST provide dynamicStats — an object with keys matching the RESOURCE TEMPLATES above and values that are MEANINGFUL for the character. For example, if templates include "HP (number, min:0, max:100)", a strong warrior might have HP=85 while a frail scholar might have HP=30. Consider the character's role, background, and story context when assigning values.
-3. NEVER use createItem for items that already exist above. Reference them by name using [[item:Name:rarity]] with the EXACT rarity listed above
-4. NEVER use createSpecialItem for special items that already exist above. Reference them using [[special:Name:rarity]] with the EXACT rarity listed above
-5. Create NEW items (weapons, potions, artifacts) using createItem with appropriate rarity
-6. Create NEW special items using createSpecialItem — the category MUST be one of the AVAILABLE SPECIAL ITEM CATEGORIES listed above. You MUST provide customFields matching the Fields defined for that category (e.g. if category has fields "Power (number, required), Element (enum, options: Fire|Ice|Thunder)", pass customFields: { "Power": 50, "Element": "Fire" })
-7. When using updateStats, reference the CURRENT stat values shown in EXISTING CHARACTERS above. Calculate the NEW value based on story events (e.g. if HP=80 and character takes moderate damage, set HP to ~50-60, not a random number). Values must match the stat's data type.
-8. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]] markup when mentioning entities in the story text
-9. Call generateChoices at the end with 3-4 meaningful options
-`.trim();
+Based on the chapter above:
+1. Create any NEW characters that appeared (not in EXISTING CHARACTERS). Provide dynamicStats with values meaningful to their role.
+2. Create any NEW items that appeared (not in EXISTING ITEMS).
+3. Create any NEW special items/abilities (not in EXISTING SPECIAL ITEMS). Category MUST match AVAILABLE SPECIAL ITEM CATEGORIES.
+4. Update stats for characters whose attributes changed. Reference their CURRENT values above and calculate new values based on events.
+5. Update entity statuses for any deaths, injuries, destructions, etc.
+6. Call summarizeArc ONLY if a major story arc concluded.
+7. MUST call generateChoices with 3-4 meaningful choices for the reader.
 
-  // Use streamText + multi-step — AI can freely interleave prose and tool calls.
-  // We collect text from ALL steps since prose may appear across multiple steps.
-  const stream = streamText({
+Call all applicable tools NOW. Do NOT output any text — ONLY tool calls.`.trim();
+
+  console.log(`[Writer] Pass 2 — Running tool calls for chapter=${chapterId}`);
+
+  const toolStream = streamText({
     model,
-    system: `${SYSTEM_PROMPT}\nWrite in ${language}.`,
-    prompt: userPrompt,
+    system: TOOLS_SYSTEM_PROMPT,
+    prompt: toolsPrompt,
     tools,
     stopWhen: stepCountIs(maxSteps),
   });
 
-  // Collect text from ALL steps — not just the last one.
-  // When AI interleaves prose + tool calls across multiple steps,
-  // each step may contain text fragments that must be concatenated.
-  const steps = await stream.steps;
-  const fullText = steps
-    .map((step) => step.text)
-    .filter((t) => t.length > 0)
-    .join('\n\n');
+  // Wait for all tool calls to complete
+  await toolStream.steps;
 
-  // Persist generated content to the chapter document
-  const { Chapter } = await import('../models/Chapter');
-  await Chapter.findByIdAndUpdate(chapterId, {
-    content: fullText,
-    status: 'completed',
-  });
+  console.log(`[Writer] Pass 2 complete — all tool calls executed for chapter=${chapterId}`);
 
-  return { text: fullText };
+  return { text: chapterContent };
 }

@@ -98,8 +98,13 @@ export async function generateChapter(
       content: result.text,
     };
   } catch (err) {
-    // Mark chapter as failed on error
-    await Chapter.findByIdAndUpdate(chapter._id, { status: 'failed' });
+    // Only mark as failed if content was never written (Pass 1 failed).
+    // If Pass 1 succeeded (content exists), the chapter is still readable
+    // even if Pass 2 (tools) failed — keep status as 'completed'.
+    const existing = await Chapter.findById(chapter._id).lean();
+    if (!existing || !existing.content) {
+      await Chapter.findByIdAndUpdate(chapter._id, { status: 'failed' });
+    }
     throw err;
   }
 }
