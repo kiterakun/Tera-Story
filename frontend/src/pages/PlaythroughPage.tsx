@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useStoryStore } from '../stores/storyStore';
 import { useTranslation } from '../i18n';
+import { showSuccess, showError } from '../lib/toast';
 import CharacterCard from '../components/CharacterCard';
 import { Search, UserRound, Plus, ChevronLeft, Play, BookOpen, Trash2 } from 'lucide-react';
 import { getImageUrl } from '../utils/url';
@@ -20,10 +21,11 @@ export default function PlaythroughPage() {
     setIsDeleting(true);
     try {
       await playthroughApi.deletePlaythrough(id);
+      showSuccess(t.toast.playthroughDeleted);
       navigate(`/worlds/${worldId}`);
     } catch (err) {
       console.error('Failed to delete playthrough:', err);
-      alert(t.playthrough.deleteFailed);
+      showError(t.toast.playthroughDeleteFailed);
       setIsDeleting(false);
     }
   };

@@ -8,6 +8,7 @@ export interface GenerateChapterResponse {
     chapterIndex: number;
     choices: Array<{ text: string; type: 'continue' | 'new_arc' | 'custom' }>;
     status: 'generating' | 'completed' | 'failed';
+    toolsStatus?: 'pending' | 'running' | 'completed' | 'failed';
     playerChoice: string;
   };
   content: string;
@@ -25,5 +26,10 @@ export async function generateChapter(playthroughId: string, choice: string): Pr
 
 export async function retryChapter(chapterId: string): Promise<GenerateChapterResponse> {
   const res = await api.post('/story/retry', { chapterId });
+  return res.data;
+}
+
+export async function retryChapterTools(chapterId: string): Promise<GenerateChapterResponse> {
+  const res = await api.post('/story/retry-tools', { chapterId });
   return res.data;
 }

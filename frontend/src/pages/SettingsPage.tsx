@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useUIStore } from '../stores/uiStore';
 import { useTranslation, persistLanguage } from '../i18n';
+import { showSuccess, showError } from '../lib/toast';
 import type { AgentConfig, AISettings } from '../stores/settingsStore';
 import { Brain, PenTool, Sparkles, Image, Globe } from 'lucide-react';
-
 const agentIcons: Record<keyof AISettings, React.FC<React.SVGProps<SVGSVGElement> & { size?: number }>> = {
   contextAgent: Brain,
   writerAgent: PenTool,
@@ -69,9 +69,11 @@ function AgentConfigCard({ agentKey }: { agentKey: keyof AISettings }) {
       
       await updateAIConfig(agentKey, payload);
       setSaveSuccess(true);
+      showSuccess(t.toast.aiConfigSaved);
       setTimeout(() => setSaveSuccess(false), 2000);
     } catch (err) {
       console.error(err);
+      showError(t.toast.aiConfigSaveFailed);
     } finally {
       setIsSaving(false);
     }
@@ -201,6 +203,9 @@ export default function SettingsPage() {
     setIsSaving(true);
     try {
       await updateSettings(generalSettings);
+      showSuccess(t.toast.settingsSaved);
+    } catch {
+      showError(t.toast.settingsSaveFailed);
     } finally {
       setIsSaving(false);
     }

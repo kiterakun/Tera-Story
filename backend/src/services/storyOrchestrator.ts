@@ -100,10 +100,13 @@ export async function generateChapter(
   } catch (err) {
     // Only mark as failed if content was never written (Pass 1 failed).
     // If Pass 1 succeeded (content exists), the chapter is still readable
-    // even if Pass 2 (tools) failed — keep status as 'completed'.
+    // even if Pass 2 (tools) failed — mark toolsStatus as 'failed'.
     const existing = await Chapter.findById(chapter._id).lean();
     if (!existing || !existing.content) {
       await Chapter.findByIdAndUpdate(chapter._id, { status: 'failed' });
+    } else {
+      // Content exists — Pass 1 succeeded but Pass 2 failed
+      await Chapter.findByIdAndUpdate(chapter._id, { toolsStatus: 'failed' });
     }
     throw err;
   }
@@ -143,4 +146,78 @@ export async function retryChapter(
     playerChoice,
     userId
   );
+}
+
+/**
+ * Retry ONLY Pass 2 (tools) for a chapter where content is OK but tools failed.
+ * Deletes entities created in the failed pass, then re-runs writerAgent Pass 2.
+ */
+export async function retryChapterTools(
+  chapterId: string,
+  userId: string
+) {
+  console.log(`[Story] retryChapterTools called: chapter=${chapterId}`);
+
+  // 1. Find the chapter
+  const chapter = await Chapter.findById(chapterId);
+  if (!chapter) throw new Error('Chapter not found');
+  if (!chapter.content) throw new Error('Chapter has no content — use full retry instead');
+  if (chapter.toolsStatus !== 'failed') throw new Error('Tools did not fail for this chapter');
+
+  // 2. Verify ownership
+  const playthrough = await Playthrough.findById(chapter.playthroughId);
+  if (!playthrough) throw new Error('Playthrough not found');
+  if (playthrough.userId.toString() !== userId) throw new Error('Unauthorized');
+
+  // 3. Load user settings
+  let settings = await UserSettings.findOne({ userId });
+  if (!settings) throw new Error('User settings not found');
+  const registry = createUserProviderRegistry(settings.aiSettings);
+
+  // 4. Delete entities created during the failed chapter's tool pass
+  await Promise.all([
+    Character.deleteMany({ playthroughId: chapter.playthroughId, createdInChapterId: chapterId }),
+    Item.deleteMany({ playthroughId: chapter.playthroughId, createdInChapterId: chapterId }),
+    SpecialItem.deleteMany({ playthroughId: chapter.playthroughId, createdInChapterId: chapterId }),
+  ]);
+
+  // Clear old choices so they can be regenerated
+  await Chapter.findByIdAndUpdate(chapterId, { choices: [], toolsStatus: 'pending' });
+
+  // 5. Run context agent to get current state
+  const arcId = chapter.arcId.toString();
+  const contextOutput = await runContextAgent({
+    playthroughId: chapter.playthroughId.toString(),
+    currentArcId: arcId,
+    playerChoice: chapter.playerChoice || 'Continue the story',
+    userId,
+    model: registry.getContextModel(),
+    language: settings.language,
+  });
+
+  // 6. Run writer agent — Pass 2 only (skipPass1 = true)
+  try {
+    await runWriterAgent({
+      contextOutput,
+      playthroughId: chapter.playthroughId.toString(),
+      arcId,
+      chapterId,
+      worldId: playthrough.worldId.toString(),
+      userId,
+      model: registry.getWriterModel(),
+      language: settings.language,
+      skipPass1: true,
+    });
+  } catch (err) {
+    await Chapter.findByIdAndUpdate(chapterId, { toolsStatus: 'failed' });
+    throw err;
+  }
+
+  // 7. Reload and return
+  const updatedChapter = await Chapter.findById(chapterId).lean();
+  console.log(`[Story] retryChapterTools completed for chapter=${chapterId}`);
+  return {
+    chapter: updatedChapter,
+    content: chapter.content,
+  };
 }

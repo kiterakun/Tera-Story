@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Star, ArrowRight, Sparkles, Loader2, AlertTriangle, X } from 'lucide-react';
 import { useTranslation } from '../i18n';
+import { showError } from '../lib/toast';
 import * as supportApi from '../services/supportApi';
 
 interface Choice {
@@ -43,6 +44,7 @@ export function ChoiceCards({ choices, isGenerating, playthroughId, onChoiceSele
       }
     } catch (err) {
       console.error('Enrich choice failed:', err);
+      showError(t.toast.aiEnrichFailed);
     } finally {
       setIsEnriching(false);
     }

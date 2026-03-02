@@ -230,6 +230,12 @@ const en = {
     generationFailed: 'Chapter generation failed',
     generationFailedHint: 'Something went wrong while generating this chapter. You can retry with the same choice.',
     retryGeneration: 'Retry Generation',
+    // Pass 2 states
+    updatingGameState: 'Updating game state...',
+    toolsFailedTitle: 'Game state update failed',
+    toolsFailedHint: 'The chapter content was saved, but updating characters, items, and choices failed. You can retry the update without regenerating the chapter.',
+    retryTools: 'Retry Update',
+    retryingTools: 'Retrying game state update...',
   },
 
   characterPanel: {
@@ -333,6 +339,44 @@ const en = {
     imageQueued: 'Queued!',
   },
 
+  // Toast messages
+  toast: {
+    // Success
+    worldCreated: 'World created successfully',
+    worldDeleted: 'World deleted',
+    playthroughCreated: 'Playthrough created',
+    playthroughDeleted: 'Playthrough deleted',
+    characterCreated: 'Character created successfully',
+    settingsSaved: 'Settings saved',
+    aiConfigSaved: 'AI configuration saved',
+    chapterGenerated: 'Chapter generated',
+    retrySuccess: 'Chapter regenerated successfully',
+    retryToolsSuccess: 'Game state updated successfully',
+
+    // Error
+    worldCreateFailed: 'Failed to create world',
+    worldDeleteFailed: 'Failed to delete world',
+    playthroughCreateFailed: 'Failed to create playthrough',
+    playthroughDeleteFailed: 'Failed to delete playthrough',
+    characterCreateFailed: 'Failed to create character',
+    settingsSaveFailed: 'Failed to save settings',
+    aiConfigSaveFailed: 'Failed to save AI configuration',
+    chapterGenerateFailed: 'Chapter generation failed',
+    retryFailed: 'Retry failed',
+    retryToolsFailed: 'Failed to update game state',
+    aiEnrichFailed: 'AI enrichment failed',
+    aiWorldGenFailed: 'AI world generation failed',
+    loadFailed: 'Failed to load data',
+
+    // Loading
+    generatingChapter: 'Generating chapter...',
+    updatingGameState: 'Updating game state...',
+    retryingChapter: 'Retrying chapter generation...',
+    retryingTools: 'Retrying game state update...',
+
+    // Info
+    toolsFailedButContentOk: 'Chapter content was saved, but game state update failed. You can retry the update.',
+  },
 };
 
 export type Translations = typeof en;

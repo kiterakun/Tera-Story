@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useWorldStore } from '../stores/worldStore';
 import { useTranslation } from '../i18n';
+import { showSuccess, showError } from '../lib/toast';
 import { Search, BookOpen, Plus, ChevronLeft, Calendar, Play, X, Trash2, ImageIcon } from 'lucide-react';
 import * as playthroughApi from '../services/playthroughApi';
 import type { Playthrough } from '../services/playthroughApi';
@@ -54,10 +55,11 @@ export default function WorldDetailPage() {
       const created = await playthroughApi.createPlaythrough(id, newName.trim());
       setShowCreateModal(false);
       setNewName('');
+      showSuccess(t.toast.playthroughCreated);
       navigate(`/worlds/${id}/playthroughs/${created._id}`);
     } catch (error) {
       console.error('Failed to create playthrough:', error);
-      alert(t.worldDetail.failedToCreatePlaythrough);
+      showError(t.toast.playthroughCreateFailed);
       setIsCreating(false);
     }
   };
@@ -66,10 +68,11 @@ export default function WorldDetailPage() {
     if (!window.confirm(t.worldDetail.confirmDeletePlaythrough.replace('{name}', ptName))) return;
     try {
       await playthroughApi.deletePlaythrough(ptId);
+      showSuccess(t.toast.playthroughDeleted);
       if (id) loadPlaythroughs(id);
     } catch (err) {
       console.error('Failed to delete playthrough:', err);
-      alert(t.worldDetail.failedToDeletePlaythrough);
+      showError(t.toast.playthroughDeleteFailed);
     }
   };
 
@@ -80,10 +83,11 @@ export default function WorldDetailPage() {
 
     try {
       await deleteWorld(currentWorld._id);
+      showSuccess(t.toast.worldDeleted);
       navigate('/worlds');
     } catch (error) {
       console.error('Failed to delete world:', error);
-      alert(t.worldDetail.failedToDelete);
+      showError(t.toast.worldDeleteFailed);
     }
   };
 

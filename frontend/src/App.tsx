@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Toaster } from 'sonner'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
 import { useUIStore } from './stores/uiStore'
@@ -49,6 +50,15 @@ function App() {
           </Layout>
         } />
       </Routes>
+      <Toaster
+        position="bottom-right"
+        theme="dark"
+        richColors
+        toastOptions={{
+          className: 'font-sans',
+          duration: 4000,
+        }}
+      />
     </BrowserRouter>
   )
 }

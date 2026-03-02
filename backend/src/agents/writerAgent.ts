@@ -19,6 +19,8 @@ export interface WriterAgentParams {
   model: LanguageModel;
   language: string;
   maxSteps?: number;
+  /** If true, skip Pass 1 (prose) and only run Pass 2 (tools). Content must already exist in DB. */
+  skipPass1?: boolean;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -108,6 +110,7 @@ export async function runWriterAgent(
     model,
     language,
     maxSteps = 10,
+    skipPass1 = false,
   } = params;
 
   // ── Shared context blocks ──
@@ -191,25 +194,37 @@ ${existingSpecialItemsBlock}
 
 Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]] markup for all entities.`.trim();
 
-  console.log(`[Writer] Pass 1 — Writing chapter content for chapter=${chapterId}`);
-
-  const writeStream = streamText({
-    model,
-    system: `${WRITER_SYSTEM_PROMPT}\nWrite in ${language}.`,
-    prompt: writePrompt,
-  });
-
-  const chapterContent = await writeStream.text;
-
-  // Save content immediately so the user can start reading
+  let chapterContent: string;
   const { Chapter } = await import('../models/Chapter');
-  await Chapter.findByIdAndUpdate(chapterId, {
-    content: chapterContent,
-    status: 'completed',
-  });
 
-  console.log(`[Writer] Pass 1 complete — ${chapterContent.length} chars written, saved to DB`);
+  if (skipPass1) {
+    // Pass 1 skipped — read existing content from DB
+    const existing = await Chapter.findById(chapterId).lean();
+    if (!existing || !existing.content) {
+      throw new Error('Cannot skip Pass 1: chapter has no content');
+    }
+    chapterContent = existing.content;
+    console.log(`[Writer] Pass 1 SKIPPED — using existing content (${chapterContent.length} chars)`);
+  } else {
+    console.log(`[Writer] Pass 1 — Writing chapter content for chapter=${chapterId}`);
 
+    const writeStream = streamText({
+      model,
+      system: `${WRITER_SYSTEM_PROMPT}\nWrite in ${language}.`,
+      prompt: writePrompt,
+    });
+
+    chapterContent = await writeStream.text;
+
+    // Save content immediately so the user can start reading
+    await Chapter.findByIdAndUpdate(chapterId, {
+      content: chapterContent,
+      status: 'completed',
+      toolsStatus: 'pending',
+    });
+
+    console.log(`[Writer] Pass 1 complete — ${chapterContent.length} chars written, saved to DB`);
+  }
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // PASS 2 — TOOLS: Analyze chapter, update game state, generate choices
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -258,6 +273,8 @@ Based on the chapter above:
 
 Call all applicable tools NOW. Do NOT output any text — ONLY tool calls.`.trim();
 
+  // Mark tools as running
+  await Chapter.findByIdAndUpdate(chapterId, { toolsStatus: 'running' });
   console.log(`[Writer] Pass 2 — Running tool calls for chapter=${chapterId}`);
 
   const toolStream = streamText({
@@ -271,7 +288,9 @@ Call all applicable tools NOW. Do NOT output any text — ONLY tool calls.`.trim
   // Wait for all tool calls to complete
   await toolStream.steps;
 
-  console.log(`[Writer] Pass 2 complete — all tool calls executed for chapter=${chapterId}`);
+  // Mark tools as completed
+  await Chapter.findByIdAndUpdate(chapterId, { toolsStatus: 'completed' });
 
+  console.log(`[Writer] Pass 2 complete — all tool calls executed for chapter=${chapterId}`);
   return { text: chapterContent };
 }

@@ -232,6 +232,12 @@ const vi: Translations = {
     generationFailed: 'Tạo chương thất bại',
     generationFailedHint: 'Đã xảy ra lỗi khi tạo chương này. Bạn có thể thử lại với cùng lựa chọn.',
     retryGeneration: 'Thử lại',
+    // Pass 2 states
+    updatingGameState: 'Đang cập nhật trạng thái trò chơi...',
+    toolsFailedTitle: 'Cập nhật trạng thái trò chơi thất bại',
+    toolsFailedHint: 'Nội dung chương đã được lưu, nhưng cập nhật nhân vật, vật phẩm và lựa chọn thất bại. Bạn có thể thử lại mà không cần tạo lại chương.',
+    retryTools: 'Thử lại cập nhật',
+    retryingTools: 'Đang thử lại cập nhật...',
   },
 
   characterPanel: {
@@ -335,6 +341,44 @@ const vi: Translations = {
     imageQueued: 'Đã xếp hàng!',
   },
 
+  // Toast messages
+  toast: {
+    // Success
+    worldCreated: 'Tạo thế giới thành công',
+    worldDeleted: 'Đã xóa thế giới',
+    playthroughCreated: 'Tạo lượt chơi thành công',
+    playthroughDeleted: 'Đã xóa lượt chơi',
+    characterCreated: 'Tạo nhân vật thành công',
+    settingsSaved: 'Đã lưu cài đặt',
+    aiConfigSaved: 'Đã lưu cấu hình AI',
+    chapterGenerated: 'Đã tạo chương mới',
+    retrySuccess: 'Đã tạo lại chương thành công',
+    retryToolsSuccess: 'Đã cập nhật trạng thái trò chơi',
+
+    // Error
+    worldCreateFailed: 'Tạo thế giới thất bại',
+    worldDeleteFailed: 'Xóa thế giới thất bại',
+    playthroughCreateFailed: 'Tạo lượt chơi thất bại',
+    playthroughDeleteFailed: 'Xóa lượt chơi thất bại',
+    characterCreateFailed: 'Tạo nhân vật thất bại',
+    settingsSaveFailed: 'Lưu cài đặt thất bại',
+    aiConfigSaveFailed: 'Lưu cấu hình AI thất bại',
+    chapterGenerateFailed: 'Tạo chương thất bại',
+    retryFailed: 'Thử lại thất bại',
+    retryToolsFailed: 'Cập nhật trạng thái trò chơi thất bại',
+    aiEnrichFailed: 'Làm giàu AI thất bại',
+    aiWorldGenFailed: 'Tạo thế giới bằng AI thất bại',
+    loadFailed: 'Tải dữ liệu thất bại',
+
+    // Loading
+    generatingChapter: 'Đang tạo chương...',
+    updatingGameState: 'Đang cập nhật trạng thái trò chơi...',
+    retryingChapter: 'Đang thử lại tạo chương...',
+    retryingTools: 'Đang thử lại cập nhật trạng thái...',
+
+    // Info
+    toolsFailedButContentOk: 'Nội dung chương đã được lưu, nhưng cập nhật trạng thái trò chơi thất bại. Bạn có thể thử lại.',
+  },
 };
 
 export default vi;

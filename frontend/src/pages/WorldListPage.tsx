@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useWorldStore } from '../stores/worldStore';
 import { useTranslation } from '../i18n';
+import { showSuccess, showError } from '../lib/toast';
 import { Castle, Rocket, Swords, Building2, Wand2, Globe, Plus, Calendar } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { getImageUrl } from '../utils/url';
@@ -26,10 +27,11 @@ export default function WorldListPage() {
   const handleTemplateCreate = async (templateId: string, name: string) => {
     try {
       const newWorld = await createFromTemplate(templateId, name);
+      showSuccess(t.toast.worldCreated);
       navigate(`/worlds/${newWorld._id}`);
     } catch (error) {
       console.error('Failed to create world from template:', error);
-      alert(t.worldList.failedToCreate);
+      showError(t.toast.worldCreateFailed);
     }
   };
 

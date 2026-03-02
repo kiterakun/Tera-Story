@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { generateChapter, retryChapter } from '../services/storyOrchestrator';
+import { generateChapter, retryChapter, retryChapterTools } from '../services/storyOrchestrator';
 import { Arc } from '../models/Arc';
 import { Chapter } from '../models/Chapter';
 import { Character } from '../models/Character';
@@ -75,6 +75,33 @@ router.post(
     } catch (err: any) {
       console.error('[Story] Retry error:', err);
       res.status(500).json({ error: err.message || 'Retry failed' });
+    }
+  }
+);
+
+// POST /api/story/retry-tools — retry only Pass 2 (tools) for a chapter with content OK
+router.post(
+  '/story/retry-tools',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const { chapterId } = req.body;
+    const userId = req.user!.id;
+
+    if (!chapterId) {
+      res.status(400).json({ error: 'chapterId is required' });
+      return;
+    }
+
+    try {
+      const result = await retryChapterTools(chapterId, userId);
+
+      res.json({
+        success: true,
+        chapter: result.chapter,
+        content: result.content,
+      });
+    } catch (err: any) {
+      console.error('[Story] Retry tools error:', err);
+      res.status(500).json({ error: err.message || 'Retry tools failed' });
     }
   }
 );

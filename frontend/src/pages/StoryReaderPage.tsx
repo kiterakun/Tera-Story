@@ -19,6 +19,7 @@ interface Chapter {
   chapterIndex: number;
   choices: Choice[];
   status?: 'generating' | 'completed' | 'failed';
+  toolsStatus?: 'pending' | 'running' | 'completed' | 'failed';
   playerChoice?: string;
 }
 
@@ -51,7 +52,7 @@ export default function StoryReaderPage() {
   const [rpgOpen, setRpgOpen] = useState(false);
   const [detailEntity, setDetailEntity] = useState<EntityData | null>(null);
   
-  const { isGenerating, error, generateChapter, retryChapter, clearError } = useChapterGeneration();
+  const { isGenerating, isRetryingTools, error, generateChapter, retryChapter, retryTools, clearError } = useChapterGeneration();
   
   // Individual selectors to avoid getSnapshot infinite loop
   const characters = useStoryStore(s => s.characters);
@@ -81,7 +82,9 @@ export default function StoryReaderPage() {
   const activeChapter = isOnLatest ? chapters[totalChapters - 1] : chapters[currentChapterIdx];
   const latestChapter = chapters.length > 0 ? chapters[totalChapters - 1] : null;
   const isLatestFailed = latestChapter?.status === 'failed';
-  const showChoices = isOnLatest && !isGenerating && !isLatestFailed && choices.length > 0;
+  const isLatestToolsFailed = latestChapter?.status === 'completed' && latestChapter?.toolsStatus === 'failed';
+  const isToolsRunning = latestChapter?.toolsStatus === 'running' || latestChapter?.toolsStatus === 'pending';
+  const showChoices = isOnLatest && !isGenerating && !isLatestFailed && !isLatestToolsFailed && choices.length > 0;
 
   const goToChapter = useCallback((idx: number) => {
     if (idx >= 0 && idx < totalChapters) {
@@ -170,6 +173,13 @@ export default function StoryReaderPage() {
     clearError();
 
     await retryChapter(latestChapter._id);
+    await reloadAfterGeneration();
+  };
+  const handleRetryTools = async () => {
+    if (!latestChapter || !playthroughId) return;
+    clearError();
+
+    await retryTools(latestChapter._id);
     await reloadAfterGeneration();
   };
 
@@ -516,6 +526,51 @@ export default function StoryReaderPage() {
             </div>
           )}
 
+          {/* Pass 2 — Updating game state indicator */}
+          {isOnLatest && !isGenerating && activeChapter && activeChapter.status === 'completed' && isToolsRunning && (
+            <div className="border-l-2 border-blue-400/30 pl-5 py-4 mt-4 bg-blue-400/[0.03] rounded-r-2xl animate-fade-in">
+              <div className="flex items-center gap-3 text-ink-200/60">
+                <svg className="animate-spin w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <p className="text-sm font-sans font-medium text-blue-300">{t.storyReader.updatingGameState}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Tools failed — content OK but game state update failed */}
+          {isOnLatest && isLatestToolsFailed && !isGenerating && !isRetryingTools && (
+            <div className="border-l-2 border-amber-400/30 pl-5 py-5 mt-4 bg-amber-400/[0.03] rounded-r-2xl animate-fade-in">
+              <div className="flex items-start gap-3">
+                <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-sans font-medium text-amber-300">{t.storyReader.toolsFailedTitle}</p>
+                  <p className="text-xs font-sans text-ink-200/50 mt-1">{t.storyReader.toolsFailedHint}</p>
+                  <button
+                    onClick={handleRetryTools}
+                    className="inline-flex items-center gap-2 mt-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 px-4 py-2 rounded-xl text-sm font-sans font-medium transition-colors border border-amber-500/20 hover:border-amber-500/30"
+                  >
+                    <RefreshCw size={14} />
+                    {t.storyReader.retryTools}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Retrying tools indicator */}
+          {isRetryingTools && (
+            <div className="border-l-2 border-blue-400/30 pl-5 py-4 mt-4 bg-blue-400/[0.03] rounded-r-2xl animate-fade-in">
+              <div className="flex items-center gap-3">
+                <svg className="animate-spin w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <p className="text-sm font-sans font-medium text-blue-300">{t.storyReader.retryingTools}</p>
+              </div>
+            </div>
+          )}
           {/* Generation error (non-failed-chapter errors, e.g. network) */}
           {error && !isLatestFailed && !isGenerating && (
             <div className="border-l-2 border-amber-400/30 pl-5 py-4 mt-4 bg-amber-400/[0.03] rounded-r-2xl animate-fade-in">

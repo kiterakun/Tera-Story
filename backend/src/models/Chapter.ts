@@ -6,6 +6,7 @@ export interface IChapterDocument extends Document {
   playthroughId: mongoose.Types.ObjectId;
   chapterIndex: number;
   status: 'generating' | 'completed' | 'failed';
+  toolsStatus: 'pending' | 'running' | 'completed' | 'failed';
   playerChoice: string;
   choices: Array<{ text: string; type: 'continue' | 'new_arc' | 'custom' }>;
   newCharacters: Array<{ name: string; description: string; role: string }>;
@@ -89,6 +90,11 @@ const ChapterSchema = new Schema<IChapterDocument>(
       type: String,
       enum: ['generating', 'completed', 'failed'],
       default: 'generating',
+    },
+    toolsStatus: {
+      type: String,
+      enum: ['pending', 'running', 'completed', 'failed'],
+      default: 'pending',
     },
     playerChoice: {
       type: String,
