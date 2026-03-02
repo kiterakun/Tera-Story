@@ -211,7 +211,7 @@ export default function WorldDetailPage() {
                           e.stopPropagation();
                           handleDeletePlaythrough(pt._id, pt.name);
                         }}
-                        className="p-1.5 rounded-lg text-ink-200/30 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100"
+                        className="p-1.5 rounded-lg text-ink-200/30 hover:text-red-400 hover:bg-red-400/10 group-hover:opacity-100"
                         title={t.worldDetail.deletePlaythroughBtn}
                       >
                         <Trash2 size={14} />
