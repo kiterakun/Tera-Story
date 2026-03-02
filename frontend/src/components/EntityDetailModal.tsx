@@ -128,6 +128,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
                   {(t.entityStatus as any)[item.status]}
                 </span>
               )}
+            </div>
           </div>
         </div>
         <p className="text-ink-200/80 text-sm leading-relaxed">{item.description}</p>
@@ -173,6 +174,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
                   {(t.entityStatus as any)[si.status]}
                 </span>
               )}
+            </div>
           </div>
         </div>
         <p className="text-ink-200/80 text-sm leading-relaxed">{si.description}</p>

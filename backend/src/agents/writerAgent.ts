@@ -1,4 +1,4 @@
-import { generateText, stepCountIs } from 'ai';
+import { streamText, stepCountIs } from 'ai';
 import type { LanguageModel } from 'ai';
 import type { ContextOutput } from './contextAgent';
 import { makeCreateCharacterTool } from '../tools/createCharacter';
@@ -155,8 +155,10 @@ Write the next chapter based on the context above. Remember to:
 8. Call generateChoices at the end with 3-4 meaningful options
 `.trim();
 
-  // Use generateText instead of streamText — wait for full response
-  const result = await generateText({
+  // Use streamText + await full result — streaming API calls are more compatible
+  // with third-party/OpenAI-compatible providers than generateText (stream: false).
+  // We don't pipe to response — just consume the full text after all steps complete.
+  const stream = streamText({
     model,
     system: `${SYSTEM_PROMPT}\nWrite in ${language}.`,
     prompt: userPrompt,
@@ -164,12 +166,15 @@ Write the next chapter based on the context above. Remember to:
     stopWhen: stepCountIs(maxSteps),
   });
 
+  // Await the full text — resolves after all tool call steps + final text generation
+  const fullText = await stream.text;
+
   // Persist generated content to the chapter document
   const { Chapter } = await import('../models/Chapter');
   await Chapter.findByIdAndUpdate(chapterId, {
-    content: result.text,
+    content: fullText,
     status: 'completed',
   });
 
-  return { text: result.text };
+  return { text: fullText };
 }
