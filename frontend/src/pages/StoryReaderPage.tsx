@@ -75,6 +75,12 @@ export default function StoryReaderPage() {
   };
   
   const bottomRef = useRef<HTMLDivElement>(null);
+  const isGeneratingRef = useRef(false);
+
+  // Keep ref in sync so polling callbacks can check current value
+  useEffect(() => {
+    isGeneratingRef.current = isGenerating;
+  }, [isGenerating]);
 
   // Chapter navigation
   const totalChapters = chapters.length;
@@ -112,6 +118,39 @@ export default function StoryReaderPage() {
       fetchSpecialItems(playthroughId).catch(console.error);
     }
   }, [playthroughId]);
+
+  // Poll for chapter updates during generation
+  // Detects Pass 1 completion from DB while the API call is still blocking on Pass 2
+  useEffect(() => {
+    if (!isGenerating || !playthroughId) return;
+
+    const pollInterval = setInterval(async () => {
+      // Guard: don't fire if generation already finished (prevents stale overwrites)
+      if (!isGeneratingRef.current) return;
+
+      try {
+        const state = await storyApi.getStoryState(playthroughId);
+
+        // Guard after async: generation may have ended while request was in-flight
+        if (!isGeneratingRef.current) return;
+
+        const stateChapters: Chapter[] = state.chapters || (state.latestChapter ? [state.latestChapter] : []);
+
+        if (stateChapters.length > 0) {
+          const latest = stateChapters[stateChapters.length - 1];
+          // If the latest chapter now has content (Pass 1 done), update UI so user can start reading
+          if (latest.content) {
+            setChapters(stateChapters);
+            setChoices(state.choices || []);
+          }
+        }
+      } catch {
+        // Polling failure is non-critical — silently ignore
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [isGenerating, playthroughId]);
 
   const loadStoryState = async () => {
     try {
@@ -476,7 +515,7 @@ export default function StoryReaderPage() {
           )}
           
           {/* Current chapter content (with entity highlighting) */}
-          {activeChapter && !isGenerating && activeChapter.status !== 'failed' && (
+          {activeChapter && activeChapter.content && activeChapter.status !== 'failed' && (
             <div className="text-ink-200/90 animate-fade-in">
               <StoryContent
                 text={activeChapter.content}
@@ -486,8 +525,29 @@ export default function StoryReaderPage() {
           )}
 
           {/* Generating state — loading overlay */}
-          {isGenerating && (
+          {isGenerating && (!latestChapter || !latestChapter.content) && (
             <div className="border-l-2 border-accent-400/30 pl-5 py-6 mt-4 bg-accent-400/[0.03] rounded-r-2xl animate-fade-in">
+              <div className="flex items-center gap-3 text-ink-200/60">
+                <svg className="animate-spin w-5 h-5 text-accent-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-sans font-medium text-ink-100">{t.storyReader.generatingChapter}</p>
+                  <p className="text-xs font-sans text-ink-200/50 mt-0.5">{t.storyReader.generatingHint}</p>
+                </div>
+              </div>
+              <div className="flex gap-1.5 mt-4">
+                <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce" />
+                <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce [animation-delay:0.15s]" />
+                <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce [animation-delay:0.3s]" />
+              </div>
+            </div>
+          )}
+
+          {/* Generating NEXT chapter — shown after existing content while API blocks */}
+          {isGenerating && isOnLatest && latestChapter?.content && !isToolsRunning && (
+            <div className="border-l-2 border-accent-400/30 pl-5 py-6 mt-8 bg-accent-400/[0.03] rounded-r-2xl animate-fade-in">
               <div className="flex items-center gap-3 text-ink-200/60">
                 <svg className="animate-spin w-5 h-5 text-accent-400" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -527,7 +587,7 @@ export default function StoryReaderPage() {
           )}
 
           {/* Pass 2 — Updating game state indicator */}
-          {isOnLatest && !isGenerating && activeChapter && activeChapter.status === 'completed' && isToolsRunning && (
+          {isOnLatest && activeChapter && activeChapter.content && isToolsRunning && !isRetryingTools && (
             <div className="border-l-2 border-blue-400/30 pl-5 py-4 mt-4 bg-blue-400/[0.03] rounded-r-2xl animate-fade-in">
               <div className="flex items-center gap-3 text-ink-200/60">
                 <svg className="animate-spin w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24">
