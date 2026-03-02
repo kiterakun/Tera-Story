@@ -35,7 +35,14 @@ export function StoryNavigation({ arcs, chapters, currentChapterId, onChapterCli
     });
   };
 
-  const getChaptersForArc = (arcId: string) => chapters.filter(c => c.arcId === arcId);
+  const getChaptersForArc = (arcId: string) => {
+    const arcChapters = chapters.filter(c => c.arcId === arcId);
+    // Compute display indices based on position in full chapter list
+    return arcChapters.map(c => ({
+      ...c,
+      displayIndex: chapters.indexOf(c),
+    }));
+  };
 
   return (
     <div className="w-64 shrink-0 hidden lg:block">
@@ -72,7 +79,7 @@ export function StoryNavigation({ arcs, chapters, currentChapterId, onChapterCli
                         : 'text-ink-200/60 hover:text-ink-100 hover:bg-ink-800/50'
                     }`}
                   >
-                    {t.storyNav.chapter} {ch.chapterIndex + 1}
+                    {t.storyNav.chapter} {ch.displayIndex + 1}
                   </button>
                 ))}
               </div>

@@ -49,8 +49,8 @@ export async function generateChapter(
     });
   }
 
-  // 4. Determine chapter index: count existing chapters in this arc
-  const chapterCount = await Chapter.countDocuments({ arcId: arc._id });
+  // 4. Determine chapter index: count existing chapters across ALL arcs (global index)
+  const chapterCount = await Chapter.countDocuments({ playthroughId });
 
   // 5. Create placeholder chapter with 'generating' status
   const chapter = await Chapter.create({

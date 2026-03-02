@@ -248,6 +248,10 @@ const en = {
     summarizeArcDesc: 'Condense the current arc into a brief summary to reduce context size, then start a new arc.',
     summarizingArc: 'Summarizing...',
     confirmSummarize: 'This will summarize all chapters in the current arc and start a new one. Continue?',
+    // Mobile bottom bar
+    mobileBack: 'Back',
+    mobileChapters: 'Chapters',
+    mobileRpg: 'RPG',
   },
 
   characterPanel: {

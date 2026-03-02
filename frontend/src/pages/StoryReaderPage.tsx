@@ -8,7 +8,7 @@ import { ChoiceCards } from '../components/ChoiceCards';
 import * as storyApi from '../services/storyApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useTranslation } from '../i18n';
-import { UserRound, Users, Package, Sparkles, Swords, X, BookOpen, ChevronLeft, ChevronRight, Skull, RefreshCw, AlertTriangle, Scissors, Zap } from 'lucide-react';
+import { UserRound, Users, Package, Sparkles, Swords, X, BookOpen, ChevronLeft, ChevronRight, Skull, RefreshCw, AlertTriangle, Scissors, Zap, List } from 'lucide-react';
 import type { ItemRarity } from '../services/playthroughApi';
 import { getImageUrl } from '../utils/url';
 import { showSuccess, showError } from '../lib/toast';
@@ -55,6 +55,7 @@ export default function StoryReaderPage() {
   const [currentChapterIdx, setCurrentChapterIdx] = useState(-1); // -1 = latest
   const [rpgTab, setRpgTab] = useState<'stats' | 'inventory' | 'abilities'>('stats');
   const [rpgOpen, setRpgOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const [detailEntity, setDetailEntity] = useState<EntityData | null>(null);
   const [contextTokens, setContextTokens] = useState<number | null>(null);
   const [isSummarizingArc, setIsSummarizingArc] = useState(false);
@@ -477,7 +478,7 @@ export default function StoryReaderPage() {
               }`}
             >
               <span className="flex items-center gap-2">
-                {t.storyNav.chapter} {ch.chapterIndex + 1}
+                {t.storyNav.chapter} {idx + 1}
                 {ch.status === 'failed' && <AlertTriangle size={12} className="text-red-400" />}
               </span>
             </button>
@@ -556,7 +557,7 @@ export default function StoryReaderPage() {
                 <ChevronLeft size={20} />
               </button>
               <h3 className="font-display text-sm text-ink-200/60 uppercase tracking-wider">
-                {t.storyNav.chapter} {activeChapter.chapterIndex + 1}{totalChapters > 0 ? ` / ${totalChapters}` : ''}
+                {t.storyNav.chapter} {(isOnLatest ? totalChapters : currentChapterIdx + 1)}{totalChapters > 0 ? ` / ${totalChapters}` : ''}
               </h3>
               <button
                 onClick={() => {
@@ -712,7 +713,7 @@ export default function StoryReaderPage() {
             </div>
           )}
 
-          <div ref={bottomRef} className="h-16" />
+          <div ref={bottomRef} className="h-24 lg:h-16" />
         </article>
       </div>
 
@@ -722,17 +723,17 @@ export default function StoryReaderPage() {
         {rpgPanelContent}
       </div>
 
-      {/* Mobile RPG toggle */}
+      {/* Floating RPG toggle — visible lg to xl only (mobile uses bottom bar) */}
       <button
-        onClick={() => setRpgOpen(!rpgOpen)}
-        className="xl:hidden fixed right-4 top-1/2 -translate-y-1/2 z-30 bg-ink-800 border border-ink-700 rounded-l-xl p-3 hover:border-accent-400/50 transition-all duration-200 shadow-lg"
+        onClick={() => { setRpgOpen(v => !v); setNavOpen(false); }}
+        className="hidden lg:block xl:hidden fixed right-4 top-1/2 -translate-y-1/2 z-30 bg-ink-800 border border-ink-700 rounded-l-xl p-3 hover:border-accent-400/50 transition-all duration-200 shadow-lg"
         title={t.storyReader.rpgPanel}
       >
         <Swords size={18} className="text-ink-100" />
       </button>
 
       {/* Mobile RPG drawer */}
-      <div className={`xl:hidden fixed right-0 top-0 h-full w-80 bg-ink-900 border-l border-ink-700 z-20 transform transition-transform duration-300 overflow-hidden flex flex-col ${rpgOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`xl:hidden fixed right-0 top-0 h-full w-80 bg-ink-900 border-l border-ink-700 z-50 transform transition-transform duration-300 overflow-hidden flex flex-col ${rpgOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="p-5 flex flex-col h-full">
           <div className="flex justify-between items-center mb-4 shrink-0">
             <h3 className="font-display text-sm text-ink-100 uppercase tracking-wider">{t.storyReader.rpgPanel}</h3>
@@ -746,8 +747,117 @@ export default function StoryReaderPage() {
 
       {/* Mobile backdrop */}
       {rpgOpen && (
-        <div className="xl:hidden fixed inset-0 bg-black/50 z-10" onClick={() => setRpgOpen(false)} />
+        <div className="xl:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setRpgOpen(false)} />
       )}
+
+
+      {/* Mobile chapter navigation drawer (left side) */}
+      <div className={`lg:hidden fixed left-0 top-0 h-full w-80 max-w-[85vw] bg-ink-900 border-r border-ink-700 z-50 transform transition-transform duration-300 overflow-hidden flex flex-col ${navOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-5 flex flex-col h-full">
+          <div className="flex justify-between items-center mb-4 shrink-0">
+            <h3 className="font-display text-sm text-ink-100 uppercase tracking-wider">{t.storyReader.storyNavigation}</h3>
+            <button onClick={() => setNavOpen(false)} className="w-8 h-8 rounded-lg text-ink-200 hover:text-ink-100 hover:bg-ink-800 flex items-center justify-center transition-colors">
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Chapter list */}
+          <div className="space-y-1 flex-1 overflow-y-auto mb-4">
+            {chapters.map((ch, idx) => (
+              <button
+                key={ch._id}
+                onClick={() => { goToChapter(idx); setNavOpen(false); }}
+                className={`w-full text-left px-3 py-2 rounded-xl text-sm transition-colors ${
+                  (isOnLatest && idx === totalChapters - 1) || (!isOnLatest && idx === currentChapterIdx)
+                    ? 'bg-accent-600/20 text-accent-400 border border-accent-400/30'
+                    : 'text-ink-200/70 hover:bg-ink-800/50 hover:text-ink-100'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  {t.storyNav.chapter} {idx + 1}
+                  {ch.status === 'failed' && <AlertTriangle size={12} className="text-red-400" />}
+                </span>
+              </button>
+            ))}
+            {chapters.length === 0 && (
+              <p className="text-sm text-ink-200/40 italic">{t.storyReader.navigationPanel}</p>
+            )}
+          </div>
+
+          {/* Context tokens + Summarize Arc */}
+          {contextTokens !== null && chapters.length > 0 && (
+            <div className="border-t border-ink-700 pt-3 mb-3 shrink-0">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Zap size={12} className="text-amber-400" />
+                <span className="text-[10px] text-ink-200/60 uppercase tracking-wider font-medium">{t.storyReader.contextTokens}</span>
+              </div>
+              <p className="text-sm font-mono text-ink-100 mb-1">{contextTokens.toLocaleString()}</p>
+              <p className="text-[10px] text-ink-200/40 mb-2.5">{t.storyReader.contextTokensHint}</p>
+              <button
+                onClick={handleSummarizeArc}
+                disabled={isSummarizingArc || isGenerating}
+                className="w-full inline-flex items-center justify-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 px-3 py-2 rounded-xl text-xs font-sans font-medium transition-colors border border-amber-500/20 hover:border-amber-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isSummarizingArc ? (
+                  <>
+                    <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                    {t.storyReader.summarizingArc}
+                  </>
+                ) : (
+                  <>
+                    <Scissors size={12} />
+                    {t.storyReader.summarizeArc}
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          <div className="shrink-0">
+            <button onClick={() => { navigate(-1); setNavOpen(false); }} className="inline-flex items-center gap-1.5 text-accent-400 hover:text-accent-500 text-sm transition-colors">
+              <ChevronLeft size={16} />
+              {t.storyReader.backToPlaythrough}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile chapter drawer backdrop */}
+      {navOpen && (
+        <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setNavOpen(false)} />
+      )}
+
+      {/* Mobile bottom navigation bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-ink-900/95 backdrop-blur-md border-t border-ink-700 safe-area-bottom">
+        <div className="flex items-stretch h-14">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 text-ink-200/60 hover:text-ink-100 active:bg-ink-800/50 transition-colors"
+          >
+            <ChevronLeft size={20} />
+            <span className="text-[10px] font-medium">{t.storyReader.mobileBack}</span>
+          </button>
+          <button
+            onClick={() => { setNavOpen(v => !v); setRpgOpen(false); }}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors active:bg-ink-800/50 ${navOpen ? 'text-accent-400' : 'text-ink-200/60 hover:text-ink-100'}`}
+          >
+            <div className="relative">
+              <List size={20} />
+              {totalChapters > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 text-[9px] font-bold bg-accent-600 text-white rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">{totalChapters}</span>
+              )}
+            </div>
+            <span className="text-[10px] font-medium">{t.storyReader.mobileChapters}</span>
+          </button>
+          <button
+            onClick={() => { setRpgOpen(v => !v); setNavOpen(false); }}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors active:bg-ink-800/50 ${rpgOpen ? 'text-accent-400' : 'text-ink-200/60 hover:text-ink-100'}`}
+          >
+            <Swords size={20} />
+            <span className="text-[10px] font-medium">{t.storyReader.mobileRpg}</span>
+          </button>
+        </div>
+      </div>
 
       {/* Entity Detail Modal */}
       <EntityDetailModal entity={detailEntity} onClose={() => setDetailEntity(null)} />

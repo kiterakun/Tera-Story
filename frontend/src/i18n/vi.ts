@@ -250,6 +250,10 @@ const vi: Translations = {
     summarizeArcDesc: 'Nén toàn bộ chương trong arc hiện tại thành bản tóm tắt ngắn gọn để giảm kích thước ngữ cảnh, sau đó bắt đầu arc mới.',
     summarizingArc: 'Đang tóm tắt...',
     confirmSummarize: 'Thao tác này sẽ tóm tắt tất cả chương trong arc hiện tại và bắt đầu arc mới. Tiếp tục?',
+    // Mobile bottom bar
+    mobileBack: 'Quay lại',
+    mobileChapters: 'Chương',
+    mobileRpg: 'RPG',
   },
 
   characterPanel: {

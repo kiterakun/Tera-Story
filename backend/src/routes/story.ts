@@ -132,10 +132,9 @@ router.get(
         .sort({ arcIndex: -1 })
         .lean();
 
-      // ALL chapters for this playthrough (for chapter navigation)
-      // Only show completed chapters (not generating/failed ones unless it's the latest)
+      // ALL chapters for this playthrough, sorted chronologically (_id embeds timestamp)
       const chapters = await Chapter.find({ playthroughId })
-        .sort({ chapterIndex: 1 })
+        .sort({ _id: 1 })
         .lean();
 
       // Latest chapter for choices
