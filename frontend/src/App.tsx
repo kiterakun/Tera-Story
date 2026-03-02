@@ -37,6 +37,11 @@ function App() {
     }
   }, [isAuthenticated, fetchSettings])
 
+  // Sync theme to DOM whenever it changes (zustand persist hydrates state but doesn't touch DOM)
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+  }, [theme])
+
   // Sync server settings → local stores once fetched
   useEffect(() => {
     if (serverLanguage) {

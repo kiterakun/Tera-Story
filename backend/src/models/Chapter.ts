@@ -14,6 +14,7 @@ export interface IChapterDocument extends Document {
   newSpecialItems: Array<{ name: string; description: string; category: string; rarity?: string }>;
   metadata: {
     tokensUsed?: number;
+    contextTokens?: number;
     model?: string;
     generatedAt: Date;
   };
@@ -60,6 +61,7 @@ const NewSpecialItemSchema = new Schema(
 const MetadataSchema = new Schema(
   {
     tokensUsed: { type: Number },
+    contextTokens: { type: Number },
     model: { type: String },
     generatedAt: { type: Date, default: Date.now },
   },

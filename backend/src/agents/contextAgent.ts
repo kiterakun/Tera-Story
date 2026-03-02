@@ -200,7 +200,7 @@ Based on the player's choice and the FULL story state above (including all items
   // 6. Call generateText then parse JSON robustly
   //    generateObject requires provider tool-calling support which custom/proxy endpoints often lack.
   //    Instead we use generateText and extract JSON from the response.
-  const { text } = await generateText({
+  const { text, usage } = await generateText({
     model,
     system: SYSTEM_PROMPT,
     prompt: userPrompt,
@@ -287,5 +287,6 @@ Based on the player's choice and the FULL story state above (including all items
     })),
     currentScene: validated.currentScene ?? '',
     relevantPlotPoints: validated.relevantPlotPoints ?? [],
+    usage: usage ? { inputTokens: usage.inputTokens ?? 0, outputTokens: usage.outputTokens ?? 0 } : undefined,
   };
 }

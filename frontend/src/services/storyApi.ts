@@ -33,3 +33,23 @@ export async function retryChapterTools(chapterId: string): Promise<GenerateChap
   const res = await api.post('/story/retry-tools', { chapterId });
   return res.data;
 }
+
+export interface SummarizeArcResponse {
+  success: boolean;
+  completedArc: {
+    _id: string;
+    title: string;
+    arcIndex: number;
+    summary: string;
+  };
+  newArc: {
+    _id: string;
+    title: string;
+    arcIndex: number;
+  };
+}
+
+export async function summarizeArc(playthroughId: string): Promise<SummarizeArcResponse> {
+  const res = await api.post('/story/summarize-arc', { playthroughId });
+  return res.data;
+}

@@ -236,6 +236,18 @@ const en = {
     toolsFailedHint: 'The chapter content was saved, but updating characters, items, and choices failed. You can retry the update without regenerating the chapter.',
     retryTools: 'Retry Update',
     retryingTools: 'Retrying game state update...',
+
+    // Arc summarization
+    summarizingArc: 'Summarizing current arc...',
+    arcSummarized: 'Arc summarized! Starting new arc.',
+    arcSummarizeFailed: 'Failed to summarize arc',
+    // Context info
+    contextTokens: 'Context Tokens',
+    contextTokensHint: 'Current context size used by the AI. Summarize the arc to reduce it.',
+    summarizeArc: 'Summarize Arc & Start New',
+    summarizeArcDesc: 'Condense the current arc into a brief summary to reduce context size, then start a new arc.',
+    summarizingArc: 'Summarizing...',
+    confirmSummarize: 'This will summarize all chapters in the current arc and start a new one. Continue?',
   },
 
   characterPanel: {

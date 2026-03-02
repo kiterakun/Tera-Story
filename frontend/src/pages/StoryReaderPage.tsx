@@ -8,9 +8,10 @@ import { ChoiceCards } from '../components/ChoiceCards';
 import * as storyApi from '../services/storyApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useTranslation } from '../i18n';
-import { UserRound, Users, Package, Sparkles, Swords, X, BookOpen, ChevronLeft, ChevronRight, Skull, RefreshCw, AlertTriangle } from 'lucide-react';
+import { UserRound, Users, Package, Sparkles, Swords, X, BookOpen, ChevronLeft, ChevronRight, Skull, RefreshCw, AlertTriangle, Scissors, Zap } from 'lucide-react';
 import type { ItemRarity } from '../services/playthroughApi';
 import { getImageUrl } from '../utils/url';
+import { showSuccess, showError } from '../lib/toast';
 
 // Matches backend Chapter model
 interface Chapter {
@@ -21,6 +22,10 @@ interface Chapter {
   status?: 'generating' | 'completed' | 'failed';
   toolsStatus?: 'pending' | 'running' | 'completed' | 'failed';
   playerChoice?: string;
+  metadata?: {
+    contextTokens?: number;
+    tokensUsed?: number;
+  };
 }
 
 // Matches backend ChoiceSchema (_id: false)
@@ -51,6 +56,8 @@ export default function StoryReaderPage() {
   const [rpgTab, setRpgTab] = useState<'stats' | 'inventory' | 'abilities'>('stats');
   const [rpgOpen, setRpgOpen] = useState(false);
   const [detailEntity, setDetailEntity] = useState<EntityData | null>(null);
+  const [contextTokens, setContextTokens] = useState<number | null>(null);
+  const [isSummarizingArc, setIsSummarizingArc] = useState(false);
   
   const { isGenerating, isRetryingTools, error, generateChapter, retryChapter, retryTools, clearError } = useChapterGeneration();
   
@@ -159,8 +166,16 @@ export default function StoryReaderPage() {
       
       if (state.chapters && state.chapters.length > 0) {
         setChapters(state.chapters);
+        // Extract contextTokens from the latest chapter's metadata
+        const latest = state.chapters[state.chapters.length - 1];
+        if (latest.metadata?.contextTokens) {
+          setContextTokens(latest.metadata.contextTokens);
+        }
       } else if (state.latestChapter) {
         setChapters([state.latestChapter]);
+        if (state.latestChapter.metadata?.contextTokens) {
+          setContextTokens(state.latestChapter.metadata.contextTokens);
+        }
       } else {
         setChapters([]);
       }
@@ -220,6 +235,22 @@ export default function StoryReaderPage() {
 
     await retryTools(latestChapter._id);
     await reloadAfterGeneration();
+  };
+
+  const handleSummarizeArc = async () => {
+    if (!playthroughId || isSummarizingArc) return;
+    if (!confirm(t.storyReader.confirmSummarize)) return;
+
+    setIsSummarizingArc(true);
+    try {
+      await storyApi.summarizeArc(playthroughId);
+      showSuccess(t.toast.arcSummarized);
+      await loadStoryState();
+    } catch (err: any) {
+      showError(t.toast.arcSummarizeFailed, err?.response?.data?.error || err?.message);
+    } finally {
+      setIsSummarizingArc(false);
+    }
   };
 
   // Handle entity clicks from story content or sidebar
@@ -455,6 +486,34 @@ export default function StoryReaderPage() {
             <p className="text-sm text-ink-200/40 italic">{t.storyReader.navigationPanel}</p>
           )}
         </div>
+        {/* Context tokens + Summarize Arc */}
+        {contextTokens !== null && chapters.length > 0 && (
+          <div className="border-t border-ink-700 pt-3 mb-3">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Zap size={12} className="text-amber-400" />
+              <span className="text-[10px] text-ink-200/60 uppercase tracking-wider font-medium">{t.storyReader.contextTokens}</span>
+            </div>
+            <p className="text-sm font-mono text-ink-100 mb-1">{contextTokens.toLocaleString()}</p>
+            <p className="text-[10px] text-ink-200/40 mb-2.5">{t.storyReader.contextTokensHint}</p>
+            <button
+              onClick={handleSummarizeArc}
+              disabled={isSummarizingArc || isGenerating}
+              className="w-full inline-flex items-center justify-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 px-3 py-2 rounded-xl text-xs font-sans font-medium transition-colors border border-amber-500/20 hover:border-amber-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {isSummarizingArc ? (
+                <>
+                  <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  {t.storyReader.summarizingArc}
+                </>
+              ) : (
+                <>
+                  <Scissors size={12} />
+                  {t.storyReader.summarizeArc}
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
         <div>
           <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 text-accent-400 hover:text-accent-500 text-sm transition-colors">

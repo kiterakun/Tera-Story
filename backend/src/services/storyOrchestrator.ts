@@ -76,6 +76,13 @@ export async function generateChapter(
     });
     console.log(`[Story] Context agent completed for playthrough=${playthroughId}, outline length=${contextOutput.outline.length}`);
 
+    // Save context token usage to chapter metadata
+    if (contextOutput.usage) {
+      await Chapter.findByIdAndUpdate(chapter._id, {
+        'metadata.contextTokens': contextOutput.usage.inputTokens,
+      });
+    }
+
     console.log(`[Story] Starting writer agent for chapter=${chapter._id}, arc=${arc._id}`);
     // 7. Run writer agent (now async — waits for full response)
     const result = await runWriterAgent({
@@ -219,5 +226,82 @@ export async function retryChapterTools(
   return {
     chapter: updatedChapter,
     content: chapter.content,
+  };
+}
+
+/**
+ * Summarize the current arc and transition to a new arc.
+ * This reduces context by replacing full chapter text with a brief summary.
+ */
+export async function summarizeCurrentArc(
+  playthroughId: string,
+  userId: string
+) {
+  console.log(`[Story] summarizeCurrentArc called: playthrough=${playthroughId}`);
+
+  // 1. Load playthrough — verify ownership
+  const playthrough = await Playthrough.findById(playthroughId);
+  if (!playthrough) throw new Error('Playthrough not found');
+  if (playthrough.userId.toString() !== userId) throw new Error('Unauthorized');
+
+  // 2. Find current active arc
+  const currentArc = await Arc.findOne({ playthroughId, status: 'active' }).sort({ arcIndex: -1 });
+  if (!currentArc) throw new Error('No active arc found');
+
+  // 3. Get all chapters in this arc
+  const chapters = await Chapter.find({ arcId: currentArc._id })
+    .sort({ chapterIndex: 1 })
+    .select('content chapterIndex')
+    .lean();
+
+  if (chapters.length === 0) throw new Error('No chapters in current arc to summarize');
+
+  // 4. Load user settings for AI model
+  const settings = await UserSettings.findOne({ userId });
+  if (!settings) throw new Error('User settings not found');
+  const registry = createUserProviderRegistry(settings.aiSettings);
+
+  // 5. Build prompt for summarization
+  const { generateText } = await import('ai');
+  const chapterTexts = chapters
+    .map((ch) => `[Chapter ${ch.chapterIndex + 1}]\n${ch.content}`)
+    .join('\n---\n');
+
+  const summaryPrompt = `Summarize the following story arc into a concise narrative summary (2-4 paragraphs). Capture the key events, character developments, important decisions, and plot points. This summary will be used as context for future chapters, so include all critically important information.\n\nLanguage: ${settings.language}\n\n${chapterTexts}`;
+
+  const { text: summary } = await generateText({
+    model: registry.getContextModel(),
+    system: 'You are a story analyst. Create concise but comprehensive arc summaries that preserve all important plot information. Respond with the summary text only, no JSON or formatting.',
+    prompt: summaryPrompt,
+    temperature: 0.3,
+  });
+
+  // 6. Update current arc: mark completed with summary
+  currentArc.status = 'completed';
+  currentArc.summary = summary;
+  await currentArc.save();
+
+  // 7. Create new active arc
+  const newArc = await Arc.create({
+    playthroughId,
+    arcIndex: currentArc.arcIndex + 1,
+    title: `Arc ${currentArc.arcIndex + 2}`,
+    status: 'active',
+  });
+
+  console.log(`[Story] Arc ${currentArc.arcIndex} summarized and completed. New arc ${newArc.arcIndex} created.`);
+
+  return {
+    completedArc: {
+      _id: currentArc._id,
+      title: currentArc.title,
+      arcIndex: currentArc.arcIndex,
+      summary,
+    },
+    newArc: {
+      _id: newArc._id,
+      title: newArc.title,
+      arcIndex: newArc.arcIndex,
+    },
   };
 }

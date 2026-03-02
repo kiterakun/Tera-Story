@@ -24,6 +24,7 @@ export interface IContextOutput {
   currentScene: string;
   relevantPlotPoints: string[];
   resourceTemplates: Array<{ key: string; type: string; min?: number; max?: number; defaultValue?: string | number; options?: string[] }>;
+  usage?: { inputTokens: number; outputTokens: number };
 }
 
 export interface IWriterOutput {

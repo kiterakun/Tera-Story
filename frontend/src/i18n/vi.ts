@@ -238,6 +238,18 @@ const vi: Translations = {
     toolsFailedHint: 'Nội dung chương đã được lưu, nhưng cập nhật nhân vật, vật phẩm và lựa chọn thất bại. Bạn có thể thử lại mà không cần tạo lại chương.',
     retryTools: 'Thử lại cập nhật',
     retryingTools: 'Đang thử lại cập nhật...',
+
+    // Arc summarization
+    summarizingArc: 'Đang tóm tắt arc...',
+    arcSummarized: 'Đã tóm tắt arc! Bắt đầu arc mới.',
+    arcSummarizeFailed: 'Tóm tắt arc thất bại',
+    // Context info
+    contextTokens: 'Context Token',
+    contextTokensHint: 'Kích thước ngữ cảnh hiện tại mà AI sử dụng. Tóm tắt arc để giảm bớt.',
+    summarizeArc: 'Tóm tắt Arc & Bắt đầu mới',
+    summarizeArcDesc: 'Nén toàn bộ chương trong arc hiện tại thành bản tóm tắt ngắn gọn để giảm kích thước ngữ cảnh, sau đó bắt đầu arc mới.',
+    summarizingArc: 'Đang tóm tắt...',
+    confirmSummarize: 'Thao tác này sẽ tóm tắt tất cả chương trong arc hiện tại và bắt đầu arc mới. Tiếp tục?',
   },
 
   characterPanel: {

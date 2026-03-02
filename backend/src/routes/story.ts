@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { generateChapter, retryChapter, retryChapterTools } from '../services/storyOrchestrator';
+import { generateChapter, retryChapter, retryChapterTools, summarizeCurrentArc } from '../services/storyOrchestrator';
 import { Arc } from '../models/Arc';
 import { Chapter } from '../models/Chapter';
 import { Character } from '../models/Character';
@@ -164,6 +164,28 @@ router.get(
       res
         .status(500)
         .json({ error: err.message || 'Failed to fetch story state' });
+    }
+  }
+);
+
+// POST /api/story/summarize-arc — summarize current arc and start a new one
+router.post(
+  '/story/summarize-arc',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const { playthroughId } = req.body;
+    const userId = req.user!.id;
+
+    if (!playthroughId) {
+      res.status(400).json({ error: 'playthroughId is required' });
+      return;
+    }
+
+    try {
+      const result = await summarizeCurrentArc(playthroughId, userId);
+      res.json({ success: true, ...result });
+    } catch (err: any) {
+      console.error('[Story] Summarize arc error:', err);
+      res.status(500).json({ error: err.message || 'Failed to summarize arc' });
     }
   }
 );
