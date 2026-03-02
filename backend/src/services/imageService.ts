@@ -1,11 +1,19 @@
-import { generateImage } from '../agents/imageAgent';
-import { UserSettings } from '../models/UserSettings';
-import { createUserProviderRegistry } from '../providers/registry';
+import {
+  generateImage,
+  ImageJobDetails,
+  WorldContext,
+} from "../agents/imageAgent";
+import { UserSettings } from "../models/UserSettings";
+import { World } from "../models/World";
+import { createUserProviderRegistry } from "../providers/registry";
+
+type EntityType = "character" | "item" | "special-item" | "world";
 
 interface ImageJob {
-  description: string;
-  entityType: 'character' | 'item' | 'special-item' | 'world';
+  entityDetails: ImageJobDetails;
+  entityType: EntityType;
   entityId: string;
+  worldId: string;
   userId: string;
 }
 
@@ -14,14 +22,16 @@ let processing = false;
 
 /**
  * Queue an image generation job. Non-blocking — returns immediately.
+ * Prompt is built internally by imageAgent from entity details + world context.
  */
 export function queueImageGeneration(
-  description: string,
-  entityType: 'character' | 'item' | 'special-item' | 'world',
+  entityDetails: ImageJobDetails,
+  entityType: EntityType,
   entityId: string,
-  userId: string
+  worldId: string,
+  userId: string,
 ): void {
-  queue.push({ description, entityType, entityId, userId });
+  queue.push({ entityDetails, entityType, entityId, worldId, userId });
   if (!processing) {
     processQueue();
   }
@@ -35,16 +45,47 @@ async function processQueue(): Promise<void> {
     try {
       const settings = await UserSettings.findOne({ userId: job.userId });
       if (!settings) {
-        console.error(`Image queue: no settings found for user ${job.userId}`);
+        console.error(
+          `Image queue: no settings found for user ${job.userId}`,
+        );
         continue;
       }
 
       const registry = createUserProviderRegistry(settings.aiSettings);
       const imageConfig = registry.getImageConfig();
 
-      await generateImage(job.description, job.entityType, job.entityId, imageConfig);
+      // Load world context for genre/style matching
+      let worldContext: WorldContext = {
+        name: "Unknown World",
+        description: "",
+        genre: "custom",
+      };
+
+      const world = await World.findById(job.worldId).lean();
+      if (world) {
+        worldContext = {
+          name: world.name,
+          description: world.description || "",
+          genre: world.genre,
+        };
+      } else if (job.entityType === "world") {
+        // For world images where we can't find the World doc yet, use entity details
+        worldContext = {
+          name: job.entityDetails.name,
+          description: job.entityDetails.description,
+          genre: "custom",
+        };
+      }
+
+      await generateImage(
+        job.entityDetails,
+        job.entityType,
+        job.entityId,
+        worldContext,
+        imageConfig,
+      );
     } catch (e) {
-      console.error('Image queue error:', e);
+      console.error("Image queue error:", e);
     }
   }
 

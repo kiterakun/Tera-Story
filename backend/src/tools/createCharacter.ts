@@ -56,9 +56,10 @@ export function makeCreateCharacterTool(
 
       // Fire-and-forget image generation
       queueImageGeneration(
-        `Character portrait, close-up bust shot facing the viewer: ${name}. ${description}. Highly detailed digital painting, painterly style, dramatic lighting, RPG character illustration. No text, no watermark, no frame.`,
+        { name, description },
         'character',
         character._id.toString(),
+        worldId,
         userId
       );
       return { characterId: character._id.toString(), name };

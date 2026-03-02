@@ -4,7 +4,7 @@ import { Item } from '../models/Item';
 import { Character } from '../models/Character';
 import { queueImageGeneration } from '../services/imageService';
 
-export function makeCreateItemTool(playthroughId: string, userId: string) {
+export function makeCreateItemTool(playthroughId: string, worldId: string, userId: string) {
   return tool({
     description: 'Create a new item in the story',
     inputSchema: z.object({
@@ -41,9 +41,10 @@ export function makeCreateItemTool(playthroughId: string, userId: string) {
 
       // Fire-and-forget image generation
       queueImageGeneration(
-        `Single item illustration, centered on dark background: ${name} — ${description}. ${rarity} tier quality. Detailed digital painting, RPG inventory icon style, dramatic lighting, no text, no watermark, no hands.`,
+        { name, description, rarity },
         'item',
         item._id.toString(),
+        worldId,
         userId
       );
 

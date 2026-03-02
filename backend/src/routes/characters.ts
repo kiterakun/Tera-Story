@@ -104,9 +104,10 @@ router.post(
 
       // Fire-and-forget image generation
       queueImageGeneration(
-        `Character portrait, close-up bust shot facing the viewer: ${name.trim()}. ${description || 'A mysterious character in a story world'}. Highly detailed digital painting, painterly style, dramatic lighting, RPG character illustration. No text, no watermark, no frame.`,
+        { name: name.trim(), description: description || 'A mysterious character in a story world' },
         'character',
         character._id.toString(),
+        worldId.toString(),
         userId
       );
 

@@ -231,8 +231,8 @@ Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[speci
 
   const tools = {
     createCharacter: makeCreateCharacterTool(playthroughId, worldId, userId),
-    createItem: makeCreateItemTool(playthroughId, userId),
-    createSpecialItem: makeCreateSpecialItemTool(playthroughId, userId),
+    createItem: makeCreateItemTool(playthroughId, worldId, userId),
+    createSpecialItem: makeCreateSpecialItemTool(playthroughId, worldId, userId),
     updateStats: makeUpdateStatsTool(playthroughId, userId),
     updateEntityStatus: makeUpdateEntityStatusTool(playthroughId),
     summarizeArc: makeSummarizeArcTool(),

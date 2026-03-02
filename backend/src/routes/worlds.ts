@@ -80,8 +80,13 @@ router.post('/from-template/:templateId', async (req: AuthRequest, res: Response
     const specialItemTemplates = await SpecialItemTemplate.find({ worldId: world._id }).lean();
 
     // Queue world image generation
-    const imgPrompt = `Fantasy world landscape illustration, panoramic vista: ${world.name}. ${template.description || 'A mysterious world'}. Genre: ${template.genre}. Epic scale, sweeping scenery, atmospheric lighting, concept art style, highly detailed digital painting, cinematic composition. No text, no watermark, no UI elements.`;
-    queueImageGeneration(imgPrompt, 'world', world._id.toString(), userId);
+    queueImageGeneration(
+      { name: world.name, description: template.description || 'A mysterious world' },
+      'world',
+      world._id.toString(),
+      world._id.toString(),
+      userId
+    );
 
     res.status(201).json({ world, specialItemTemplates });
   } catch (err) {
@@ -165,8 +170,13 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
     const specialItemTemplates = await SpecialItemTemplate.find({ worldId: world._id }).lean();
 
     // Queue world image generation
-    const imgPrompt = `Fantasy world landscape illustration, panoramic vista: ${world.name}. ${parsed.data.description || 'A mysterious world'}. Genre: ${parsed.data.genre}. Epic scale, sweeping scenery, atmospheric lighting, concept art style, highly detailed digital painting, cinematic composition. No text, no watermark, no UI elements.`;
-    queueImageGeneration(imgPrompt, 'world', world._id.toString(), userId);
+    queueImageGeneration(
+      { name: world.name, description: parsed.data.description || 'A mysterious world' },
+      'world',
+      world._id.toString(),
+      world._id.toString(),
+      userId
+    );
 
     res.status(201).json({ world, specialItemTemplates });
   } catch (err) {

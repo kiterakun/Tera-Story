@@ -27,34 +27,55 @@ router.post(
         return;
       }
 
-      let prompt: string;
-
       if (entityType === 'character') {
         const char = await Character.findById(entityId).lean();
         if (!char) { res.status(404).json({ error: 'Character not found' }); return; }
         if (char.userId.toString() !== userId) { res.status(403).json({ error: 'Forbidden' }); return; }
-        prompt = `Character portrait, close-up bust shot facing the viewer: ${char.name}. ${char.description || 'A mysterious character'}. Highly detailed digital painting, painterly style, dramatic lighting, RPG character illustration. No text, no watermark, no frame.`;
+        queueImageGeneration(
+          { name: char.name, description: char.description || 'A mysterious character' },
+          'character',
+          entityId,
+          char.worldId.toString(),
+          userId
+        );
       } else if (entityType === 'item') {
         const item = await Item.findById(entityId).lean();
         if (!item) { res.status(404).json({ error: 'Item not found' }); return; }
         const pt = await Playthrough.findById(item.playthroughId).lean();
         if (!pt || pt.userId.toString() !== userId) { res.status(403).json({ error: 'Forbidden' }); return; }
-        prompt = `Single item illustration, centered on dark background: ${item.name} — ${item.description}. ${item.rarity || 'common'} tier quality. Detailed digital painting, RPG inventory icon style, dramatic lighting, no text, no watermark, no hands.`;
+        queueImageGeneration(
+          { name: item.name, description: item.description, rarity: item.rarity },
+          'item',
+          entityId,
+          pt.worldId.toString(),
+          userId
+        );
       } else if (entityType === 'world') {
         const world = await World.findById(entityId).lean();
         if (!world) { res.status(404).json({ error: 'World not found' }); return; }
         if (world.userId.toString() !== userId) { res.status(403).json({ error: 'Forbidden' }); return; }
-        prompt = `Fantasy world landscape illustration, panoramic vista: ${world.name}. ${world.description || 'A mysterious world'}. Genre: ${world.genre}. Epic scale, sweeping scenery, atmospheric lighting, concept art style, highly detailed digital painting, cinematic composition. No text, no watermark, no UI elements.`;
+        queueImageGeneration(
+          { name: world.name, description: world.description || 'A mysterious world' },
+          'world',
+          entityId,
+          entityId, // world IS the worldId
+          userId
+        );
       } else {
         // special-item
         const si = await SpecialItem.findById(entityId).lean();
         if (!si) { res.status(404).json({ error: 'Special item not found' }); return; }
         const pt = await Playthrough.findById(si.playthroughId).lean();
         if (!pt || pt.userId.toString() !== userId) { res.status(403).json({ error: 'Forbidden' }); return; }
-        prompt = `Magical ability icon, centered glowing effect on dark background: ${si.name} — ${si.description}. Category: ${si.category}, ${si.rarity || 'common'} tier. Ethereal digital art, mystical energy visualization, RPG skill icon style, no text, no watermark.`;
+        queueImageGeneration(
+          { name: si.name, description: si.description, rarity: si.rarity, category: si.category },
+          'special-item',
+          entityId,
+          pt.worldId.toString(),
+          userId
+        );
       }
 
-      queueImageGeneration(prompt, entityType, entityId, userId);
       res.json({ message: 'Image generation queued' });
     } catch (err) {
       console.error('Image regenerate error:', err);

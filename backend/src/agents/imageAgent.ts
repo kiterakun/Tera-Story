@@ -11,20 +11,133 @@ fs.mkdirSync(path.join(UPLOADS_BASE, "item"), { recursive: true });
 fs.mkdirSync(path.join(UPLOADS_BASE, "special-item"), { recursive: true });
 fs.mkdirSync(path.join(UPLOADS_BASE, "world"), { recursive: true });
 
+type EntityType = "character" | "item" | "special-item" | "world";
+
+export interface ImageJobDetails {
+  name: string;
+  description: string;
+  rarity?: string;
+  category?: string;
+}
+
+export interface WorldContext {
+  name: string;
+  description: string;
+  genre: string;
+}
+
+// ── Size per entity type ──────────────────────────────────────────────
+// DALL-E 3: 1024x1024 | 1024x1792 | 1792x1024
+// DALL-E 2 & many providers: 256x256 | 512x512 | 1024x1024
+function getImageSize(entityType: EntityType, model: string): string {
+  const isDalle3 = model.includes("dall-e-3") || model.includes("dalle-3");
+
+  switch (entityType) {
+    case "world":
+      return isDalle3 ? "1792x1024" : "1024x1024"; // landscape panorama
+    case "character":
+      return "1024x1024"; // square portrait — needs detail
+    case "item":
+    case "special-item":
+      return isDalle3 ? "1024x1024" : "512x512"; // icon — smallest available
+  }
+}
+
+// ── Genre → visual style mapping ──────────────────────────────────────
+const GENRE_STYLE_MAP: Record<string, string> = {
+  fantasy:
+    "high fantasy art style, medieval magical world, enchanted atmosphere",
+  "sci-fi":
+    "science fiction concept art, futuristic technology, neon-lit cyberpunk or space-age aesthetic",
+  wuxia:
+    "Chinese martial arts painting style, xianxia cultivation aesthetic, ink wash and ethereal atmosphere",
+  modern:
+    "contemporary realistic style, modern urban setting, photorealistic rendering",
+  custom: "detailed digital art, rich atmospheric rendering",
+};
+
+// ── Centralized prompt builder ────────────────────────────────────────
+function buildImagePrompt(
+  entityDetails: ImageJobDetails,
+  entityType: EntityType,
+  worldContext: WorldContext,
+): string {
+  const genreStyle =
+    GENRE_STYLE_MAP[worldContext.genre] || GENRE_STYLE_MAP.custom;
+  const worldHint = worldContext.description
+    ? `World setting: "${worldContext.name}" — ${worldContext.description.slice(0, 150)}.`
+    : `World setting: "${worldContext.name}".`;
+
+  switch (entityType) {
+    case "character":
+      return [
+        `Character portrait, close-up bust shot facing the viewer: ${entityDetails.name}.`,
+        entityDetails.description,
+        worldHint,
+        `Art direction: ${genreStyle}. Highly detailed digital painting, painterly style, dramatic lighting, RPG character illustration.`,
+        "No text, no watermark, no frame, no UI elements.",
+      ].join(" ");
+
+    case "item":
+      return [
+        `Single item illustration, centered on dark background: ${entityDetails.name}.`,
+        entityDetails.description,
+        entityDetails.rarity ? `${entityDetails.rarity} tier quality glow.` : "",
+        worldHint,
+        `Art direction: ${genreStyle}. RPG inventory icon, dramatic lighting, detailed rendering.`,
+        "No text, no watermark, no hands, no characters.",
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+    case "special-item":
+      return [
+        `Magical ability icon, centered glowing effect on dark background: ${entityDetails.name}.`,
+        entityDetails.description,
+        entityDetails.category ? `Category: ${entityDetails.category}.` : "",
+        entityDetails.rarity ? `${entityDetails.rarity} tier quality.` : "",
+        worldHint,
+        `Art direction: ${genreStyle}. Ethereal energy visualization, mystical RPG skill icon.`,
+        "No text, no watermark, no characters.",
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+    case "world":
+      return [
+        `Panoramic landscape vista of "${entityDetails.name}".`,
+        entityDetails.description,
+        `Genre: ${worldContext.genre}.`,
+        `Art direction: ${genreStyle}. Epic scale, sweeping scenery, atmospheric lighting, concept art, cinematic composition.`,
+        "No text, no watermark, no UI elements, no characters.",
+      ].join(" ");
+  }
+}
+
 /**
  * Generate an image via DALL-E compatible API (fire-and-forget).
+ * Prompt is built internally from entity details + world context.
  * Caller does NOT await — errors are logged, not thrown.
  */
 export async function generateImage(
-  description: string,
-  entityType: "character" | "item" | "special-item" | "world",
+  entityDetails: ImageJobDetails,
+  entityType: EntityType,
   entityId: string,
+  worldContext: WorldContext,
   imageConfig: IAgentConfig,
 ): Promise<void> {
   try {
     const apiKey = imageConfig.apiKey ? decrypt(imageConfig.apiKey) : "";
     const baseUrl = imageConfig.baseUrl || "https://api.openai.com/v1";
     const endpoint = `${baseUrl.replace(/\/+$/, "")}/images/generations`;
+    const model = imageConfig.model || "dall-e-3";
+
+    const prompt = buildImagePrompt(entityDetails, entityType, worldContext);
+    const size = getImageSize(entityType, model);
+
+    console.log(
+      `[Image] Generating ${entityType}/${entityId}: size=${size}, model=${model}`,
+    );
 
     const response = await fetch(endpoint, {
       method: "POST",
@@ -33,10 +146,10 @@ export async function generateImage(
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: imageConfig.model,
-        prompt: description,
+        model,
+        prompt,
         n: 1,
-        size: "1024x1024",
+        size,
         response_format: "url",
       }),
     });
@@ -89,7 +202,7 @@ export async function generateImage(
     }
 
     console.log(
-      `Image generated for ${entityType}/${entityId}: ${relativeUrl}`,
+      `[Image] Generated ${entityType}/${entityId}: ${relativeUrl} (${size})`,
     );
   } catch (error) {
     console.error(

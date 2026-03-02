@@ -3,6 +3,8 @@ import { Toaster } from 'sonner'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
 import { useUIStore } from './stores/uiStore'
+import { useSettingsStore } from './stores/settingsStore'
+import { persistLanguage } from './i18n'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -17,16 +19,33 @@ import { Layout } from './components/Layout'
 
 function App() {
   const loadUser = useAuthStore(s => s.loadUser)
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const theme = useUIStore(s => s.theme)
+  const setTheme = useUIStore(s => s.setTheme)
+  const fetchSettings = useSettingsStore(s => s.fetchSettings)
+  const serverLanguage = useSettingsStore(s => s.settings?.language)
+  const serverTheme = useSettingsStore(s => s.settings?.theme)
 
   useEffect(() => {
     loadUser()
   }, [loadUser])
 
-  // Sync theme class with uiStore
+  // Fetch settings from server as soon as user is authenticated
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-  }, [theme])
+    if (isAuthenticated) {
+      fetchSettings()
+    }
+  }, [isAuthenticated, fetchSettings])
+
+  // Sync server settings → local stores once fetched
+  useEffect(() => {
+    if (serverLanguage) {
+      persistLanguage(serverLanguage)
+    }
+    if (serverTheme && serverTheme !== theme) {
+      setTheme(serverTheme)
+    }
+  }, [serverLanguage, serverTheme])
 
   return (
     <BrowserRouter>

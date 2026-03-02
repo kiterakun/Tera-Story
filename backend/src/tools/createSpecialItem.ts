@@ -6,7 +6,7 @@ import { Character } from '../models/Character';
 import { Playthrough } from '../models/Playthrough';
 import { queueImageGeneration } from '../services/imageService';
 
-export function makeCreateSpecialItemTool(playthroughId: string, userId: string) {
+export function makeCreateSpecialItemTool(playthroughId: string, worldId: string, userId: string) {
   return tool({
     description:
       'Create a new special item (skill, technique, spiritual root, etc.) in the story. The category MUST match one of the world\'s special item template categories. You MUST provide customFields with values for each field defined in the template (see AVAILABLE SPECIAL ITEM CATEGORIES in the prompt for field definitions).',
@@ -106,9 +106,10 @@ export function makeCreateSpecialItemTool(playthroughId: string, userId: string)
 
       // 5. Fire-and-forget image generation
       queueImageGeneration(
-        `Magical ability icon, centered glowing effect on dark background: ${name} — ${description}. Category: ${category}, ${rarity} tier. Ethereal digital art, mystical energy visualization, RPG skill icon style, no text, no watermark.`,
+        { name, description, rarity, category },
         'special-item',
         specialItem._id.toString(),
+        worldId,
         userId
       );
 

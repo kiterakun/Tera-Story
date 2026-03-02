@@ -47,26 +47,71 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
   const t = useTranslation();
   if (!entity) return null;
 
+  // ── Hero image block (shared by all entity types) ───────────────────
+  const renderHeroImage = (
+    imageUrl: string | undefined,
+    alt: string,
+    entityType: 'character' | 'item' | 'special-item',
+    entityId: string,
+    fallbackIcon: React.ReactNode,
+    borderClass: string = 'border-ink-700',
+  ) => {
+    if (imageUrl) {
+      // Character: square 1024×1024 → show at max 256px (crisp on 2x displays)
+      // Item/Special: square 512–1024 → show at max 192px
+      const sizeClass = entityType === 'character'
+        ? 'w-64 h-64 max-w-full'
+        : 'w-48 h-48 max-w-full';
+
+      return (
+        <div className="flex justify-center mb-5">
+          <img
+            src={getImageUrl(imageUrl)}
+            alt={alt}
+            className={`${sizeClass} rounded-2xl object-cover border-2 ${borderClass}`}
+            style={{ imageRendering: 'auto' }}
+          />
+        </div>
+      );
+    }
+
+    // No image placeholder
+    const placeholderSize = entityType === 'character'
+      ? 'w-48 h-48'
+      : 'w-36 h-36';
+
+    return (
+      <div className={`flex justify-center mb-5`}>
+        <div className={`${placeholderSize} rounded-2xl bg-ink-800/60 border ${borderClass} flex flex-col items-center justify-center gap-2`}>
+          {fallbackIcon}
+          <RetryImageButton entityType={entityType} entityId={entityId} showLabel />
+        </div>
+      </div>
+    );
+  };
+
   const renderCharacter = (char: Character) => {
     return (
-      <div className="space-y-5">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          {char.imageUrl ? (
-            <img src={getImageUrl(char.imageUrl)} alt={char.name} className="w-20 h-20 rounded-2xl object-cover border-2 border-accent-400/30" />
-          ) : (
-            <div className="w-20 h-20 rounded-2xl bg-ink-700/50 border border-ink-600 flex flex-col items-center justify-center gap-1">
-              <UserRound size={28} className="text-ink-200/60" />
-              <RetryImageButton entityType="character" entityId={char._id} showLabel />
-            </div>
-          )}
-          <div>
-            <h3 className="font-display text-xl text-ink-100">{char.name}</h3>
+      <div className="space-y-4">
+        {/* Hero image */}
+        {renderHeroImage(
+          char.imageUrl,
+          char.name,
+          'character',
+          char._id,
+          <UserRound size={40} className="text-ink-200/40" />,
+          'border-accent-400/30',
+        )}
+
+        {/* Name & role */}
+        <div className="text-center">
+          <h3 className="font-display text-2xl text-ink-100">{char.name}</h3>
+          <div className="flex items-center justify-center gap-2 mt-1">
             <span className="text-xs text-accent-400 uppercase tracking-wide font-medium">
               {char.role === 'protagonist' ? t.characterPanel.protagonist : 'NPC'}
             </span>
             {char.status && char.status !== 'active' && (
-              <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ml-1 ${CHARACTER_STATUS_CONFIG[char.status].text} ${CHARACTER_STATUS_CONFIG[char.status].bg}`}>
+              <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${CHARACTER_STATUS_CONFIG[char.status].text} ${CHARACTER_STATUS_CONFIG[char.status].bg}`}>
                 {(t.entityStatus as any)[char.status]}
               </span>
             )}
@@ -107,31 +152,36 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
   const renderItem = (item: Item) => {
     const rc = RARITY_CONFIG[item.rarity];
     return (
-      <div className="space-y-5">
-        <div className="flex items-center gap-4">
-          {item.imageUrl ? (
-            <img src={getImageUrl(item.imageUrl)} alt={item.name} className={`w-20 h-20 rounded-2xl object-cover border-2 ${rc.border}`} />
-          ) : (
-            <div className={`w-20 h-20 rounded-2xl bg-ink-700/50 border ${rc.border} flex flex-col items-center justify-center gap-1`}>
-              <Package size={28} className="text-ink-200/60" />
-              <RetryImageButton entityType="item" entityId={item._id} showLabel />
-            </div>
-          )}
-          <div>
-            <h3 className="font-display text-xl text-ink-100">{item.name}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className={`text-xs uppercase tracking-wide font-bold ${rc.text}`}>
-                {rc.icon} {t.rarity[item.rarity]}
+      <div className="space-y-4">
+        {/* Hero image */}
+        {renderHeroImage(
+          item.imageUrl,
+          item.name,
+          'item',
+          item._id,
+          <Package size={36} className="text-ink-200/40" />,
+          rc.border,
+        )}
+
+        {/* Name & rarity */}
+        <div className="text-center">
+          <h3 className="font-display text-2xl text-ink-100">{item.name}</h3>
+          <div className="flex items-center justify-center gap-2 mt-1">
+            <span className={`text-xs uppercase tracking-wide font-bold ${rc.text}`}>
+              {rc.icon} {t.rarity[item.rarity]}
+            </span>
+            {item.status && item.status !== 'active' && (
+              <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${ITEM_STATUS_CONFIG[item.status].text} ${ITEM_STATUS_CONFIG[item.status].bg}`}>
+                {(t.entityStatus as any)[item.status]}
               </span>
-              {item.status && item.status !== 'active' && (
-                <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${ITEM_STATUS_CONFIG[item.status].text} ${ITEM_STATUS_CONFIG[item.status].bg}`}>
-                  {(t.entityStatus as any)[item.status]}
-                </span>
-              )}
-            </div>
+            )}
           </div>
         </div>
+
+        {/* Description */}
         <p className="text-ink-200/80 text-sm leading-relaxed">{item.description}</p>
+
+        {/* Properties */}
         {Object.keys(item.properties || {}).length > 0 && (
           <div>
             <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-3 font-medium">{t.itemDetail.properties}</h4>
@@ -152,32 +202,37 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
   const renderSpecialItem = (si: SpecialItem) => {
     const rc = RARITY_CONFIG[si.rarity];
     return (
-      <div className="space-y-5">
-        <div className="flex items-center gap-4">
-          {si.imageUrl ? (
-            <img src={getImageUrl(si.imageUrl)} alt={si.name} className={`w-20 h-20 rounded-2xl object-cover border-2 ${rc.border}`} />
-          ) : (
-            <div className={`w-20 h-20 rounded-2xl bg-purple-900/30 border ${rc.border} flex flex-col items-center justify-center gap-1`}>
-              <Sparkles size={28} className="text-purple-400/60" />
-              <RetryImageButton entityType="special-item" entityId={si._id} showLabel />
-            </div>
-          )}
-          <div>
-            <h3 className="font-display text-xl text-ink-100">{si.name}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] text-purple-400/80 bg-purple-400/10 px-2 py-0.5 rounded">{si.category}</span>
-              <span className={`text-xs uppercase tracking-wide font-bold ${rc.text}`}>
-                {rc.icon} {t.rarity[si.rarity]}
+      <div className="space-y-4">
+        {/* Hero image */}
+        {renderHeroImage(
+          si.imageUrl,
+          si.name,
+          'special-item',
+          si._id,
+          <Sparkles size={36} className="text-purple-400/40" />,
+          rc.border,
+        )}
+
+        {/* Name, category & rarity */}
+        <div className="text-center">
+          <h3 className="font-display text-2xl text-ink-100">{si.name}</h3>
+          <div className="flex items-center justify-center gap-2 mt-1">
+            <span className="text-[10px] text-purple-400/80 bg-purple-400/10 px-2 py-0.5 rounded">{si.category}</span>
+            <span className={`text-xs uppercase tracking-wide font-bold ${rc.text}`}>
+              {rc.icon} {t.rarity[si.rarity]}
+            </span>
+            {si.status && si.status !== 'active' && (
+              <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${SPECIAL_STATUS_CONFIG[si.status].text} ${SPECIAL_STATUS_CONFIG[si.status].bg}`}>
+                {(t.entityStatus as any)[si.status]}
               </span>
-              {si.status && si.status !== 'active' && (
-                <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${SPECIAL_STATUS_CONFIG[si.status].text} ${SPECIAL_STATUS_CONFIG[si.status].bg}`}>
-                  {(t.entityStatus as any)[si.status]}
-                </span>
-              )}
-            </div>
+            )}
           </div>
         </div>
+
+        {/* Description */}
         <p className="text-ink-200/80 text-sm leading-relaxed">{si.description}</p>
+
+        {/* Custom Fields */}
         {Object.keys(si.customFields || {}).length > 0 && (
           <div>
             <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-3 font-medium">{t.itemDetail.properties}</h4>
@@ -205,7 +260,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className={`relative w-full max-w-lg bg-ink-900 border rounded-3xl p-6 max-h-[85vh] overflow-y-auto ${rc ? `${rc.border} ${rc.glow}` : 'border-ink-700'}`}>
+      <div className={`relative w-full max-w-md bg-ink-900 border rounded-3xl p-6 max-h-[85vh] overflow-y-auto ${rc ? `${rc.border} ${rc.glow}` : 'border-ink-700'}`}>
         {/* Rarity shimmer for epic/legendary */}
         {rarity === 'legendary' && (
           <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
@@ -225,7 +280,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
           <X size={16} />
         </button>
 
-        <div className="relative">
+        <div className="relative pt-2">
           {entity.type === 'character' && renderCharacter(entity.data)}
           {entity.type === 'item' && renderItem(entity.data)}
           {entity.type === 'special' && renderSpecialItem(entity.data)}
