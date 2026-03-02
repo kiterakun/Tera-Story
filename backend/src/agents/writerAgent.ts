@@ -115,9 +115,20 @@ export async function runWriterAgent(
     generateChoices: makeGenerateChoicesTool(chapterId),
   };
 
-  // Format context for prompt — include existing character names to prevent duplication
+  // Format context for prompt — full character data for accurate tool calls
   const existingCharacters = contextOutput.activeCharacters;
+  const existingCharacterNames = existingCharacters.map(c => c.name);
 
+  // Build detailed character block with stats, status, description
+  const existingCharactersBlock = existingCharacters.length > 0
+    ? existingCharacters.map(c => {
+        const statsStr = Object.entries(c.dynamicStats).length > 0
+          ? ` [Stats: ${Object.entries(c.dynamicStats).map(([k, v]) => `${k}=${v}`).join(', ')}]`
+          : '';
+        const statusTag = c.status && c.status !== 'active' ? ` [STATUS: ${c.status.toUpperCase()}]` : '';
+        return `- ${c.name} (${c.role}${statusTag}): ${c.description}${statsStr}`;
+      }).join('\n')
+    : 'No characters yet \u2014 you may create new ones.';
   // Build structured item reference for accurate markup
   const existingItemsBlock = contextOutput.existingItems.length > 0
     ? contextOutput.existingItems.map(i => `- ${i.name} (${i.rarity})${i.owner ? ` [owned by ${i.owner}]` : ''}`).join('\n')
@@ -164,7 +175,7 @@ Outline: ${contextOutput.outline}
 
 Scene: ${contextOutput.currentScene}
 
-Active Characters: ${existingCharacters.join(', ') || 'None specified'}
+Active Characters: ${existingCharacterNames.join(', ') || 'None specified'}
 
 Relevant Plot Points:
 ${contextOutput.relevantPlotPoints.map((p) => `- ${p}`).join('\n') || '- None'}
@@ -173,7 +184,7 @@ Filtered Context:
 ${contextOutput.filteredContext}
 
 === EXISTING CHARACTERS (DO NOT recreate with createCharacter) ===
-${existingCharacters.length > 0 ? existingCharacters.map(c => `- ${c}`).join('\n') : 'No characters yet \u2014 you may create new ones.'}
+${existingCharactersBlock}
 
 === EXISTING ITEMS (USE EXACT rarity when mentioning with [[item:Name:rarity]] markup) ===
 ${existingItemsBlock}
@@ -189,13 +200,13 @@ ${resourceTemplatesBlock}
 
 === INSTRUCTIONS ===
 Write the next chapter based on the context above. Remember to:
-1. ONLY use createCharacter for genuinely NEW characters. NEVER call createCharacter for: ${existingCharacters.join(', ') || 'N/A'}
+1. ONLY use createCharacter for genuinely NEW characters. NEVER call createCharacter for: ${existingCharacterNames.join(', ') || 'N/A'}
 2. When calling createCharacter, you MUST provide dynamicStats — an object with keys matching the RESOURCE TEMPLATES above and values that are MEANINGFUL for the character. For example, if templates include "HP (number, min:0, max:100)", a strong warrior might have HP=85 while a frail scholar might have HP=30. Consider the character's role, background, and story context when assigning values.
 3. NEVER use createItem for items that already exist above. Reference them by name using [[item:Name:rarity]] with the EXACT rarity listed above
 4. NEVER use createSpecialItem for special items that already exist above. Reference them using [[special:Name:rarity]] with the EXACT rarity listed above
 5. Create NEW items (weapons, potions, artifacts) using createItem with appropriate rarity
 6. Create NEW special items using createSpecialItem — the category MUST be one of the AVAILABLE SPECIAL ITEM CATEGORIES listed above. You MUST provide customFields matching the Fields defined for that category (e.g. if category has fields "Power (number, required), Element (enum, options: Fire|Ice|Thunder)", pass customFields: { "Power": 50, "Element": "Fire" })
-7. Update character stats if story events warrant it using updateStats \u2014 values must match data types
+7. When using updateStats, reference the CURRENT stat values shown in EXISTING CHARACTERS above. Calculate the NEW value based on story events (e.g. if HP=80 and character takes moderate damage, set HP to ~50-60, not a random number). Values must match the stat's data type.
 8. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]] markup when mentioning entities in the story text
 9. Call generateChoices at the end with 3-4 meaningful options
 `.trim();

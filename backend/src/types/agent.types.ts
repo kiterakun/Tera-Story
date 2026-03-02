@@ -6,10 +6,18 @@ export interface IEntityRef {
   owner?: string;
 }
 
+export interface ICharacterRef {
+  name: string;
+  role: 'protagonist' | 'npc';
+  status: string;
+  description: string;
+  dynamicStats: Record<string, string | number | boolean>;
+}
+
 export interface IContextOutput {
   outline: string;
   filteredContext: string;
-  activeCharacters: string[];
+  activeCharacters: ICharacterRef[];
   existingItems: IEntityRef[];
   existingSpecialItems: IEntityRef[];
   specialItemTemplateCategories: Array<{ category: string; description: string; fields: Array<{ name: string; type: string; options?: string[]; required?: boolean }> }>;

@@ -223,14 +223,17 @@ Based on the player's choice and the FULL story state above (including all items
 
   // Filter activeCharacters against actual DB records to prevent hallucinated names.
   // The LLM may return character names that don't exist in the database yet.
-  const dbCharacterNames = new Set(characters.map((c) => c.name));
-  const verifiedActiveCharacters = (validated.activeCharacters ?? []).filter((name) => dbCharacterNames.has(name));
+  const dbCharacterMap = new Map(characters.map((c) => [c.name, c]));
 
-  // If LLM missed some DB characters that are active, ensure they're included
-  const allActiveDbCharacters = characters
-    .filter((c) => (c as any).status === 'active' || !(c as any).status)
-    .map((c) => c.name);
-  const mergedActiveCharacters = Array.from(new Set([...verifiedActiveCharacters, ...allActiveDbCharacters]));
+  // Build full character refs from DB — authoritative source of truth
+  // Include ALL DB characters (not just LLM-mentioned ones) to prevent missed entities
+  const activeCharacterRefs = characters.map((c) => ({
+    name: c.name,
+    role: c.role as 'protagonist' | 'npc',
+    status: (c as any).status ?? 'active',
+    description: c.description,
+    dynamicStats: Object.fromEntries(c.dynamicStats.map((s) => [s.k, s.v])),
+  }));
 
   // Build structured entity refs directly from DB (authoritative, not LLM-summarized)
   const existingItems = items.map((i) => {
@@ -261,7 +264,7 @@ Based on the player's choice and the FULL story state above (including all items
   return {
     outline: validated.outline ?? '',
     filteredContext: validated.filteredContext ?? '',
-    activeCharacters: mergedActiveCharacters,
+    activeCharacters: activeCharacterRefs,
     existingItems,
     existingSpecialItems,
     specialItemTemplateCategories: specialItemTemplates.map((t) => ({
