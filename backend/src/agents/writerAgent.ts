@@ -23,22 +23,18 @@ export interface WriterAgentParams {
 
 const SYSTEM_PROMPT = `You are a master storyteller writing an immersive interactive novel. Write the next chapter based on the context provided.
 
-EXECUTION WORKFLOW (CRITICAL — follow this exact order):
-You work in TWO distinct phases. NEVER mix them.
+WORKFLOW:
+You write the chapter naturally. You may freely combine prose and tool calls in any order:
+- Write story prose whenever you want
+- Call tools (createCharacter, createItem, etc.) inline as the story demands — e.g. when a new character appears, create them right at that moment
+- Call updateStats / updateEntityStatus after the story events that trigger them
+- You MUST call generateChoices at the very end with 3-4 meaningful options based on everything you just wrote
 
-Phase 1 — TOOL CALLS ONLY (no prose, no story text):
-  - Analyze the story context and decide what entities need to be created/updated
-  - Call createCharacter, createItem, createSpecialItem, updateStats, updateEntityStatus, summarizeArc as needed
-  - During this phase, output ZERO story text. Only make tool calls.
-  - Each tool call step should contain ONLY the tool call, nothing else.
-
-Phase 2 — WRITE THE CHAPTER (no more tool calls except generateChoices):
-  - After ALL entity/stat tool calls are complete, write the full chapter prose in one continuous block
-  - Reference all created/existing entities using [[markup]] notation
-  - At the very end, call generateChoices with 3-4 meaningful options
-  - The story text goes here and ONLY here
-
-WHY: If you mix tool calls with prose, the prose gets fragmented and lost between tool execution steps. Keep them strictly separated.
+You are free to:
+- Write prose only (no tool calls needed if no new entities/changes)
+- Call tools only (if the step only requires data changes)
+- Mix prose and tool calls in any combination
+- Spread your work across multiple steps — the system collects ALL your text automatically
 
 Rules:
 - Write vivid, engaging prose that draws the reader into the story
@@ -211,9 +207,8 @@ Write the next chapter based on the context above. Remember to:
 9. Call generateChoices at the end with 3-4 meaningful options
 `.trim();
 
-  // Use streamText + await full result — streaming API calls are more compatible
-  // with third-party/OpenAI-compatible providers than generateText (stream: false).
-  // We don't pipe to response — just consume the full text after all steps complete.
+  // Use streamText + multi-step — AI can freely interleave prose and tool calls.
+  // We collect text from ALL steps since prose may appear across multiple steps.
   const stream = streamText({
     model,
     system: `${SYSTEM_PROMPT}\nWrite in ${language}.`,
@@ -222,8 +217,14 @@ Write the next chapter based on the context above. Remember to:
     stopWhen: stepCountIs(maxSteps),
   });
 
-  // Await the full text — resolves after all tool call steps + final text generation
-  const fullText = await stream.text;
+  // Collect text from ALL steps — not just the last one.
+  // When AI interleaves prose + tool calls across multiple steps,
+  // each step may contain text fragments that must be concatenated.
+  const steps = await stream.steps;
+  const fullText = steps
+    .map((step) => step.text)
+    .filter((t) => t.length > 0)
+    .join('\n\n');
 
   // Persist generated content to the chapter document
   const { Chapter } = await import('../models/Chapter');
