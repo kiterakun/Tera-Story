@@ -30,17 +30,18 @@ export interface WorldContext {
 // DALL-E 3: 1024x1024 | 1024x1792 | 1792x1024
 // DALL-E 2 & many providers: 256x256 | 512x512 | 1024x1024
 function getImageSize(entityType: EntityType, model: string): string {
-  const isDalle3 = model.includes("dall-e-3") || model.includes("dalle-3");
+  // const isDalle3 = model.includes("dall-e-3") || model.includes("dalle-3");
 
-  switch (entityType) {
-    case "world":
-      return isDalle3 ? "1792x1024" : "1024x1024"; // landscape panorama
-    case "character":
-      return "1024x1024"; // square portrait — needs detail
-    case "item":
-    case "special-item":
-      return isDalle3 ? "1024x1024" : "512x512"; // icon — smallest available
-  }
+  // switch (entityType) {
+  //   case "world":
+  //     return isDalle3 ? "1792x1024" : "1024x1024"; // landscape panorama
+  //   case "character":
+  //     return "1024x1024"; // square portrait — needs detail
+  //   case "item":
+  //   case "special-item":
+  //     return isDalle3 ? "1024x1024" : "512x512"; // icon — smallest available
+  // }
+  return "1024x1024"; // Use 1024x1024 for all types to maximize quality and compatibility
 }
 
 // ── Genre → visual style mapping ──────────────────────────────────────
@@ -82,7 +83,9 @@ function buildImagePrompt(
       return [
         `Single item illustration, centered on dark background: ${entityDetails.name}.`,
         entityDetails.description,
-        entityDetails.rarity ? `${entityDetails.rarity} tier quality glow.` : "",
+        entityDetails.rarity
+          ? `${entityDetails.rarity} tier quality glow.`
+          : "",
         worldHint,
         `Art direction: ${genreStyle}. RPG inventory icon, dramatic lighting, detailed rendering.`,
         "No text, no watermark, no hands, no characters.",
