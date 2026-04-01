@@ -1,4 +1,3 @@
-.sisyphus
 node_modules/
 dist/
 build/
@@ -8,3 +7,4 @@ build/
 Thumbs.db
 *.log
 uploads/
+.vscode/
