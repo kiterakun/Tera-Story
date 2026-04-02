@@ -176,8 +176,21 @@ export async function generateImage(
       return;
     }
 
-    // Download image bytes
-    const imageResponse = await fetch(imageUrl);
+    // Download image bytes with optional auth fallback
+    // Some providers (OpenRouter, Azure) return URLs that require the API token
+    // OpenAI DALL-E returns pre-signed URLs that don't need auth
+    let imageResponse = await fetch(imageUrl);
+
+    // If 401, retry with Bearer token
+    if (imageResponse.status === 401) {
+      console.log(`[Image] URL returned 401, retrying with auth token...`);
+      imageResponse = await fetch(imageUrl, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+      });
+    }
+
     if (!imageResponse.ok) {
       console.error(`Failed to download image: ${imageResponse.status}`);
       return;
