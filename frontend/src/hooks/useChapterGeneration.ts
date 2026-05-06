@@ -1,21 +1,30 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import * as storyApi from '../services/storyApi';
 import type { GenerateChapterResponse } from '../services/storyApi';
 
 interface UseChapterGenerationReturn {
   isGenerating: boolean;
   isRetryingTools: boolean;
+  isStreaming: boolean;
+  streamingText: string;
+  streamPhase: string;
   error: string | null;
   generateChapter: (playthroughId: string, choice: string) => Promise<GenerateChapterResponse | null>;
+  generateChapterStream: (playthroughId: string, choice: string) => Promise<GenerateChapterResponse | null>;
   retryChapter: (chapterId: string) => Promise<GenerateChapterResponse | null>;
   retryTools: (chapterId: string) => Promise<GenerateChapterResponse | null>;
   clearError: () => void;
+  cancelStream: () => void;
 }
 
 export function useChapterGeneration(): UseChapterGenerationReturn {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRetryingTools, setIsRetryingTools] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingText, setStreamingText] = useState('');
+  const [streamPhase, setStreamPhase] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
 
   const generateChapter = useCallback(async (playthroughId: string, choice: string): Promise<GenerateChapterResponse | null> => {
     setIsGenerating(true);
@@ -32,6 +41,47 @@ export function useChapterGeneration(): UseChapterGenerationReturn {
     } finally {
       setIsGenerating(false);
     }
+  }, []);
+
+  const generateChapterStream = useCallback((playthroughId: string, choice: string): Promise<GenerateChapterResponse | null> => {
+    setIsGenerating(true);
+    setIsStreaming(true);
+    setStreamingText('');
+    setStreamPhase('writing');
+    setError(null);
+
+    return new Promise((resolve) => {
+      const { cancel } = storyApi.generateChapterStream(playthroughId, choice, {
+        onToken: (token) => {
+          setStreamingText((prev) => prev + token);
+        },
+        onPhase: (phase, _message) => {
+          setStreamPhase(phase);
+        },
+        onComplete: (data) => {
+          setIsGenerating(false);
+          setIsStreaming(false);
+          setStreamPhase('');
+          resolve(data);
+        },
+        onError: (err) => {
+          setError(err);
+          setIsGenerating(false);
+          setIsStreaming(false);
+          setStreamPhase('');
+          resolve(null);
+        },
+      });
+
+      cancelRef.current = cancel;
+    });
+  }, []);
+
+  const cancelStream = useCallback(() => {
+    cancelRef.current?.();
+    setIsGenerating(false);
+    setIsStreaming(false);
+    setStreamPhase('');
   }, []);
 
   const retryChapter = useCallback(async (chapterId: string): Promise<GenerateChapterResponse | null> => {
@@ -72,5 +122,18 @@ export function useChapterGeneration(): UseChapterGenerationReturn {
     setError(null);
   }, []);
 
-  return { isGenerating, isRetryingTools, error, generateChapter, retryChapter, retryTools, clearError };
+  return {
+    isGenerating,
+    isRetryingTools,
+    isStreaming,
+    streamingText,
+    streamPhase,
+    error,
+    generateChapter,
+    generateChapterStream,
+    retryChapter,
+    retryTools,
+    clearError,
+    cancelStream,
+  };
 }

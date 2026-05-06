@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { generateChapter, retryChapter, retryChapterTools, summarizeCurrentArc } from '../services/storyOrchestrator';
+import { generateChapter, generateChapterStream, retryChapter, retryChapterTools, summarizeCurrentArc } from '../services/storyOrchestrator';
 import { Arc } from '../models/Arc';
 import { Chapter } from '../models/Chapter';
 import { Character } from '../models/Character';
@@ -48,6 +48,69 @@ router.post(
       res.status(500).json({ error: err.message || 'Generation failed' });
     } finally {
       activeGenerations.delete(playthroughId);
+    }
+  }
+);
+
+// POST /api/story/generate-stream — SSE streaming endpoint
+router.post(
+  '/story/generate-stream',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const { playthroughId, choice } = req.body;
+    const userId = req.user!.id;
+
+    if (!playthroughId || !choice) {
+      res.status(400).json({ error: 'playthroughId and choice are required' });
+      return;
+    }
+
+    if (activeGenerations.has(playthroughId)) {
+      res.status(429).json({ error: 'Generation already in progress for this playthrough' });
+      return;
+    }
+
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    activeGenerations.add(playthroughId);
+
+    // Handle client disconnect
+    let clientDisconnected = false;
+    req.on('close', () => { clientDisconnected = true; });
+
+    const sendSSE = (event: string, data: unknown) => {
+      if (clientDisconnected) return;
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+
+    try {
+      const result = await generateChapterStream(
+        playthroughId,
+        choice,
+        userId,
+        (token) => sendSSE('token', { token })
+      );
+
+      sendSSE('phase', { phase: 'tools', message: 'Updating game state...' });
+
+      // Reload chapter to include choices and tool results
+      const updatedChapter = await Chapter.findById(result.chapter?._id).lean();
+
+      sendSSE('complete', {
+        success: true,
+        chapter: updatedChapter || result.chapter,
+        content: result.content,
+      });
+    } catch (err: any) {
+      console.error('[Story] Stream generation error:', err);
+      sendSSE('error', { error: err.message || 'Generation failed' });
+    } finally {
+      activeGenerations.delete(playthroughId);
+      if (!clientDisconnected) res.end();
     }
   }
 );

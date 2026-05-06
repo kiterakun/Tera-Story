@@ -238,7 +238,6 @@ const en = {
     retryingTools: 'Retrying game state update...',
 
     // Arc summarization
-    summarizingArc: 'Summarizing current arc...',
     arcSummarized: 'Arc summarized! Starting new arc.',
     arcSummarizeFailed: 'Failed to summarize arc',
     // Context info
@@ -252,6 +251,17 @@ const en = {
     mobileBack: 'Back',
     mobileChapters: 'Chapters',
     mobileRpg: 'RPG',
+    // Streaming
+    streamingChapter: 'AI is writing...',
+    streamPhaseTools: 'Updating game state...',
+    // Relationships tab
+    relationshipsTab: 'Relations',
+    noRelationships: 'No relationships established yet.',
+    // Combat
+    combatActive: 'Combat in progress!',
+    combatResolved: 'Combat resolved.',
+    // Consequences
+    consequenceActivated: 'A past decision echoes through time...',
   },
 
   characterPanel: {
@@ -355,6 +365,39 @@ const en = {
     imageQueued: 'Queued!',
   },
 
+  // Relationship labels
+  relationship: {
+    ally: 'Ally',
+    enemy: 'Enemy',
+    romantic: 'Romantic',
+    mentor: 'Mentor',
+    rival: 'Rival',
+    neutral: 'Neutral',
+    family: 'Family',
+  },
+
+  // Consequence labels
+  consequence: {
+    minor: 'Minor',
+    major: 'Major',
+    critical: 'Critical',
+    pending: 'Pending',
+    activated: 'Activated',
+  },
+
+  // Combat labels
+  combat: {
+    title: 'Combat',
+    player: 'Player',
+    enemy: 'Enemy',
+    chooseAction: 'Choose your action:',
+    resolving: 'Resolving...',
+    victory: 'Victory!',
+    defeat: 'Defeat...',
+    fled: 'Fled!',
+    round: 'Round',
+  },
+
   // Toast messages
   toast: {
     // Success
@@ -368,6 +411,7 @@ const en = {
     chapterGenerated: 'Chapter generated',
     retrySuccess: 'Chapter regenerated successfully',
     retryToolsSuccess: 'Game state updated successfully',
+    arcSummarized: 'Arc summarized! Starting new arc.',
 
     // Error
     worldCreateFailed: 'Failed to create world',
@@ -383,6 +427,7 @@ const en = {
     aiEnrichFailed: 'AI enrichment failed',
     aiWorldGenFailed: 'AI world generation failed',
     loadFailed: 'Failed to load data',
+    arcSummarizeFailed: 'Failed to summarize arc',
 
     // Loading
     generatingChapter: 'Generating chapter...',

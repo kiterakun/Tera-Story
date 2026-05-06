@@ -8,6 +8,9 @@ import { makeUpdateStatsTool } from '../tools/updateStats';
 import { makeUpdateEntityStatusTool } from '../tools/updateEntityStatus';
 import { makeSummarizeArcTool } from '../tools/summarizeArc';
 import { makeGenerateChoicesTool } from '../tools/generateChoices';
+import { makeUpdateRelationshipTool } from '../tools/updateRelationship';
+import { makePlantConsequenceTool, makeActivateConsequenceTool } from '../tools/plantConsequence';
+import { makeInitiateCombatTool } from '../tools/initiateCombat';
 
 export interface WriterAgentParams {
   contextOutput: ContextOutput;
@@ -21,6 +24,8 @@ export interface WriterAgentParams {
   maxSteps?: number;
   /** If true, skip Pass 1 (prose) and only run Pass 2 (tools). Content must already exist in DB. */
   skipPass1?: boolean;
+  /** Optional callback for each text token during Pass 1 streaming */
+  onToken?: (token: string) => void;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -39,6 +44,20 @@ CHARACTER & ENTITY CONSISTENCY:
 - Characters with status 'dead' MUST NOT appear alive. Characters with status 'injured' should reflect their injuries. Characters with status 'missing' are absent from the scene.
 - Items/special items with status 'destroyed', 'consumed', 'lost', or 'sealed' MUST NOT be used as if they still exist. Reference them only in past tense or memories.
 - You may introduce NEW characters, items, or abilities in the prose — they will be registered in the game system automatically after you finish writing.
+
+RELATIONSHIP AWARENESS:
+- Use character relationships to drive natural drama, tension, and emotional depth
+- Allies should act supportive, rivals should create tension, enemies should be hostile
+- Relationship changes (betrayal, bonding, romance development) make great story moments
+
+CONSEQUENCE AWARENESS:
+- If MATURE CONSEQUENCES are listed, try to naturally weave them into the chapter when appropriate
+- These are delayed effects from earlier player choices — make the callback feel earned and surprising
+- Not every consequence needs to activate in every chapter — only when it fits naturally
+
+COMBAT AWARENESS:
+- If there is an ACTIVE COMBAT, the chapter should focus on the combat scene
+- When combat situations arise naturally, describe the battle scene vividly and set up for combat initiation
 
 ENTITY MARKUP (REQUIRED):
 When mentioning characters, items, or special items in the story text, wrap them in special markup:
@@ -89,9 +108,26 @@ TOOL CALLING RULES:
    - Ability LOST → ('special-item', name, 'lost')
    - Ability CONSUMED → ('special-item', name, 'consumed')
 
-6. summarizeArc — ONLY if a major story arc has clearly concluded in this chapter
+6. updateRelationship — For any relationship changes between characters:
+   - New alliance formed, betrayal, romantic development, mentor taking a student, rivalry emerging
+   - Set appropriate type and intensity (-100 to +100)
 
-7. generateChoices (REQUIRED) — You MUST call this with 3-4 meaningful choices for the reader based on the chapter content. Each choice should lead to a genuinely different narrative path.
+7. plantConsequence — For important player decisions that should have DELAYED effects:
+   - Sparing an enemy, making promises, acquiring cursed items, offending powerful figures
+   - Set appropriate delay (3-10 chapters) and impact level
+   - Do NOT plant consequences for trivial events
+
+8. activateConsequence — If any MATURE CONSEQUENCES were woven into this chapter:
+   - Mark them as activated so they won't be repeated
+
+9. initiateCombat — If a combat encounter begins in this chapter:
+   - Provide enemy combatants with HP based on their strength
+   - Provide 3-6 available combat actions for the player
+   - Only initiate if the chapter describes the START of a fight
+
+10. summarizeArc — ONLY if a major story arc has clearly concluded in this chapter
+
+11. generateChoices (REQUIRED) — You MUST call this with 3-4 meaningful choices for the reader based on the chapter content. Each choice should lead to a genuinely different narrative path.
 
 Call ALL applicable tools. If nothing changed (no new entities, no stat changes, no status changes), just call generateChoices.`;
 
@@ -111,6 +147,7 @@ export async function runWriterAgent(
     language,
     maxSteps = 10,
     skipPass1 = false,
+    onToken,
   } = params;
 
   // ── Shared context blocks ──
@@ -167,6 +204,21 @@ export async function runWriterAgent(
   // PASS 1 — WRITE the chapter (no tools, pure prose)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+  // --- Relationship context ---
+  const relationshipsBlock = contextOutput.relationships.length > 0
+    ? contextOutput.relationships.map(r => `- ${r.characterA} ↔ ${r.characterB}: ${r.type} (intensity: ${r.intensity})`).join('\n')
+    : 'No established relationships.';
+
+  // --- Mature consequences ---
+  const consequencesBlock = contextOutput.matureConsequences.length > 0
+    ? contextOutput.matureConsequences.map(c => `- [${c.impact.toUpperCase()}] ${c.description} (planted ch.${c.triggerChapterIndex + 1}, tags: ${c.tags.join(', ')})`).join('\n')
+    : 'No mature consequences.';
+
+  // --- Active combat ---
+  const combatBlock = contextOutput.activeCombat
+    ? `ACTIVE COMBAT: ${contextOutput.activeCombat.context}\nCombatants: ${contextOutput.activeCombat.combatants.map(c => `${c.name}(${c.side}) HP:${c.currentHp}/${c.maxHp}`).join(', ')}`
+    : '';
+
   const writePrompt = `
 Write the next chapter in ${language}.
 
@@ -186,12 +238,19 @@ ${contextOutput.filteredContext}
 === EXISTING CHARACTERS ===
 ${existingCharactersBlock}
 
+=== CHARACTER RELATIONSHIPS ===
+${relationshipsBlock}
+
 === EXISTING ITEMS (USE EXACT rarity in [[item:Name:rarity]] markup) ===
 ${existingItemsBlock}
 
 === EXISTING SPECIAL ITEMS (USE EXACT rarity in [[special:Name:rarity]] markup) ===
 ${existingSpecialItemsBlock}
 
+=== MATURE CONSEQUENCES (Butterfly Effect — weave these in when it fits naturally) ===
+${consequencesBlock}
+
+${combatBlock ? `=== ACTIVE COMBAT ===\n${combatBlock}\n` : ''}
 Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]] markup for all entities.`.trim();
 
   let chapterContent: string;
@@ -214,7 +273,17 @@ Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[speci
       prompt: writePrompt,
     });
 
-    chapterContent = await writeStream.text;
+    // If onToken callback exists, iterate token stream for SSE
+    if (onToken) {
+      const chunks: string[] = [];
+      for await (const chunk of writeStream.textStream) {
+        chunks.push(chunk);
+        onToken(chunk);
+      }
+      chapterContent = chunks.join('');
+    } else {
+      chapterContent = await writeStream.text;
+    }
 
     // Save content immediately so the user can start reading
     await Chapter.findByIdAndUpdate(chapterId, {
@@ -235,6 +304,10 @@ Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[speci
     createSpecialItem: makeCreateSpecialItemTool(playthroughId, worldId, userId),
     updateStats: makeUpdateStatsTool(playthroughId, userId),
     updateEntityStatus: makeUpdateEntityStatusTool(playthroughId),
+    updateRelationship: makeUpdateRelationshipTool(playthroughId),
+    plantConsequence: makePlantConsequenceTool(playthroughId, chapterId),
+    activateConsequence: makeActivateConsequenceTool(playthroughId, chapterId),
+    initiateCombat: makeInitiateCombatTool(playthroughId, chapterId),
     summarizeArc: makeSummarizeArcTool(),
     generateChoices: makeGenerateChoicesTool(chapterId),
   };
@@ -249,6 +322,9 @@ ${chapterContent}
 === EXISTING CHARACTERS (DO NOT recreate these — they already exist) ===
 ${existingCharactersBlock}
 
+=== CHARACTER RELATIONSHIPS (current state — update if changed) ===
+${relationshipsBlock}
+
 === EXISTING ITEMS (DO NOT recreate these) ===
 ${existingItemsBlock}
 
@@ -261,6 +337,9 @@ ${templateCategoriesBlock}
 === RESOURCE TEMPLATES / CHARACTER STATS (MUST provide dynamicStats when calling createCharacter) ===
 ${resourceTemplatesBlock}
 
+=== MATURE CONSEQUENCES (mark as activated if woven into this chapter) ===
+${consequencesBlock}
+
 === INSTRUCTIONS ===
 Based on the chapter above:
 1. Create any NEW characters that appeared (not in EXISTING CHARACTERS). Provide dynamicStats with values meaningful to their role.
@@ -268,8 +347,12 @@ Based on the chapter above:
 3. Create any NEW special items/abilities (not in EXISTING SPECIAL ITEMS). Category MUST match AVAILABLE SPECIAL ITEM CATEGORIES.
 4. Update stats for characters whose attributes changed. Reference their CURRENT values above and calculate new values based on events.
 5. Update entity statuses for any deaths, injuries, destructions, etc.
-6. Call summarizeArc ONLY if a major story arc concluded.
-7. MUST call generateChoices with 3-4 meaningful choices for the reader.
+6. Update relationships if character dynamics changed (new alliance, betrayal, rivalry, romance, etc.).
+7. Plant consequence seeds for significant player decisions with delayed effects.
+8. Activate any MATURE CONSEQUENCES that were incorporated into this chapter.
+9. Initiate combat if a fight scene begins in this chapter.
+10. Call summarizeArc ONLY if a major story arc concluded.
+11. MUST call generateChoices with 3-4 meaningful choices for the reader.
 
 Call all applicable tools NOW. Do NOT output any text — ONLY tool calls.`.trim();
 

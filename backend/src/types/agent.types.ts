@@ -14,6 +14,29 @@ export interface ICharacterRef {
   dynamicStats: Record<string, string | number | boolean>;
 }
 
+export interface IRelationshipRef {
+  characterA: string;
+  characterB: string;
+  type: string;
+  intensity: number;
+}
+
+export interface IConsequenceSeedRef {
+  description: string;
+  impact: string;
+  tags: string[];
+  triggerChapterIndex: number;
+}
+
+export interface ICombatRef {
+  combatId: string;
+  context: string;
+  status: string;
+  combatants: Array<{ name: string; side: string; currentHp: number; maxHp: number; defeated: boolean }>;
+  availableActions: string[];
+  roundCount: number;
+}
+
 export interface IContextOutput {
   outline: string;
   filteredContext: string;
@@ -24,6 +47,9 @@ export interface IContextOutput {
   currentScene: string;
   relevantPlotPoints: string[];
   resourceTemplates: Array<{ key: string; type: string; min?: number; max?: number; defaultValue?: string | number; options?: string[] }>;
+  relationships: IRelationshipRef[];
+  matureConsequences: IConsequenceSeedRef[];
+  activeCombat: ICombatRef | null;
   usage?: { inputTokens: number; outputTokens: number };
 }
 

@@ -128,3 +128,82 @@ export async function listSpecialItemsByOwner(playthroughId: string, characterId
   const { data } = await api.get<{ specialItems: SpecialItem[] }>(`/playthroughs/${playthroughId}/special-items/by-owner/${characterId}`);
   return data.specialItems;
 }
+
+// Relationship types
+export type RelationType = 'ally' | 'enemy' | 'romantic' | 'mentor' | 'rival' | 'neutral' | 'family';
+
+export interface Relationship {
+  _id: string;
+  characterA: { _id: string; name: string };
+  characterB: { _id: string; name: string };
+  type: RelationType;
+  intensity: number;
+}
+
+export async function listRelationships(playthroughId: string): Promise<Relationship[]> {
+  const { data } = await api.get<{ relationships: Relationship[] }>(`/playthroughs/${playthroughId}/relationships`);
+  return data.relationships;
+}
+
+// Consequence types
+export interface ConsequenceSeed {
+  _id: string;
+  description: string;
+  triggerChapterIndex: number;
+  minChapterDelay: number;
+  activated: boolean;
+  activatedInChapterId?: string;
+  impact: 'minor' | 'major' | 'critical';
+  tags: string[];
+  createdAt: string;
+}
+
+export async function listConsequences(playthroughId: string): Promise<ConsequenceSeed[]> {
+  const { data } = await api.get<{ consequences: ConsequenceSeed[] }>(`/playthroughs/${playthroughId}/consequences`);
+  return data.consequences;
+}
+
+// Combat types
+export interface CombatCombatant {
+  characterId: string;
+  name: string;
+  side: 'player' | 'enemy';
+  currentHp: number;
+  maxHp: number;
+  defeated: boolean;
+}
+
+export interface CombatRound {
+  roundIndex: number;
+  playerAction: string;
+  narrative: string;
+  stateChanges: Array<{ characterName: string; stat: string; oldValue: number; newValue: number }>;
+}
+
+export interface CombatEncounter {
+  _id: string;
+  playthroughId: string;
+  chapterId: string;
+  combatants: CombatCombatant[];
+  rounds: CombatRound[];
+  status: 'active' | 'victory' | 'defeat' | 'fled' | 'resolved';
+  context: string;
+  availableActions: string[];
+}
+
+export async function getActiveCombat(playthroughId: string): Promise<CombatEncounter | null> {
+  const { data } = await api.get<{ combat: CombatEncounter | null }>(`/playthroughs/${playthroughId}/combat`);
+  return data.combat;
+}
+
+export interface CombatActionResponse {
+  success: boolean;
+  narrative: string;
+  combat: CombatEncounter;
+  stateChanges: Array<{ characterName: string; stat: string; oldValue: number; newValue: number }>;
+}
+
+export async function performCombatAction(combatId: string, action: string): Promise<CombatActionResponse> {
+  const { data } = await api.post<CombatActionResponse>(`/combat/${combatId}/action`, { action });
+  return data;
+}

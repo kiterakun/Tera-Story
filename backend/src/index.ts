@@ -16,6 +16,8 @@ import itemsRouter from './routes/items';
 import specialItemsRouter from './routes/specialItems';
 import imagesRouter from './routes/images';
 import specialItemTemplatesRouter from './routes/specialItemTemplates';
+import relationshipsRouter from './routes/relationships';
+import combatRouter from './routes/combat';
 import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
@@ -73,6 +75,12 @@ app.use('/api/support', authMiddleware, supportRouter);
 
 // Story Routes (generation + state)
 app.use('/api', authMiddleware, storyRouter);
+
+// Relationship & Consequence Routes
+app.use('/api', authMiddleware, relationshipsRouter);
+
+// Combat Routes
+app.use('/api', authMiddleware, combatRouter);
 
 // Start logic separated for testing
 if (require.main === module) {

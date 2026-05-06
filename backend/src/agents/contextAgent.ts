@@ -9,6 +9,9 @@ import { SpecialItem } from '../models/SpecialItem';
 import { Playthrough } from '../models/Playthrough';
 import { World } from '../models/World';
 import { SpecialItemTemplate } from '../models/SpecialItemTemplate';
+import { Relationship } from '../models/Relationship';
+import { ConsequenceSeed } from '../models/ConsequenceSeed';
+import { CombatEncounter } from '../models/CombatEncounter';
 import type { IContextOutput } from '../types/agent.types';
 
 export interface ContextAgentParams {
@@ -69,12 +72,15 @@ export async function runContextAgent(
   const world = await World.findById(playthrough.worldId).lean();
   if (!world) throw new Error('World not found');
 
-  // 2. Fetch all characters, items, and special items in parallel
-  const [characters, items, specialItems, specialItemTemplates] = await Promise.all([
+  // 2. Fetch all characters, items, special items, relationships, consequences, combat in parallel
+  const [characters, items, specialItems, specialItemTemplates, relationships, allConsequences, activeCombatDoc] = await Promise.all([
     Character.find({ playthroughId }).lean(),
     Item.find({ playthroughId }).lean(),
     SpecialItem.find({ playthroughId }).lean(),
     SpecialItemTemplate.find({ worldId: playthrough.worldId }).lean(),
+    Relationship.find({ playthroughId }).lean(),
+    ConsequenceSeed.find({ playthroughId, activated: false }).lean(),
+    CombatEncounter.findOne({ playthroughId, status: 'active' }).lean(),
   ]);
 
   // 3. Fetch recent chapters from current arc (limit 5 most recent)
@@ -172,6 +178,29 @@ export async function runContextAgent(
           .join('\n---\n')
       : 'No chapters yet (beginning of story).';
 
+  // --- Relationship info ---
+  const relationshipInfo = relationships.length > 0
+    ? relationships.map((r) => {
+        const charA = characters.find((c) => c._id.toString() === r.characterA.toString());
+        const charB = characters.find((c) => c._id.toString() === r.characterB.toString());
+        return `- ${charA?.name || '?'} ↔ ${charB?.name || '?'}: ${r.type} (intensity: ${r.intensity})`;
+      }).join('\n')
+    : 'No established relationships yet.';
+
+  // --- Mature consequence seeds ---
+  const chapterCount = await Chapter.countDocuments({ playthroughId });
+  const matureSeeds = allConsequences.filter(
+    (s) => chapterCount >= s.triggerChapterIndex + s.minChapterDelay
+  );
+  const consequencesInfo = matureSeeds.length > 0
+    ? matureSeeds.map((s) => `- [${s.impact.toUpperCase()}] ${s.description} (planted in chapter ${s.triggerChapterIndex + 1}, tags: ${s.tags.join(', ')})`).join('\n')
+    : 'No mature consequences.';
+
+  // --- Active combat ---
+  const combatInfo = activeCombatDoc
+    ? `ACTIVE COMBAT: ${activeCombatDoc.context}\nCombatants: ${activeCombatDoc.combatants.map((c) => `${c.name} (${c.side}) HP:${c.currentHp}/${c.maxHp}`).join(', ')}\nRounds played: ${activeCombatDoc.rounds.length}`
+    : '';
+
   const userPrompt = `
 Language: ${language}
 Player's choice: "${playerChoice}"
@@ -182,19 +211,26 @@ ${worldInfo}
 === CHARACTERS ===
 ${characterInfo || 'No characters yet.'}
 
+=== RELATIONSHIPS ===
+${relationshipInfo}
+
 === ITEMS (INVENTORY) ===
 ${itemsInfo}
 
 === SPECIAL ITEMS (SKILLS / TECHNIQUES / ETC.) ===
 ${specialItemsInfo}
 
+=== MATURE CONSEQUENCES (Butterfly Effect — incorporate these into the story when appropriate) ===
+${consequencesInfo}
+
+${combatInfo ? `=== ACTIVE COMBAT ===\n${combatInfo}\n` : ''}
 === PREVIOUS ARC SUMMARIES ===
 ${arcSummaries}
 
 === RECENT CHAPTERS ===
 ${isColdStart ? 'This is the very beginning of the story. No chapters have been written yet.' : chapterTexts}
 
-Based on the player's choice and the FULL story state above (including all items, special items, character stats, and world templates), produce the JSON context for the next chapter writer.
+Based on the player's choice and the FULL story state above (including all items, special items, character stats, relationships, consequences, and world templates), produce the JSON context for the next chapter writer.
 `.trim();
 
   // 6. Call generateText then parse JSON robustly
@@ -261,6 +297,44 @@ Based on the player's choice and the FULL story state above (including all items
     };
   });
 
+  // Build relationship refs
+  const relationshipRefs = relationships.map((r) => {
+    const charA = characters.find((c) => c._id.toString() === r.characterA.toString());
+    const charB = characters.find((c) => c._id.toString() === r.characterB.toString());
+    return {
+      characterA: charA?.name || 'Unknown',
+      characterB: charB?.name || 'Unknown',
+      type: r.type,
+      intensity: r.intensity,
+    };
+  });
+
+  // Build mature consequence refs
+  const consequenceRefs = matureSeeds.map((s) => ({
+    description: s.description,
+    impact: s.impact,
+    tags: s.tags,
+    triggerChapterIndex: s.triggerChapterIndex,
+  }));
+
+  // Build active combat ref
+  const activeCombat = activeCombatDoc
+    ? {
+        combatId: activeCombatDoc._id.toString(),
+        context: activeCombatDoc.context,
+        status: activeCombatDoc.status,
+        combatants: activeCombatDoc.combatants.map((c) => ({
+          name: c.name,
+          side: c.side,
+          currentHp: c.currentHp,
+          maxHp: c.maxHp,
+          defeated: c.defeated,
+        })),
+        availableActions: activeCombatDoc.availableActions,
+        roundCount: activeCombatDoc.rounds.length,
+      }
+    : null;
+
   return {
     outline: validated.outline ?? '',
     filteredContext: validated.filteredContext ?? '',
@@ -285,6 +359,9 @@ Based on the player's choice and the FULL story state above (including all items
       ...(t.defaultValue !== undefined ? { defaultValue: t.defaultValue } : {}),
       ...(t.options && t.options.length > 0 ? { options: t.options } : {}),
     })),
+    relationships: relationshipRefs,
+    matureConsequences: consequenceRefs,
+    activeCombat,
     currentScene: validated.currentScene ?? '',
     relevantPlotPoints: validated.relevantPlotPoints ?? [],
     usage: usage ? { inputTokens: usage.inputTokens ?? 0, outputTokens: usage.outputTokens ?? 0 } : undefined,

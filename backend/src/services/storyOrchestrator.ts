@@ -119,6 +119,104 @@ export async function generateChapter(
   }
 }
 
+/**
+ * Streaming variant of generateChapter — passes an onToken callback
+ * so callers (SSE endpoint) can stream text tokens in real-time.
+ */
+export async function generateChapterStream(
+  playthroughId: string,
+  playerChoice: string,
+  userId: string,
+  onToken: (token: string) => void
+) {
+  console.log(`[Story] generateChapterStream called: playthrough=${playthroughId}, choice="${playerChoice.slice(0, 50)}"`);
+
+  const playthrough = await Playthrough.findById(playthroughId);
+  if (!playthrough) throw new Error('Playthrough not found');
+  if (playthrough.userId.toString() !== userId) throw new Error('Unauthorized');
+  if (playthrough.status !== 'active') throw new Error('Playthrough is not active');
+
+  let settings = await UserSettings.findOne({ userId });
+  if (!settings) {
+    settings = await UserSettings.create({
+      userId,
+      language: 'en',
+      theme: 'dark',
+      aiSettings: {
+        contextAgent: { provider: 'openai', model: 'gpt-4o' },
+        writerAgent: { provider: 'openai', model: 'gpt-4o' },
+        supportAgent: { provider: 'openai', model: 'gpt-4o' },
+        imageAgent: { provider: 'openai', model: 'dall-e-3' },
+      },
+    });
+  }
+  const registry = createUserProviderRegistry(settings.aiSettings);
+
+  let arc = await Arc.findOne({ playthroughId, status: 'active' }).sort({ arcIndex: -1 });
+  if (!arc) {
+    arc = await Arc.create({
+      playthroughId,
+      arcIndex: 0,
+      title: 'Arc 1',
+      status: 'active',
+    });
+  }
+
+  const chapterCount = await Chapter.countDocuments({ playthroughId });
+  const chapter = await Chapter.create({
+    content: '',
+    arcId: arc._id,
+    playthroughId,
+    chapterIndex: chapterCount,
+    status: 'generating',
+    playerChoice,
+    metadata: { generatedAt: new Date() },
+  });
+
+  try {
+    const contextOutput = await runContextAgent({
+      playthroughId,
+      currentArcId: arc._id.toString(),
+      playerChoice,
+      userId,
+      model: registry.getContextModel(),
+      language: settings.language,
+    });
+
+    if (contextOutput.usage) {
+      await Chapter.findByIdAndUpdate(chapter._id, {
+        'metadata.contextTokens': contextOutput.usage.inputTokens,
+      });
+    }
+
+    const result = await runWriterAgent({
+      contextOutput,
+      playthroughId,
+      arcId: arc._id.toString(),
+      chapterId: chapter._id.toString(),
+      worldId: playthrough.worldId.toString(),
+      userId,
+      model: registry.getWriterModel(),
+      language: settings.language,
+      onToken,
+    });
+
+    const updatedChapter = await Chapter.findById(chapter._id).lean();
+    return {
+      chapter: updatedChapter,
+      content: result.text,
+    };
+  } catch (err) {
+    const existing = await Chapter.findById(chapter._id).lean();
+    if (!existing || !existing.content) {
+      await Chapter.findByIdAndUpdate(chapter._id, { status: 'failed' });
+    } else {
+      await Chapter.findByIdAndUpdate(chapter._id, { toolsStatus: 'failed' });
+    }
+    throw err;
+  }
+}
+
 export async function retryChapter(
   chapterId: string,
   userId: string

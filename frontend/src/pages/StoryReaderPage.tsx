@@ -5,11 +5,13 @@ import { useChapterGeneration } from '../hooks/useChapterGeneration';
 import { StoryContent, type EntityRef } from '../components/StoryContent';
 import { EntityDetailModal, type EntityData } from '../components/EntityDetailModal';
 import { ChoiceCards } from '../components/ChoiceCards';
+import { CombatPanel } from '../components/CombatPanel';
 import * as storyApi from '../services/storyApi';
+import * as playthroughApi from '../services/playthroughApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useTranslation } from '../i18n';
-import { UserRound, Users, Package, Sparkles, Swords, X, BookOpen, ChevronLeft, ChevronRight, Skull, RefreshCw, AlertTriangle, Scissors, Zap, List } from 'lucide-react';
-import type { ItemRarity } from '../services/playthroughApi';
+import { UserRound, Users, Package, Sparkles, Swords, X, BookOpen, ChevronLeft, ChevronRight, Skull, RefreshCw, AlertTriangle, Scissors, Zap, List, Heart, GitBranch } from 'lucide-react';
+import type { ItemRarity, CombatEncounter, Relationship } from '../services/playthroughApi';
 import { getImageUrl } from '../utils/url';
 import { showSuccess, showError } from '../lib/toast';
 
@@ -53,14 +55,16 @@ export default function StoryReaderPage() {
   const [isLoadingState, setIsLoadingState] = useState(true);
   const [isNewGame, setIsNewGame] = useState(false);
   const [currentChapterIdx, setCurrentChapterIdx] = useState(-1); // -1 = latest
-  const [rpgTab, setRpgTab] = useState<'stats' | 'inventory' | 'abilities'>('stats');
+  const [rpgTab, setRpgTab] = useState<'stats' | 'inventory' | 'abilities' | 'relations'>('stats');
   const [rpgOpen, setRpgOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [detailEntity, setDetailEntity] = useState<EntityData | null>(null);
   const [contextTokens, setContextTokens] = useState<number | null>(null);
   const [isSummarizingArc, setIsSummarizingArc] = useState(false);
+  const [activeCombat, setActiveCombat] = useState<CombatEncounter | null>(null);
+  const [relationships, setRelationships] = useState<Relationship[]>([]);
   
-  const { isGenerating, isRetryingTools, error, generateChapter, retryChapter, retryTools, clearError } = useChapterGeneration();
+  const { isGenerating, isRetryingTools, isStreaming, streamingText, streamPhase, error, generateChapter, generateChapterStream, retryChapter, retryTools, clearError } = useChapterGeneration();
   
   // Individual selectors to avoid getSnapshot infinite loop
   const characters = useStoryStore(s => s.characters);
@@ -80,6 +84,7 @@ export default function StoryReaderPage() {
     stats: t.storyReader.statsTab,
     inventory: t.storyReader.inventoryTab,
     abilities: t.storyReader.abilitiesTab,
+    relations: t.storyReader.relationshipsTab,
   };
   
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -124,6 +129,8 @@ export default function StoryReaderPage() {
       fetchCharacters(playthroughId).catch(console.error);
       fetchItems(playthroughId).catch(console.error);
       fetchSpecialItems(playthroughId).catch(console.error);
+      loadRelationships();
+      loadActiveCombat();
     }
   }, [playthroughId]);
 
@@ -197,8 +204,26 @@ export default function StoryReaderPage() {
       fetchCharacters(playthroughId),
       fetchItems(playthroughId),
       fetchSpecialItems(playthroughId),
+      loadRelationships(),
+      loadActiveCombat(),
     ]);
     setCurrentChapterIdx(-1);
+  };
+
+  const loadRelationships = async () => {
+    if (!playthroughId) return;
+    try {
+      const rels = await playthroughApi.listRelationships(playthroughId);
+      setRelationships(rels);
+    } catch { /* non-critical */ }
+  };
+
+  const loadActiveCombat = async () => {
+    if (!playthroughId) return;
+    try {
+      const combat = await playthroughApi.getActiveCombat(playthroughId);
+      setActiveCombat(combat);
+    } catch { /* non-critical */ }
   };
 
   const handleChoiceSelect = async (choiceText: string) => {
@@ -208,7 +233,7 @@ export default function StoryReaderPage() {
     setIsNewGame(false);
     setCurrentChapterIdx(-1);
 
-    await generateChapter(playthroughId, choiceText);
+    await generateChapterStream(playthroughId, choiceText);
     await reloadAfterGeneration();
   };
 
@@ -219,7 +244,7 @@ export default function StoryReaderPage() {
     setChoices([]);
     setCurrentChapterIdx(-1);
 
-    await generateChapter(playthroughId, 'Begin the story');
+    await generateChapterStream(playthroughId, 'Begin the story');
     await reloadAfterGeneration();
   };
 
@@ -456,6 +481,48 @@ export default function StoryReaderPage() {
           )}
         </div>
       )}
+
+      {/* Relationships Tab */}
+      {rpgTab === 'relations' && (
+        <div className="space-y-2 overflow-y-auto flex-1">
+          {relationships.length > 0 ? relationships.map(rel => {
+            const typeColors: Record<string, string> = {
+              ally: 'text-emerald-400 bg-emerald-400/10',
+              enemy: 'text-red-400 bg-red-400/10',
+              romantic: 'text-pink-400 bg-pink-400/10',
+              mentor: 'text-blue-400 bg-blue-400/10',
+              rival: 'text-amber-400 bg-amber-400/10',
+              neutral: 'text-ink-300 bg-ink-700/50',
+              family: 'text-purple-400 bg-purple-400/10',
+            };
+            const color = typeColors[rel.type] || typeColors.neutral;
+            return (
+              <div key={rel._id} className="bg-ink-800/60 border border-ink-700 rounded-xl p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Heart size={12} className="text-pink-400/60" />
+                  <span className="text-sm text-ink-100 font-medium">{rel.characterA.name}</span>
+                  <span className="text-ink-400 text-xs">↔</span>
+                  <span className="text-sm text-ink-100 font-medium">{rel.characterB.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${color}`}>
+                    {(t.relationship as Record<string, string>)[rel.type] || rel.type}
+                  </span>
+                  <div className="flex-1 h-1 bg-ink-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-accent-400/60 rounded-full transition-all duration-300"
+                      style={{ width: `${Math.min(100, rel.intensity * 10)}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-ink-400 tabular-nums">{rel.intensity}/10</span>
+                </div>
+              </div>
+            );
+          }) : (
+            <p className="text-ink-200/40 text-sm italic">{t.storyReader.noRelationships}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -584,45 +651,67 @@ export default function StoryReaderPage() {
             </div>
           )}
 
-          {/* Generating state — loading overlay */}
+          {/* Generating state — streaming text or loading */}
           {isGenerating && (!latestChapter || !latestChapter.content) && (
             <div className="border-l-2 border-accent-400/30 pl-5 py-6 mt-4 bg-accent-400/[0.03] rounded-r-2xl animate-fade-in">
-              <div className="flex items-center gap-3 text-ink-200/60">
-                <svg className="animate-spin w-5 h-5 text-accent-400" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <div>
-                  <p className="text-sm font-sans font-medium text-ink-100">{t.storyReader.generatingChapter}</p>
-                  <p className="text-xs font-sans text-ink-200/50 mt-0.5">{t.storyReader.generatingHint}</p>
+              {isStreaming && streamingText ? (
+                <div className="text-ink-200/90">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg className="animate-spin w-4 h-4 text-accent-400" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span className="text-xs font-sans text-accent-400 font-medium">
+                      {streamPhase === 'tools' ? t.storyReader.streamPhaseTools : t.storyReader.streamingChapter}
+                    </span>
+                  </div>
+                  <StoryContent text={streamingText} onEntityClick={handleEntityClick} />
+                  <span className="inline-block w-0.5 h-4 bg-accent-400 animate-pulse ml-0.5 align-middle" />
                 </div>
-              </div>
-              <div className="flex gap-1.5 mt-4">
-                <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce" />
-                <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce [animation-delay:0.15s]" />
-                <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce [animation-delay:0.3s]" />
-              </div>
+              ) : (
+                <div className="flex items-center gap-3 text-ink-200/60">
+                  <svg className="animate-spin w-5 h-5 text-accent-400" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-sans font-medium text-ink-100">{t.storyReader.generatingChapter}</p>
+                    <p className="text-xs font-sans text-ink-200/50 mt-0.5">{t.storyReader.generatingHint}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Generating NEXT chapter — shown after existing content while API blocks */}
+          {/* Generating NEXT chapter — streaming or waiting */}
           {isGenerating && isOnLatest && latestChapter?.content && !isToolsRunning && (
             <div className="border-l-2 border-accent-400/30 pl-5 py-6 mt-8 bg-accent-400/[0.03] rounded-r-2xl animate-fade-in">
-              <div className="flex items-center gap-3 text-ink-200/60">
-                <svg className="animate-spin w-5 h-5 text-accent-400" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <div>
-                  <p className="text-sm font-sans font-medium text-ink-100">{t.storyReader.generatingChapter}</p>
-                  <p className="text-xs font-sans text-ink-200/50 mt-0.5">{t.storyReader.generatingHint}</p>
+              {isStreaming && streamingText ? (
+                <div className="text-ink-200/90">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg className="animate-spin w-4 h-4 text-accent-400" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span className="text-xs font-sans text-accent-400 font-medium">
+                      {streamPhase === 'tools' ? t.storyReader.streamPhaseTools : t.storyReader.streamingChapter}
+                    </span>
+                  </div>
+                  <StoryContent text={streamingText} onEntityClick={handleEntityClick} />
+                  <span className="inline-block w-0.5 h-4 bg-accent-400 animate-pulse ml-0.5 align-middle" />
                 </div>
-              </div>
-              <div className="flex gap-1.5 mt-4">
-                <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce" />
-                <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce [animation-delay:0.15s]" />
-                <div className="w-1.5 h-1.5 bg-accent-400 rounded-full animate-bounce [animation-delay:0.3s]" />
-              </div>
+              ) : (
+                <div className="flex items-center gap-3 text-ink-200/60">
+                  <svg className="animate-spin w-5 h-5 text-accent-400" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-sans font-medium text-ink-100">{t.storyReader.generatingChapter}</p>
+                    <p className="text-xs font-sans text-ink-200/50 mt-0.5">{t.storyReader.generatingHint}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -698,6 +787,20 @@ export default function StoryReaderPage() {
                 <AlertTriangle size={16} />
                 <p className="text-sm font-sans">{error}</p>
               </div>
+            </div>
+          )}
+
+          {/* Combat Panel — active combat encounter */}
+          {activeCombat && activeCombat.status === 'active' && isOnLatest && !isGenerating && (
+            <div className="mt-8 animate-fade-in">
+              <CombatPanel
+                combat={activeCombat}
+                onCombatUpdate={(updated) => setActiveCombat(updated)}
+                onCombatEnd={() => {
+                  loadActiveCombat();
+                  reloadAfterGeneration();
+                }}
+              />
             </div>
           )}
 

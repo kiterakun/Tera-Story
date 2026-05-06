@@ -248,12 +248,22 @@ const vi: Translations = {
     contextTokensHint: 'Kích thước ngữ cảnh hiện tại mà AI sử dụng. Tóm tắt arc để giảm bớt.',
     summarizeArc: 'Tóm tắt Arc & Bắt đầu mới',
     summarizeArcDesc: 'Nén toàn bộ chương trong arc hiện tại thành bản tóm tắt ngắn gọn để giảm kích thước ngữ cảnh, sau đó bắt đầu arc mới.',
-    summarizingArc: 'Đang tóm tắt...',
     confirmSummarize: 'Thao tác này sẽ tóm tắt tất cả chương trong arc hiện tại và bắt đầu arc mới. Tiếp tục?',
     // Mobile bottom bar
     mobileBack: 'Quay lại',
     mobileChapters: 'Chương',
     mobileRpg: 'RPG',
+    // Streaming
+    streamingChapter: 'AI đang viết...',
+    streamPhaseTools: 'Đang cập nhật trạng thái...',
+    // Relationships tab
+    relationshipsTab: 'Quan hệ',
+    noRelationships: 'Chưa có quan hệ nào được thiết lập.',
+    // Combat
+    combatActive: 'Đang chiến đấu!',
+    combatResolved: 'Chiến đấu kết thúc.',
+    // Consequences
+    consequenceActivated: 'Một quyết định trong quá khứ đang vang vọng...',
   },
 
   characterPanel: {
@@ -357,6 +367,39 @@ const vi: Translations = {
     imageQueued: 'Đã xếp hàng!',
   },
 
+  // Relationship labels
+  relationship: {
+    ally: 'Đồng minh',
+    enemy: 'Kẻ thù',
+    romantic: 'Lãng mạn',
+    mentor: 'Sư phụ',
+    rival: 'Đối thủ',
+    neutral: 'Trung lập',
+    family: 'Gia đình',
+  },
+
+  // Consequence labels
+  consequence: {
+    minor: 'Nhỏ',
+    major: 'Lớn',
+    critical: 'Nghiêm trọng',
+    pending: 'Chờ xử lý',
+    activated: 'Đã kích hoạt',
+  },
+
+  // Combat labels
+  combat: {
+    title: 'Chiến đấu',
+    player: 'Người chơi',
+    enemy: 'Kẻ thù',
+    chooseAction: 'Chọn hành động:',
+    resolving: 'Đang xử lý...',
+    victory: 'Chiến thắng!',
+    defeat: 'Thất bại...',
+    fled: 'Đã chạy trốn!',
+    round: 'Hiệp',
+  },
+
   // Toast messages
   toast: {
     // Success
@@ -370,6 +413,7 @@ const vi: Translations = {
     chapterGenerated: 'Đã tạo chương mới',
     retrySuccess: 'Đã tạo lại chương thành công',
     retryToolsSuccess: 'Đã cập nhật trạng thái trò chơi',
+    arcSummarized: 'Đã tóm tắt arc! Bắt đầu arc mới.',
 
     // Error
     worldCreateFailed: 'Tạo thế giới thất bại',
@@ -385,6 +429,7 @@ const vi: Translations = {
     aiEnrichFailed: 'Làm giàu AI thất bại',
     aiWorldGenFailed: 'Tạo thế giới bằng AI thất bại',
     loadFailed: 'Tải dữ liệu thất bại',
+    arcSummarizeFailed: 'Tóm tắt arc thất bại',
 
     // Loading
     generatingChapter: 'Đang tạo chương...',
