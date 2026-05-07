@@ -1,4 +1,6 @@
-import { generateText } from 'ai';
+import { streamText } from 'ai';
+import type { LanguageModel } from 'ai';
+import { extractJson } from '../utils/jsonExtractor';
 import { IResourceTemplate } from '../types/world.types';
 import { IDynamicStat } from '../types/character.types';
 
@@ -22,10 +24,10 @@ interface EnrichCharacterResult {
 
 export async function enrichWorld(
   description: string,
-  model: Parameters<typeof generateText>[0]['model'],
+  model: LanguageModel,
   language: string
 ): Promise<EnrichWorldResult> {
-  const { text } = await generateText({
+  const result = streamText({
     model,
     system: `You are a world-building assistant for an interactive novel RPG. Given a user's idea or description, create a COMPLETE and DETAILED world with name, genre, rich description, resource templates (RPG stats like HP, MP, Gold, Experience, etc.), and special item templates (categories of special abilities/skills/techniques the AI story writer can create during gameplay).
 
@@ -55,19 +57,20 @@ Guidelines:
 - Use the user's language for all content
 Language: ${language}`,
     prompt: description,
+    temperature: 0.7,
   });
 
-  const cleaned = text.replace(/\`\`\`json\n?|\`\`\`\n?/g, '').trim();
-  return JSON.parse(cleaned) as EnrichWorldResult;
+  const text = await result.text;
+  return extractJson<EnrichWorldResult>(text);
 }
 
 export async function enrichCharacter(
   description: string,
   worldContext: string,
-  model: Parameters<typeof generateText>[0]['model'],
+  model: LanguageModel,
   language: string
 ): Promise<EnrichCharacterResult> {
-  const { text } = await generateText({
+  const result = streamText({
     model,
     system: `You are an expert character creator for an interactive novel RPG. Given a user's description/idea and the FULL world context, create a character that FITS PERFECTLY into this world.
 
@@ -90,25 +93,27 @@ Language: ${language}`,
     prompt: worldContext
       ? `Character idea: ${description}\n\n=== WORLD CONTEXT (character MUST fit this world) ===\n${worldContext}`
       : `Character idea: ${description}`,
+    temperature: 0.7,
   });
 
-  const cleaned = text.replace(/```json\n?|```\n?/g, '').trim();
-  return JSON.parse(cleaned) as EnrichCharacterResult;
+  const text = await result.text;
+  return extractJson<EnrichCharacterResult>(text);
 }
 
 export async function enrichChoices(
   context: string,
-  model: Parameters<typeof generateText>[0]['model'],
+  model: LanguageModel,
   language: string
 ): Promise<string[]> {
-  const { text } = await generateText({
+  const result = streamText({
     model,
     system: `You are a story continuation expert. Given the current story context, suggest 3 engaging choices for the reader. Respond ONLY with a valid JSON array of strings, e.g. ["choice 1", "choice 2", "choice 3"]. Language: ${language}`,
     prompt: context,
+    temperature: 0.7,
   });
 
-  const cleaned = text.replace(/```json\n?|```\n?/g, '').trim();
-  return JSON.parse(cleaned) as string[];
+  const text = await result.text;
+  return extractJson<string[]>(text);
 }
 
 export interface EnrichCustomChoiceResult {
@@ -122,10 +127,10 @@ export async function enrichCustomChoice(
   customChoice: string,
   storyContext: string,
   worldContext: string,
-  model: Parameters<typeof generateText>[0]['model'],
+  model: LanguageModel,
   language: string
 ): Promise<EnrichCustomChoiceResult> {
-  const { text } = await generateText({
+  const result = streamText({
     model,
     system: `You are a story consistency expert and creative writing advisor. The user has written a custom choice for their interactive story. Your job is to:
 1. Evaluate if this choice is logically consistent with the story so far and world rules.
@@ -144,8 +149,9 @@ Respond ONLY with valid JSON matching this schema:
 World context: ${worldContext}
 Language: ${language}`,
     prompt: `User's custom choice: "${customChoice}"\n\nRecent story context:\n${storyContext}`,
+    temperature: 0.7,
   });
 
-  const cleaned = text.replace(/\`\`\`json\n?|\`\`\`\n?/g, '').trim();
-  return JSON.parse(cleaned) as EnrichCustomChoiceResult;
+  const text = await result.text;
+  return extractJson<EnrichCustomChoiceResult>(text);
 }

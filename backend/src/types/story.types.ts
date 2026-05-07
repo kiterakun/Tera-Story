@@ -9,12 +9,16 @@ export interface IChapter {
   arcId: string;
   playthroughId: string;
   chapterIndex: number;
+  status: 'generating' | 'completed' | 'failed';
+  toolsStatus: 'pending' | 'running' | 'completed' | 'failed';
+  playerChoice: string;
   choices: IChoice[];
   newCharacters: Array<{ name: string; description: string; role: 'npc' }>;
   newItems: Array<{ name: string; description: string; rarity?: string; ownerId?: string }>;
   newSpecialItems: Array<{ name: string; description: string; category: string; rarity?: string }>;
   metadata: {
     tokensUsed?: number;
+    contextTokens?: number;
     model?: string;
     generatedAt: Date;
   };

@@ -26,6 +26,10 @@ export interface WriterAgentParams {
   skipPass1?: boolean;
   /** Optional callback for each text token during Pass 1 streaming */
   onToken?: (token: string) => void;
+  /** Called when Pass 2 (tools) starts */
+  onToolsStart?: () => void;
+  /** Called when Pass 2 (tools) completes */
+  onToolsComplete?: () => void;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -60,14 +64,14 @@ COMBAT AWARENESS:
 - When combat situations arise naturally, describe the battle scene vividly and set up for combat initiation
 
 ENTITY MARKUP (REQUIRED):
-When mentioning characters, items, or special items in the story text, wrap them in special markup:
+When mentioning SIGNIFICANT characters, items, or special items in the story text, wrap them in special markup. Do NOT markup minor background characters (like "guard", "villager") or trivial, common items.
 - Characters: [[char:CharacterName]]
 - Items: [[item:ItemName:rarity]]  (rarity = common|uncommon|rare|epic|legendary)
 - Special Items: [[special:ItemName:rarity]]
 Examples: "[[char:Vương Quân]] drew the [[item:Flame Sword:epic]] and channeled his [[special:Dragon Breath:legendary]] technique."
-- Use this markup for EXISTING entities (listed below) and any NEW entities you introduce in the chapter.
+- Use this markup for EXISTING entities (listed below) and any IMPORTANT NEW entities you introduce in the chapter.
 - Use the EXACT rarity listed for existing entities. For new entities, assign appropriate rarity: common (basic), uncommon (notable), rare (powerful), epic (extraordinary), legendary (mythical).
-- Do NOT markup generic nouns — only named entities.`;
+- Do NOT markup generic nouns, background extras, or ordinary objects. Only markup entities that matter to the plot.`;
 
 // ────────────────────────────────────────────────────────────────────────────
 // Pass 2 — TOOLS: Read the finished chapter, execute all game-state changes.
@@ -79,15 +83,15 @@ Read the chapter content carefully and call ALL necessary tools in a SINGLE step
 
 TOOL CALLING RULES:
 
-1. createCharacter — For each NEW character that appeared in the chapter (not in the EXISTING CHARACTERS list):
+1. createCharacter — ONLY for NEW, SIGNIFICANT characters that will have a recurring role or major impact on the plot. Do NOT create tools for background, minor, or unnamed characters (e.g., generic guards, villagers, random monsters).
    - Provide name, description, role='npc'
    - MUST provide dynamicStats with meaningful values based on the character's role and strength in the story
    - NEVER create characters that already exist in EXISTING CHARACTERS
 
-2. createItem — For each NEW item that appeared in the chapter (not in EXISTING ITEMS):
+2. createItem — ONLY for NEW, IMPORTANT items that are crucial to the plot or have significant value/power. Do NOT create tools for generic or common objects (e.g., normal clothes, common food, generic swords).
    - Provide name, description, rarity matching the [[item:Name:rarity]] markup used in the chapter
 
-3. createSpecialItem — For each NEW special item/ability/skill that appeared (not in EXISTING SPECIAL ITEMS):
+3. createSpecialItem — ONLY for NEW, NOTABLE special abilities/skills/spells that are powerful or unique. Do NOT create tools for basic or trivial skills.
    - The category MUST match one of the AVAILABLE SPECIAL ITEM CATEGORIES
    - Provide customFields matching the category's field definitions
    - Category name MUST be in the story's language
@@ -129,7 +133,9 @@ TOOL CALLING RULES:
 
 11. generateChoices (REQUIRED) — You MUST call this with 3-4 meaningful choices for the reader based on the chapter content. Each choice should lead to a genuinely different narrative path.
 
-Call ALL applicable tools. If nothing changed (no new entities, no stat changes, no status changes), just call generateChoices.`;
+Call ALL applicable tools in a SINGLE step. Do NOT wait for confirmation. If nothing changed (no new entities, no stat changes, no status changes), just call generateChoices.
+
+IMPORTANT: Call ALL tools at once in ONE response. Do NOT split across multiple messages.`;
 
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -145,9 +151,11 @@ export async function runWriterAgent(
     userId,
     model,
     language,
-    maxSteps = 10,
+    maxSteps = 2,
     skipPass1 = false,
     onToken,
+    onToolsStart,
+    onToolsComplete,
   } = params;
 
   // ── Shared context blocks ──
@@ -299,9 +307,9 @@ Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[speci
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   const tools = {
-    createCharacter: makeCreateCharacterTool(playthroughId, worldId, userId),
-    createItem: makeCreateItemTool(playthroughId, worldId, userId),
-    createSpecialItem: makeCreateSpecialItemTool(playthroughId, worldId, userId),
+    createCharacter: makeCreateCharacterTool(playthroughId, worldId, userId, chapterId),
+    createItem: makeCreateItemTool(playthroughId, worldId, userId, chapterId),
+    createSpecialItem: makeCreateSpecialItemTool(playthroughId, worldId, userId, chapterId),
     updateStats: makeUpdateStatsTool(playthroughId, userId),
     updateEntityStatus: makeUpdateEntityStatusTool(playthroughId),
     updateRelationship: makeUpdateRelationshipTool(playthroughId),
@@ -354,10 +362,11 @@ Based on the chapter above:
 10. Call summarizeArc ONLY if a major story arc concluded.
 11. MUST call generateChoices with 3-4 meaningful choices for the reader.
 
-Call all applicable tools NOW. Do NOT output any text — ONLY tool calls.`.trim();
+Call all applicable tools NOW in ONE step. Do NOT output any text — ONLY tool calls.`.trim();
 
-  // Mark tools as running
+  // Mark tools as running & notify caller
   await Chapter.findByIdAndUpdate(chapterId, { toolsStatus: 'running' });
+  onToolsStart?.();
   console.log(`[Writer] Pass 2 — Running tool calls for chapter=${chapterId}`);
 
   const toolStream = streamText({
@@ -371,8 +380,9 @@ Call all applicable tools NOW. Do NOT output any text — ONLY tool calls.`.trim
   // Wait for all tool calls to complete
   await toolStream.steps;
 
-  // Mark tools as completed
+  // Mark tools as completed & notify caller
   await Chapter.findByIdAndUpdate(chapterId, { toolsStatus: 'completed' });
+  onToolsComplete?.();
 
   console.log(`[Writer] Pass 2 complete — all tool calls executed for chapter=${chapterId}`);
   return { text: chapterContent };

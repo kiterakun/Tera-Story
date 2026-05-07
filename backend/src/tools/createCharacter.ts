@@ -7,7 +7,8 @@ import { queueImageGeneration } from '../services/imageService';
 export function makeCreateCharacterTool(
   playthroughId: string,
   worldId: string,
-  userId: string
+  userId: string,
+  chapterId?: string
 ) {
   return tool({
     description: 'Create a new NPC character in the story world. You MUST provide dynamicStats with meaningful values for each resource template stat based on the character role, strength, and story context.',
@@ -52,6 +53,7 @@ export function makeCreateCharacterTool(
         worldId,
         userId,
         dynamicStats: defaultStats,
+        ...(chapterId ? { createdInChapterId: chapterId } : {}),
       });
 
       // Fire-and-forget image generation

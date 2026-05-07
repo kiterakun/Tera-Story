@@ -1,7 +1,7 @@
 import { Arc } from '../models/Arc';
 import type { IArcDocument } from '../models/Arc';
 import { Chapter } from '../models/Chapter';
-import { generateText } from 'ai';
+import { streamText } from 'ai';
 import type { LanguageModel } from 'ai';
 
 export async function createNewArc(
@@ -37,12 +37,14 @@ export async function generateArcSummary(
     .map((c, i) => `Chapter ${i + 1}:\n${c.content}`)
     .join('\n\n---\n\n');
 
-  const { text } = await generateText({
+  const result = streamText({
     model,
     system:
       'You are a story archivist. Create a concise but comprehensive summary of the story arc described in these chapters. Focus on: key events, character development, plot threads introduced/resolved, and the emotional arc. Keep it under 500 words.',
     prompt: `Summarize this story arc:\n\n${chapterTexts}`,
   });
+
+  const text = await result.text;
 
   await Arc.findByIdAndUpdate(arcId, { summary: text.trim() });
   return text.trim();

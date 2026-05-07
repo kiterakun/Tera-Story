@@ -6,7 +6,7 @@ import { Character } from '../models/Character';
 import { Playthrough } from '../models/Playthrough';
 import { queueImageGeneration } from '../services/imageService';
 
-export function makeCreateSpecialItemTool(playthroughId: string, worldId: string, userId: string) {
+export function makeCreateSpecialItemTool(playthroughId: string, worldId: string, userId: string, chapterId?: string) {
   return tool({
     description:
       'Create a new special item (skill, technique, spiritual root, etc.) in the story. The category MUST match one of the world\'s special item template categories. You MUST provide customFields with values for each field defined in the template (see AVAILABLE SPECIAL ITEM CATEGORIES in the prompt for field definitions).',
@@ -102,6 +102,7 @@ export function makeCreateSpecialItemTool(playthroughId: string, worldId: string
         customFields: finalCustomFields,
         ...(templateId ? { templateId } : {}),
         ...(ownerId ? { ownerId } : {}),
+        ...(chapterId ? { createdInChapterId: chapterId } : {}),
       });
 
       // 5. Fire-and-forget image generation

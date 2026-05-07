@@ -92,10 +92,10 @@ router.post(
         playthroughId,
         choice,
         userId,
-        (token) => sendSSE('token', { token })
+        (token) => sendSSE('token', { token }),
+        () => sendSSE('phase', { phase: 'tools', message: 'Updating game state...' }),
+        () => sendSSE('phase', { phase: 'tools_complete', message: 'Game state updated' })
       );
-
-      sendSSE('phase', { phase: 'tools', message: 'Updating game state...' });
 
       // Reload chapter to include choices and tool results
       const updatedChapter = await Chapter.findById(result.chapter?._id).lean();

@@ -1,5 +1,7 @@
-import { generateText } from 'ai';
+import { streamText } from 'ai';
 import type { LanguageModel } from 'ai';
+import { extractJson } from '../utils/jsonExtractor';
+import { z } from 'zod';
 import { CombatEncounter, ICombatEncounterDocument } from '../models/CombatEncounter';
 import { Character } from '../models/Character';
 import { updateStat } from './characterService';
@@ -44,19 +46,19 @@ ${encounter.rounds.length > 0 ? encounter.rounds.slice(-3).map((r) => `Round ${r
 
 Player Action: "${playerAction}"`;
 
-  // AI resolves combat round
-  const { text } = await generateText({
+  // Resolve combat using AI
+  const result = streamText({
     model,
     system: `You are a combat narrator for an interactive RPG novel. Given the combat state and the player's action, resolve this combat round.
 
-Respond ONLY with valid JSON:
+Respond ONLY with valid JSON matching this schema:
 {
   "narrative": "string (2-3 vivid paragraphs describing what happens)",
   "damages": [
     { "target": "character name", "amount": number, "type": "damage|heal" }
   ],
   "combatEnded": false,
-  "endReason": null
+  "endReason": null|"victory"|"defeat"|"fled"
 }
 
 RULES:
@@ -69,16 +71,22 @@ RULES:
     temperature: 0.7,
   });
 
-  // Parse AI response
-  let parsed: any;
-  try {
-    const cleaned = text.replace(/```json\n?|```\n?/g, '').trim();
-    const firstBrace = cleaned.indexOf('{');
-    const lastBrace = cleaned.lastIndexOf('}');
-    parsed = JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
-  } catch {
-    throw new Error('Failed to parse combat resolution');
-  }
+  const text = await result.text;
+
+  const parsedRaw = extractJson(text);
+
+  const combatOutputSchema = z.object({
+    narrative: z.string(),
+    damages: z.array(z.object({
+      target: z.string(),
+      amount: z.number(),
+      type: z.enum(['damage', 'heal'])
+    })).optional(),
+    combatEnded: z.boolean(),
+    endReason: z.enum(['victory', 'defeat', 'fled']).nullable()
+  });
+
+  const parsed = combatOutputSchema.parse(parsedRaw);
 
   // Apply damages
   const stateChanges: Array<{ characterName: string; stat: string; oldValue: number; newValue: number }> = [];

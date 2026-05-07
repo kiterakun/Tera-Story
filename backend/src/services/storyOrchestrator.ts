@@ -127,7 +127,9 @@ export async function generateChapterStream(
   playthroughId: string,
   playerChoice: string,
   userId: string,
-  onToken: (token: string) => void
+  onToken: (token: string) => void,
+  onToolsStart?: () => void,
+  onToolsComplete?: () => void
 ) {
   console.log(`[Story] generateChapterStream called: playthrough=${playthroughId}, choice="${playerChoice.slice(0, 50)}"`);
 
@@ -199,6 +201,8 @@ export async function generateChapterStream(
       model: registry.getWriterModel(),
       language: settings.language,
       onToken,
+      onToolsStart,
+      onToolsComplete,
     });
 
     const updatedChapter = await Chapter.findById(chapter._id).lean();
@@ -360,19 +364,21 @@ export async function summarizeCurrentArc(
   const registry = createUserProviderRegistry(settings.aiSettings);
 
   // 5. Build prompt for summarization
-  const { generateText } = await import('ai');
+  const { streamText } = await import('ai');
   const chapterTexts = chapters
     .map((ch) => `[Chapter ${ch.chapterIndex + 1}]\n${ch.content}`)
     .join('\n---\n');
 
   const summaryPrompt = `Summarize the following story arc into a concise narrative summary (2-4 paragraphs). Capture the key events, character developments, important decisions, and plot points. This summary will be used as context for future chapters, so include all critically important information.\n\nLanguage: ${settings.language}\n\n${chapterTexts}`;
 
-  const { text: summary } = await generateText({
+  const result = streamText({
     model: registry.getContextModel(),
     system: 'You are a story analyst. Create concise but comprehensive arc summaries that preserve all important plot information. Respond with the summary text only, no JSON or formatting.',
     prompt: summaryPrompt,
     temperature: 0.3,
   });
+
+  const summary = await result.text;
 
   // 6. Update current arc: mark completed with summary
   currentArc.status = 'completed';

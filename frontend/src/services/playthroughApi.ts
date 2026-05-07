@@ -2,7 +2,7 @@ import { api } from './api';
 
 export interface DynamicStat { 
   k: string; 
-  v: number | string; 
+  v: number | string | boolean; 
   t: string; 
 }
 
@@ -20,6 +20,10 @@ export interface Character {
   dynamicStats: DynamicStat[]; 
   playthroughId: string; 
   worldId: string;
+  userId: string;
+  createdInChapterId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Arc { 

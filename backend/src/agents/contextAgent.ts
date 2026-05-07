@@ -1,6 +1,7 @@
-import { generateText } from 'ai';
+import { streamText } from 'ai';
 import type { LanguageModel } from 'ai';
 import { z } from 'zod';
+import { extractJson } from '../utils/jsonExtractor';
 import { Chapter } from '../models/Chapter';
 import { Arc } from '../models/Arc';
 import { Character } from '../models/Character';
@@ -35,30 +36,6 @@ Output JSON schema:
   "currentScene": "string",
   "relevantPlotPoints": ["string"]
 }`;
-
-/**
- * Robustly extract JSON from LLM text response.
- * Handles: markdown fences, leading/trailing text, raw JSON.
- */
-function extractJson(text: string): unknown {
-  // Strategy 1: Try to find JSON inside markdown code fences
-  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) {
-    try { return JSON.parse(fenceMatch[1].trim()); } catch { /* fall through */ }
-  }
-
-  // Strategy 2: Find first { ... last } in the text
-  const firstBrace = text.indexOf('{');
-  const lastBrace = text.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace > firstBrace) {
-    try { return JSON.parse(text.slice(firstBrace, lastBrace + 1)); } catch { /* fall through */ }
-  }
-
-  // Strategy 3: Try parsing the whole text as-is
-  try { return JSON.parse(text.trim()); } catch { /* fall through */ }
-
-  throw new Error(`Failed to extract JSON from context agent response: ${text.slice(0, 200)}...`);
-}
 
 export async function runContextAgent(
   params: ContextAgentParams
@@ -234,16 +211,20 @@ Based on the player's choice and the FULL story state above (including all items
 `.trim();
 
   // 6. Call generateText then parse JSON robustly
-  //    generateObject requires provider tool-calling support which custom/proxy endpoints often lack.
-  //    Instead we use generateText and extract JSON from the response.
-  const { text, usage } = await generateText({
+  // We use streamText and robust JSON extraction because some providers/models
+  // (like reasoning models) ignore stream:false or force SSE streams.
+  // Using streamText lets the SDK properly parse chunks, then we await the full text.
+  const result = streamText({
     model,
     system: SYSTEM_PROMPT,
     prompt: userPrompt,
     temperature: 0.3,
   });
 
-  // Robust JSON extraction: handle markdown fences, leading text, etc.
+  const text = await result.text;
+  const usage = await result.usage;
+
+  // Robust JSON extraction: handles <think> blocks, markdown fences, leading text
   const parsed = extractJson(text);
 
   // Validate with Zod for safety
