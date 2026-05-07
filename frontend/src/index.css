@@ -12,8 +12,8 @@
    and get light/dark support automatically.
    ============================================================ */
 
-/* Light mode (default) */
-:root {
+/* Light mode (default) / theme-light */
+:root, .theme-light {
   --ink-950: #F8FAFC;   /* page bg */
   --ink-900: #F1F5F9;   /* navbar / sidebar bg */
   --ink-800: #FFFFFF;   /* card bg */
@@ -23,7 +23,7 @@
   --ink-200: #475569;   /* main text */
   --ink-100: #1E293B;   /* strong text */
 
-  --parchment-50:  #0F172A;  /* hero text (dark in light mode) */
+  --parchment-50:  #0F172A;  
   --parchment-100: #F5F0E8;
   --parchment-200: #E2DED6;
   --parchment-900: #1A202C;
@@ -33,8 +33,8 @@
   --accent-600: #4338CA;  /* deeper accent / buttons */
 }
 
-/* Dark mode */
-.dark {
+/* Dark mode (default dark) / theme-dark */
+.dark, .theme-dark {
   --ink-950: #0B1120;   /* page bg */
   --ink-900: #0F172A;   /* navbar / sidebar bg */
   --ink-800: #1E293B;   /* card bg */
@@ -44,7 +44,7 @@
   --ink-200: #E2E8F0;   /* main text */
   --ink-100: #F1F5F9;   /* bright text */
 
-  --parchment-50:  #FDFBF7;  /* hero text (cream in dark mode) */
+  --parchment-50:  #FDFBF7;
   --parchment-100: #F5F0E8;
   --parchment-200: #E8E0D0;
   --parchment-900: #1A202C;
@@ -52,6 +52,69 @@
   --accent-400: #818CF8;
   --accent-500: #6366F1;
   --accent-600: #4F46E5;
+}
+
+/* Cyberpunk theme */
+.theme-cyberpunk {
+  --ink-950: #09090b;   
+  --ink-900: #18181b;   
+  --ink-800: #27272a;   
+  --ink-700: #3f3f46;   
+  --ink-600: #52525b;
+  --ink-500: #71717a;
+  --ink-200: #e4e4e7;   
+  --ink-100: #f4f4f5;   
+
+  --parchment-50:  #fce7f3;
+  --parchment-100: #fbcfe8;
+  --parchment-200: #f9a8d4;
+  --parchment-900: #831843;
+
+  --accent-400: #f472b6; /* pink */
+  --accent-500: #ec4899;
+  --accent-600: #db2777;
+}
+
+/* Sepia theme */
+.theme-sepia {
+  --ink-950: #fcf4e3;   
+  --ink-900: #f3e8d2;   
+  --ink-800: #f9f1e1;   
+  --ink-700: #d5c8ab;   
+  --ink-600: #b0a184;
+  --ink-500: #8b7d62;
+  --ink-200: #4a3c31;   
+  --ink-100: #2c2118;   
+
+  --parchment-50:  #2c2118;
+  --parchment-100: #f9f1e1;
+  --parchment-200: #d5c8ab;
+  --parchment-900: #fcf4e3;
+
+  --accent-400: #d97706; /* amber */
+  --accent-500: #b45309;
+  --accent-600: #92400e;
+}
+
+/* Abyssal theme */
+.theme-abyssal {
+  --ink-950: #020617;   
+  --ink-900: #0f172a;   
+  --ink-800: #1e293b;   
+  --ink-700: #115e59;   /* teal borders */
+  --ink-600: #0f766e;
+  --ink-500: #14b8a6;
+  --ink-200: #ccfbf1;   
+  --ink-100: #f0fdfa;   
+
+  --parchment-50:  #ccfbf1;
+  --parchment-100: #134e4a;
+  --parchment-200: #0f766e;
+  --parchment-900: #042f2e;
+
+  --accent-400: #2dd4bf; /* teal */
+  --accent-500: #14b8a6;
+  --accent-600: #0d9488;
 }
 
 /* ============================================================

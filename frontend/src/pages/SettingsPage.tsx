@@ -171,7 +171,7 @@ export default function SettingsPage() {
   const t = useTranslation();
   const { settings, isLoading, fetchSettings, updateSettings } = useSettingsStore();
   const { theme, toggleTheme } = useUIStore();
-  const [generalSettings, setGeneralSettings] = useState({ language: 'en', theme: 'dark' as 'dark' | 'light' });
+  const [generalSettings, setGeneralSettings] = useState({ language: 'en', theme: 'dark' as string });
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -186,10 +186,11 @@ export default function SettingsPage() {
 
   // Sync theme changes to uiStore immediately
   const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newTheme = e.target.value as 'dark' | 'light';
+    const newTheme = e.target.value;
     setGeneralSettings(prev => ({ ...prev, theme: newTheme }));
     if (newTheme !== theme) {
-      toggleTheme();
+      // Direct call to avoid just toggling between two
+      useUIStore.getState().setTheme(newTheme as any);
     }
   };
 
@@ -260,6 +261,9 @@ export default function SettingsPage() {
               >
                 <option value="dark">{t.settings.themeDark}</option>
                 <option value="light">{t.settings.themeLight}</option>
+                <option value="cyberpunk">{t.settings.themeCyberpunk || 'Cyberpunk (Neon)'}</option>
+                <option value="sepia">{t.settings.themeSepia || 'Classic Sepia'}</option>
+                <option value="abyssal">{t.settings.themeAbyssal || 'Abyssal (Teal)'}</option>
               </select>
             </div>
           </div>

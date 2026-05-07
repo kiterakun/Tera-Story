@@ -16,7 +16,7 @@ export interface IUserSettings {
   _id: string;
   userId: string;
   language: string; // e.g. 'en', 'vi'
-  theme: 'dark' | 'light';
+  theme: string;
   aiSettings: IAISettings;
 }
 

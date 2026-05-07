@@ -10,10 +10,12 @@ import * as storyApi from '../services/storyApi';
 import * as playthroughApi from '../services/playthroughApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useTranslation } from '../i18n';
-import { UserRound, Users, Package, Sparkles, Swords, X, BookOpen, ChevronLeft, ChevronRight, Skull, RefreshCw, AlertTriangle, Scissors, Zap, List, Heart, GitBranch } from 'lucide-react';
-import type { ItemRarity, CombatEncounter, Relationship } from '../services/playthroughApi';
+import { UserRound, Users, Package, Sparkles, Swords, X, BookOpen, ChevronLeft, ChevronRight, Skull, RefreshCw, AlertTriangle, Scissors, Zap, List, Heart, GitBranch, Network } from 'lucide-react';
+import type { ItemRarity, CombatEncounter, Relationship, ConsequenceSeed } from '../services/playthroughApi';
 import { getImageUrl } from '../utils/url';
 import { showSuccess, showError } from '../lib/toast';
+import { RelationshipWebModal } from '../components/RelationshipWebModal';
+import { ConsequenceFlashback } from '../components/ConsequenceFlashback';
 
 // Matches backend Chapter model
 interface Chapter {
@@ -63,6 +65,9 @@ export default function StoryReaderPage() {
   const [isSummarizingArc, setIsSummarizingArc] = useState(false);
   const [activeCombat, setActiveCombat] = useState<CombatEncounter | null>(null);
   const [relationships, setRelationships] = useState<Relationship[]>([]);
+  const [consequences, setConsequences] = useState<ConsequenceSeed[]>([]);
+  const [flashbackQueue, setFlashbackQueue] = useState<ConsequenceSeed[]>([]);
+  const [isRelationshipModalOpen, setIsRelationshipModalOpen] = useState(false);
   
   const { isGenerating, isRetryingTools, isStreaming, streamingText, streamPhase, error, generateChapter, generateChapterStream, retryChapter, retryTools, clearError } = useChapterGeneration();
   
@@ -131,6 +136,7 @@ export default function StoryReaderPage() {
       fetchSpecialItems(playthroughId).catch(console.error);
       loadRelationships();
       loadActiveCombat();
+      loadConsequences();
     }
   }, [playthroughId]);
 
@@ -206,6 +212,7 @@ export default function StoryReaderPage() {
       fetchSpecialItems(playthroughId),
       loadRelationships(),
       loadActiveCombat(),
+      loadConsequences(true),
     ]);
     setCurrentChapterIdx(-1);
   };
@@ -215,6 +222,23 @@ export default function StoryReaderPage() {
     try {
       const rels = await playthroughApi.listRelationships(playthroughId);
       setRelationships(rels);
+    } catch { /* non-critical */ }
+  };
+
+  const loadConsequences = async (isReload = false) => {
+    if (!playthroughId) return;
+    try {
+      const freshConsequences = await playthroughApi.listConsequences(playthroughId);
+      
+      if (isReload && consequences.length > 0) {
+        const newlyActivated = freshConsequences.filter(fresh => 
+          fresh.activated && !consequences.find(old => old._id === fresh._id && old.activated)
+        );
+        if (newlyActivated.length > 0) {
+          setFlashbackQueue(newlyActivated);
+        }
+      }
+      setConsequences(freshConsequences);
     } catch { /* non-critical */ }
   };
 
@@ -484,7 +508,19 @@ export default function StoryReaderPage() {
 
       {/* Relationships Tab */}
       {rpgTab === 'relations' && (
-        <div className="space-y-2 overflow-y-auto flex-1">
+        <div className="space-y-3 overflow-y-auto flex-1 custom-scrollbar">
+          <div className="flex justify-between items-center px-1 mb-1">
+            <span className="text-xs text-ink-400 uppercase tracking-wider font-semibold">Connections</span>
+            {relationships.length > 0 && (
+              <button 
+                onClick={() => setIsRelationshipModalOpen(true)}
+                className="flex items-center gap-1.5 text-[10px] bg-accent-500/10 text-accent-300 hover:text-accent-200 hover:bg-accent-500/20 px-2 py-1 rounded border border-accent-500/20 transition-colors"
+              >
+                <Network size={12} />
+                View Web
+              </button>
+            )}
+          </div>
           {relationships.length > 0 ? relationships.map(rel => {
             const typeColors: Record<string, string> = {
               ally: 'text-emerald-400 bg-emerald-400/10',
@@ -964,6 +1000,17 @@ export default function StoryReaderPage() {
 
       {/* Entity Detail Modal */}
       <EntityDetailModal entity={detailEntity} onClose={() => setDetailEntity(null)} />
+
+      {/* Relationship Web Modal */}
+      <RelationshipWebModal
+        isOpen={isRelationshipModalOpen}
+        onClose={() => setIsRelationshipModalOpen(false)}
+        relationships={relationships}
+        characters={characters}
+      />
+
+      {/* Flashback Banner */}
+      <ConsequenceFlashback consequences={flashbackQueue} />
     </div>
   );
 }

@@ -1,14 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export type AppTheme = 'light' | 'dark' | 'cyberpunk' | 'sepia' | 'abyssal';
+
 interface UIState {
-  theme: 'dark' | 'light';
+  theme: AppTheme;
   sidebarOpen: boolean;
-  setTheme: (theme: 'dark' | 'light') => void;
+  setTheme: (theme: AppTheme) => void;
   toggleTheme: () => void;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
 }
+
+const THEMES: AppTheme[] = ['light', 'dark', 'cyberpunk', 'sepia', 'abyssal'];
 
 export const useUIStore = create<UIState>()(
   persist(
@@ -16,12 +20,16 @@ export const useUIStore = create<UIState>()(
       theme: 'dark',
       sidebarOpen: false,
       toggleTheme: () => {
-        const newTheme = get().theme === 'dark' ? 'light' : 'dark';
-        document.documentElement.classList.toggle('dark', newTheme === 'dark');
-        set({ theme: newTheme });
+        // Toggle loops through themes or just light/dark if simple toggle
+        const current = get().theme;
+        const newTheme = current === 'dark' ? 'light' : 'dark';
+        get().setTheme(newTheme);
       },
       setTheme: (theme) => {
-        document.documentElement.classList.toggle('dark', theme === 'dark');
+        const html = document.documentElement;
+        html.classList.remove('theme-light', 'theme-dark', 'theme-cyberpunk', 'theme-sepia', 'theme-abyssal');
+        html.classList.add(`theme-${theme}`);
+        html.classList.toggle('dark', ['dark', 'cyberpunk', 'abyssal'].includes(theme));
         set({ theme });
       },
       toggleSidebar: () => set(state => ({ sidebarOpen: !state.sidebarOpen })),

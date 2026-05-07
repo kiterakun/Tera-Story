@@ -17,7 +17,7 @@ export interface AISettings {
 
 export interface UserSettings {
   language: string;
-  theme: 'dark' | 'light';
+  theme: string;
   aiSettings?: AISettings;
 }
 

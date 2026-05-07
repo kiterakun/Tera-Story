@@ -39,7 +39,10 @@ function App() {
 
   // Sync theme to DOM whenever it changes (zustand persist hydrates state but doesn't touch DOM)
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
+    const html = document.documentElement;
+    html.classList.remove('theme-light', 'theme-dark', 'theme-cyberpunk', 'theme-sepia', 'theme-abyssal');
+    html.classList.add(`theme-${theme}`);
+    html.classList.toggle('dark', ['dark', 'cyberpunk', 'abyssal'].includes(theme));
   }, [theme])
 
   // Sync server settings → local stores once fetched
@@ -48,9 +51,9 @@ function App() {
       persistLanguage(serverLanguage)
     }
     if (serverTheme && serverTheme !== theme) {
-      setTheme(serverTheme)
+      setTheme(serverTheme as any)
     }
-  }, [serverLanguage, serverTheme])
+  }, [serverLanguage, serverTheme, theme, setTheme])
 
   return (
     <BrowserRouter>

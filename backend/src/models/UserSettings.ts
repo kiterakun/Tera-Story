@@ -4,7 +4,7 @@ import { IAISettings } from '../types/user.types';
 export interface IUserSettingsDocument extends Document {
   userId: mongoose.Types.ObjectId;
   language: string;
-  theme: 'dark' | 'light';
+  theme: string;
   aiSettings: IAISettings;
   createdAt: Date;
   updatedAt: Date;
@@ -43,7 +43,7 @@ const UserSettingsSchema = new Schema<IUserSettingsDocument>(
       unique: true,
     },
     language: { type: String, default: 'en' },
-    theme: { type: String, enum: ['dark', 'light'], default: 'dark' },
+    theme: { type: String, enum: ['dark', 'light', 'cyberpunk', 'sepia', 'abyssal'], default: 'dark' },
     aiSettings: { type: AISettingsSchema, required: true },
   },
   { timestamps: true }
