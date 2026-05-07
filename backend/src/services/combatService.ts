@@ -57,22 +57,25 @@ Respond ONLY with valid JSON matching this schema:
   "damages": [
     { "target": "character name", "amount": number, "type": "damage|heal" }
   ],
+  "newAvailableActions": ["action 1", "action 2", "action 3"],
   "combatEnded": false,
-  "endReason": null|"victory"|"defeat"|"fled"
+  "endReason": null|"victory"|"defeat"|"fled",
+  "choicesForNextChapter": [{"text": "choice 1", "type": "continue"}, {"text": "choice 2", "type": "continue"}]
 }
 
 RULES:
 - Damage should be proportional to combatant strength and action quality
 - HP cannot go below 0
+- newAvailableActions: provide 3-4 new context-aware actions for the NEXT round (if combatEnded is false)
 - Set combatEnded=true if all enemies are defeated (victory), player HP reaches 0 (defeat), or player successfully flees
 - endReason: "victory" | "defeat" | "fled" | null
+- choicesForNextChapter: MUST provide 3-4 choices IF AND ONLY IF combatEnded is true.
 - Write the narrative in ${language}`,
     prompt: combatState,
     temperature: 0.7,
   });
 
   const text = await result.text;
-
   const parsedRaw = extractJson(text);
 
   const combatOutputSchema = z.object({
@@ -82,8 +85,13 @@ RULES:
       amount: z.number(),
       type: z.enum(['damage', 'heal'])
     })).optional(),
+    newAvailableActions: z.array(z.string()).optional(),
     combatEnded: z.boolean(),
-    endReason: z.enum(['victory', 'defeat', 'fled']).nullable()
+    endReason: z.enum(['victory', 'defeat', 'fled']).nullable(),
+    choicesForNextChapter: z.array(z.object({
+      text: z.string(),
+      type: z.enum(['continue', 'new_arc', 'custom'])
+    })).optional()
   });
 
   const parsed = combatOutputSchema.parse(parsedRaw);
@@ -111,6 +119,11 @@ RULES:
       oldValue: oldHp,
       newValue: combatant.currentHp,
     });
+  }
+
+  // Update actions if combat continues
+  if (!parsed.combatEnded && parsed.newAvailableActions && parsed.newAvailableActions.length > 0) {
+    encounter.availableActions = parsed.newAvailableActions;
   }
 
   // Add round
@@ -147,6 +160,27 @@ RULES:
   }
 
   await encounter.save();
+
+  // Append narrative to the latest chapter
+  try {
+    const { Chapter } = await import('../models/Chapter');
+    const latestChapter = await Chapter.findOne({ playthroughId: encounter.playthroughId })
+      .sort({ chapterIndex: -1 });
+    
+    if (latestChapter) {
+      const appendedText = `\n\n> **${playerAction}**\n\n${parsed.narrative}`;
+      latestChapter.content += appendedText;
+      
+      // Add choices if combat ended
+      if (parsed.combatEnded && parsed.choicesForNextChapter && parsed.choicesForNextChapter.length > 0) {
+        latestChapter.choices = parsed.choicesForNextChapter as any;
+      }
+      
+      await latestChapter.save();
+    }
+  } catch (err) {
+    console.error('Failed to append combat narrative to chapter:', err);
+  }
 
   return {
     narrative: parsed.narrative || '',

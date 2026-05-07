@@ -711,7 +711,9 @@ export default function StoryReaderPage() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                   <div>
-                    <p className="text-sm font-sans font-medium text-ink-100">{t.storyReader.generatingChapter}</p>
+                    <p className="text-sm font-sans font-medium text-ink-100">
+                      {streamPhase === 'context' ? 'Analyzing world and story state...' : t.storyReader.generatingChapter}
+                    </p>
                     <p className="text-xs font-sans text-ink-200/50 mt-0.5">{t.storyReader.generatingHint}</p>
                   </div>
                 </div>
@@ -743,7 +745,9 @@ export default function StoryReaderPage() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                   <div>
-                    <p className="text-sm font-sans font-medium text-ink-100">{t.storyReader.generatingChapter}</p>
+                    <p className="text-sm font-sans font-medium text-ink-100">
+                      {streamPhase === 'context' ? 'Analyzing world and story state...' : t.storyReader.generatingChapter}
+                    </p>
                     <p className="text-xs font-sans text-ink-200/50 mt-0.5">{t.storyReader.generatingHint}</p>
                   </div>
                 </div>

@@ -131,11 +131,11 @@ TOOL CALLING RULES:
 
 10. summarizeArc — ONLY if a major story arc has clearly concluded in this chapter
 
-11. generateChoices (REQUIRED) — You MUST call this with 3-4 meaningful choices for the reader based on the chapter content. Each choice should lead to a genuinely different narrative path.
+11. generateChoices — You MUST call this with 3-4 meaningful choices for the reader UNLESS you are calling initiateCombat or an active combat is continuing. If combat is active or just initiated, DO NOT call generateChoices.
 
-Call ALL applicable tools in a SINGLE step. Do NOT wait for confirmation. If nothing changed (no new entities, no stat changes, no status changes), just call generateChoices.
+Call ALL applicable tools in a SINGLE step. Do NOT wait for confirmation. If nothing changed (no new entities, no stat changes, no status changes) and there is no active combat, just call generateChoices.
 
-IMPORTANT: Call ALL tools at once in ONE response. Do NOT split across multiple messages.`;
+IMPORTANT: Call ALL tools at once in ONE response. Do NOT split across multiple messages. For customFields in createSpecialItem, MUST use a valid JSON object, NOT an XML string.`;
 
 // ────────────────────────────────────────────────────────────────────────────
 

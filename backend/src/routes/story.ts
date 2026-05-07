@@ -85,7 +85,14 @@ router.post(
     const sendSSE = (event: string, data: unknown) => {
       if (clientDisconnected) return;
       res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      // Use res.flush() if using compression middleware
+      if (typeof (res as any).flush === 'function') {
+        (res as any).flush();
+      }
     };
+    
+    // Immediately send a connected event to resolve the fetch promise and show progress
+    sendSSE('phase', { phase: 'context', message: 'Analyzing world and story state...' });
 
     try {
       const result = await generateChapterStream(
