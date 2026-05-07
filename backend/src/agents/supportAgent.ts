@@ -12,7 +12,7 @@ interface EnrichWorldResult {
   specialItemTemplates?: Array<{
     category: string;
     description: string;
-    fields: Array<{ name: string; type: 'text' | 'number' | 'enum' }>;
+    fields: Array<{ name: string; type: 'text' | 'number' | 'enum'; options?: string[] }>;
   }>;
 }
 
@@ -37,14 +37,14 @@ Respond ONLY with valid JSON matching this schema:
   "description": "string (rich, evocative, 2-4 paragraphs describing the world's lore, atmosphere, and key features)",
   "genre": "fantasy|sci-fi|wuxia|modern|custom",
   "resourceTemplates": [
-    { "key": "string", "type": "number|text|progress|enum", "min": 0, "max": 100, "defaultValue": 0 }
+    { "key": "string", "type": "number|text|progress|enum", "min": 0, "max": 100, "defaultValue": 0, "options": ["string (if type is enum)"] }
   ],
   "specialItemTemplates": [
     {
       "category": "string (e.g. Skill, Technique, Spell, Mutation)",
       "description": "string (what this category represents in the world)",
       "fields": [
-        { "name": "string (e.g. Element, Cooldown, Damage)", "type": "text|number|enum" }
+        { "name": "string (e.g. Element, Cooldown, Damage)", "type": "text|number|enum", "options": ["string (if type is enum)"] }
       ]
     }
   ]

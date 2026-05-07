@@ -118,6 +118,8 @@ const en = {
     typeProgress: 'Progress/Gauge',
     typeText: 'Text',
     typeEnum: 'Enum/Options',
+    options: 'Options (comma separated)',
+    optionsPlaceholder: 'e.g. Fire, Water, Earth',
     defaultVal: 'Default',
     defaultText: 'Default (Text)',
     min: 'Min',

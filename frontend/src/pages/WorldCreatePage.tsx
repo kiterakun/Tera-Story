@@ -46,7 +46,7 @@ export default function WorldCreatePage() {
   const handleResourceChange = (
     index: number,
     field: keyof ResourceTemplate,
-    value: string | number,
+    value: any,
   ) => {
     const updated = [...resources];
     const item = updated[index];
@@ -57,8 +57,13 @@ export default function WorldCreatePage() {
       item.key = value as string;
     } else if (field === "displayFormat") {
       item.displayFormat = value as string;
+    } else if (field === "options") {
+      item.options = (value as string)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
     } else if (field === "min" || field === "max" || field === "defaultValue") {
-      if (item.type !== "text" && value !== "") {
+      if (item.type !== "text" && item.type !== "enum" && value !== "") {
         (item as any)[field] = Number(value);
       } else {
         (item as any)[field] = value;
@@ -112,14 +117,21 @@ export default function WorldCreatePage() {
     templateIndex: number,
     fieldIndex: number,
     key: keyof SpecialItemFieldDefinition,
-    value: string,
+    value: any,
   ) => {
     const updated = [...specialItemTemplates];
     const fields = [...updated[templateIndex].fields];
     fields[fieldIndex] = {
       ...fields[fieldIndex],
       [key]:
-        key === "type" ? (value as SpecialItemFieldDefinition["type"]) : value,
+        key === "type"
+          ? (value as SpecialItemFieldDefinition["type"])
+          : key === "options"
+          ? (value as string)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : value,
     };
     updated[templateIndex] = { ...updated[templateIndex], fields };
     setSpecialItemTemplates(updated);
@@ -178,17 +190,19 @@ export default function WorldCreatePage() {
             min: rt.min,
             max: rt.max,
             defaultValue: rt.defaultValue,
+            ...(rt.options?.length ? { options: rt.options } : {}),
           })),
         );
       }
-      if ((result as any).specialItemTemplates?.length) {
+      if (result.specialItemTemplates?.length) {
         setSpecialItemTemplates(
-          (result as any).specialItemTemplates.map((sit: any) => ({
+          result.specialItemTemplates.map((sit) => ({
             category: sit.category || "",
             description: sit.description || "",
-            fields: (sit.fields || []).map((f: any) => ({
+            fields: (sit.fields || []).map((f) => ({
               name: f.name || "",
               type: f.type || "text",
+              ...(f.options?.length ? { options: f.options } : {}),
             })),
           })),
         );
@@ -425,6 +439,43 @@ export default function WorldCreatePage() {
                         </div>
                       </div>
                     </>
+                  ) : res.type === "enum" ? (
+                    <>
+                      <div className="col-span-1">
+                        <label className="block text-xs text-ink-200/60 mb-1">
+                          {t.worldCreate.defaultVal}
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-accent-400 outline-none transition-all"
+                          value={res.defaultValue ?? ""}
+                          onChange={(e) =>
+                            handleResourceChange(
+                              index,
+                              "defaultValue",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <label
+                          className="block text-xs text-ink-200/60 mb-1 truncate"
+                          title={t.worldCreate.options}
+                        >
+                          {t.worldCreate.options}
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-accent-400 outline-none transition-all"
+                          placeholder={t.worldCreate.optionsPlaceholder}
+                          value={res.options?.join(", ") ?? ""}
+                          onChange={(e) =>
+                            handleResourceChange(index, "options", e.target.value)
+                          }
+                        />
+                      </div>
+                    </>
                   ) : (
                     <div className="col-span-2">
                       <label className="block text-xs text-ink-200/60 mb-1">
@@ -604,6 +655,21 @@ export default function WorldCreatePage() {
                         </option>
                         <option value="enum">{t.worldCreate.typeEnum}</option>
                       </select>
+                      {field.type === "enum" && (
+                        <input
+                          className="flex-1 bg-ink-800 border border-ink-700 rounded-lg px-3 py-1.5 text-xs text-ink-100 focus:border-purple-400 outline-none transition-all"
+                          placeholder={t.worldCreate.optionsPlaceholder}
+                          value={field.options?.join(", ") ?? ""}
+                          onChange={(e) =>
+                            handleFieldChange(
+                              tIdx,
+                              fIdx,
+                              "options",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      )}
                       <button
                         type="button"
                         onClick={() => handleRemoveField(tIdx, fIdx)}

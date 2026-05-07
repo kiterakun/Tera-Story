@@ -22,18 +22,30 @@ export async function initializeDynamicStats(
   }
 
   const templates = (world as Record<string, unknown>).resourceTemplates as
-    | Array<{ key: string; type: string; defaultValue?: string | number }>
+    | Array<{ key: string; type: string; defaultValue?: string | number; options?: string[] }>
     | undefined;
 
   if (!templates || !Array.isArray(templates)) {
     return [];
   }
 
-  return templates.map((tpl) => ({
-    k: tpl.key,
-    v: tpl.defaultValue ?? 0,
-    t: tpl.type,
-  }));
+  return templates.map((tpl) => {
+    let defaultVal: any = tpl.defaultValue;
+    if (defaultVal === undefined || defaultVal === null) {
+      if (tpl.type === 'enum' && tpl.options && tpl.options.length > 0) {
+        defaultVal = tpl.options[0];
+      } else if (tpl.type === 'text') {
+        defaultVal = '';
+      } else {
+        defaultVal = 0;
+      }
+    }
+    return {
+      k: tpl.key,
+      v: defaultVal,
+      t: tpl.type,
+    };
+  });
 }
 
 /**

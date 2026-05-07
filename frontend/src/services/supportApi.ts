@@ -11,6 +11,12 @@ export interface EnrichWorldResult {
     max?: number;
     defaultValue?: string | number;
     displayFormat?: string;
+    options?: string[];
+  }>;
+  specialItemTemplates?: Array<{
+    category: string;
+    description: string;
+    fields: Array<{ name: string; type: 'text' | 'number' | 'enum'; options?: string[] }>;
   }>;
 }
 

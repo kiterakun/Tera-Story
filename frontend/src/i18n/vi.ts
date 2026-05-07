@@ -120,6 +120,8 @@ const vi: Translations = {
     typeProgress: 'Thanh tiến trình',
     typeText: 'Văn bản',
     typeEnum: 'Lựa chọn',
+    options: 'Các tùy chọn (cách nhau bởi dấu phẩy)',
+    optionsPlaceholder: 'VD. Lửa, Nước, Đất',
     defaultVal: 'Mặc định',
     defaultText: 'Mặc định (Văn bản)',
     min: 'Tối thiểu',

@@ -280,6 +280,21 @@ export default function WorldDetailPage() {
                          {t.worldDetail.defaultLabel} "{res.defaultValue || ''}"
                        </div>
                     )}
+
+                    {res.type === 'enum' && (
+                      <div className="text-xs text-ink-200/60 mt-2">
+                        <span className="block mb-1">{t.worldDetail.defaultLabel} {res.defaultValue || '-'}</span>
+                        {res.options && res.options.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {res.options.map((opt, oi) => (
+                              <span key={oi} className="bg-ink-800 px-1.5 py-0.5 rounded border border-ink-700">
+                                {opt}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -305,8 +320,11 @@ export default function WorldDetailPage() {
                         <span className="text-xs text-ink-200/50">{t.worldDetail.fieldsLabel}</span>
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {tmpl.fields.map((f, fi) => (
-                            <span key={fi} className="text-[10px] bg-ink-700/50 text-ink-200/70 px-2 py-0.5 rounded">
-                              {f.name} ({f.type})
+                            <span key={fi} className="text-[10px] bg-ink-700/50 text-ink-200/70 px-2 py-0.5 rounded flex flex-col">
+                              <span>{f.name} ({f.type})</span>
+                              {f.type === 'enum' && f.options && f.options.length > 0 && (
+                                <span className="text-ink-200/40 mt-0.5">[{f.options.join(', ')}]</span>
+                              )}
                             </span>
                           ))}
                         </div>

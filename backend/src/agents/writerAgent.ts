@@ -350,9 +350,9 @@ ${consequencesBlock}
 
 === INSTRUCTIONS ===
 Based on the chapter above:
-1. Create any NEW characters that appeared (not in EXISTING CHARACTERS). Provide dynamicStats with values meaningful to their role.
+1. Create any NEW characters that appeared (not in EXISTING CHARACTERS). Provide dynamicStats with values meaningful to their role. If a stat has options, you MUST choose exactly one of those options.
 2. Create any NEW items that appeared (not in EXISTING ITEMS).
-3. Create any NEW special items/abilities (not in EXISTING SPECIAL ITEMS). Category MUST match AVAILABLE SPECIAL ITEM CATEGORIES.
+3. Create any NEW special items/abilities (not in EXISTING SPECIAL ITEMS). Category MUST match AVAILABLE SPECIAL ITEM CATEGORIES. If a custom field has options, you MUST choose exactly one of those options.
 4. Update stats for characters whose attributes changed. Reference their CURRENT values above and calculate new values based on events.
 5. Update entity statuses for any deaths, injuries, destructions, etc.
 6. Update relationships if character dynamics changed (new alliance, betrayal, rivalry, romance, etc.).
