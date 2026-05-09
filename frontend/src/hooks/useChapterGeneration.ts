@@ -33,8 +33,11 @@ export function useChapterGeneration(): UseChapterGenerationReturn {
     try {
       const result = await storyApi.generateChapter(playthroughId, choice);
       return result;
-    } catch (err: any) {
-      const message = err?.response?.data?.error || err?.message || 'Generation failed';
+    } catch (err: unknown) {
+      const message = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+          || 'Generation failed'
+        : err instanceof Error ? err.message : 'Generation failed';
       setError(message);
       console.error('Chapter generation error:', err);
       return null;
@@ -91,8 +94,11 @@ export function useChapterGeneration(): UseChapterGenerationReturn {
     try {
       const result = await storyApi.retryChapter(chapterId);
       return result;
-    } catch (err: any) {
-      const message = err?.response?.data?.error || err?.message || 'Retry failed';
+    } catch (err: unknown) {
+      const message = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+          || 'Retry failed'
+        : err instanceof Error ? err.message : 'Retry failed';
       setError(message);
       console.error('Chapter retry error:', err);
       return null;
@@ -108,8 +114,11 @@ export function useChapterGeneration(): UseChapterGenerationReturn {
     try {
       const result = await storyApi.retryChapterTools(chapterId);
       return result;
-    } catch (err: any) {
-      const message = err?.response?.data?.error || err?.message || 'Retry tools failed';
+    } catch (err: unknown) {
+      const message = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+          || 'Retry tools failed'
+        : err instanceof Error ? err.message : 'Retry tools failed';
       setError(message);
       console.error('Chapter retry tools error:', err);
       return null;

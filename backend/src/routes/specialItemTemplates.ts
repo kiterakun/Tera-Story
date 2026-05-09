@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
 import { AuthRequest } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 import { SpecialItemTemplate } from '../models/SpecialItemTemplate';
 import { World } from '../models/World';
 
@@ -77,6 +78,7 @@ router.get(
 // POST /api/worlds/:worldId/special-item-templates
 router.post(
   '/worlds/:worldId/special-item-templates',
+  validate(createTemplateSchema),
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const userId = req.user!.id;
@@ -92,20 +94,14 @@ router.post(
         return;
       }
 
-      const parsed = createTemplateSchema.safeParse(req.body);
-      if (!parsed.success) {
-        res.status(400).json({ error: 'Validation failed', details: parsed.error.issues });
-        return;
-      }
-
       const template = await SpecialItemTemplate.create({
-        ...parsed.data,
+        ...req.body,
         worldId,
       });
 
       res.status(201).json({ specialItemTemplate: template });
-    } catch (err: any) {
-      if (err?.code === 11000) {
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && (err as { code?: number }).code === 11000) {
         res.status(409).json({ error: 'A template with this category already exists in this world' });
         return;
       }
@@ -146,8 +142,8 @@ router.post(
       const templates = await SpecialItemTemplate.insertMany(docs);
 
       res.status(201).json({ specialItemTemplates: templates });
-    } catch (err: any) {
-      if (err?.code === 11000) {
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && (err as { code?: number }).code === 11000) {
         res.status(409).json({ error: 'Duplicate category detected in batch' });
         return;
       }
@@ -160,6 +156,7 @@ router.post(
 // PUT /api/special-item-templates/:id
 router.put(
   '/special-item-templates/:id',
+  validate(updateTemplateSchema),
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const userId = req.user!.id;
@@ -178,21 +175,15 @@ router.put(
         return;
       }
 
-      const parsed = updateTemplateSchema.safeParse(req.body);
-      if (!parsed.success) {
-        res.status(400).json({ error: 'Validation failed', details: parsed.error.issues });
-        return;
-      }
-
       const updated = await SpecialItemTemplate.findByIdAndUpdate(
         id,
-        { $set: parsed.data },
+        { $set: req.body },
         { new: true }
       );
 
       res.json({ specialItemTemplate: updated });
-    } catch (err: any) {
-      if (err?.code === 11000) {
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && (err as { code?: number }).code === 11000) {
         res.status(409).json({ error: 'A template with this category already exists in this world' });
         return;
       }

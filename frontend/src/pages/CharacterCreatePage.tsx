@@ -44,12 +44,11 @@ export default function CharacterCreatePage() {
       await createCharacter(playthroughId!, { name, description, role });
       showSuccess(t.toast.characterCreated);
       navigate(`/worlds/${worldId}/playthroughs/${playthroughId}`);
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          t.characterCreate.failedToCreate,
-      );
+    } catch (err: unknown) {
+      const message = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message || t.characterCreate.failedToCreate
+        : err instanceof Error ? err.message : t.characterCreate.failedToCreate;
+      setError(message);
       setIsSubmitting(false);
     }
   };
@@ -70,12 +69,11 @@ export default function CharacterCreatePage() {
       if (result.characterName) setName(result.characterName);
       if (result.characterDescription)
         setDescription(result.characterDescription);
-    } catch (err: any) {
-      setError(
-        err.response?.data?.error ||
-          err.message ||
-          t.characterCreate.aiEnrichFailed,
-      );
+    } catch (err: unknown) {
+      const message = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { error?: string } } }).response?.data?.error || t.characterCreate.aiEnrichFailed
+        : err instanceof Error ? err.message : t.characterCreate.aiEnrichFailed;
+      setError(message);
       showError(t.toast.aiEnrichFailed);
     } finally {
       setIsEnriching(false);

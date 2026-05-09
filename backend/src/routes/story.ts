@@ -43,9 +43,10 @@ router.post(
         chapter: result.chapter,
         content: result.content,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Story] Generation error:', err);
-      res.status(500).json({ error: err.message || 'Generation failed' });
+      const message = err instanceof Error ? err.message : 'Generation failed';
+      res.status(500).json({ error: message });
     } finally {
       activeGenerations.delete(playthroughId);
     }
@@ -86,8 +87,8 @@ router.post(
       if (clientDisconnected) return;
       res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
       // Use res.flush() if using compression middleware
-      if (typeof (res as any).flush === 'function') {
-        (res as any).flush();
+      if (typeof (res as unknown as { flush?: () => void }).flush === 'function') {
+        (res as unknown as { flush: () => void }).flush();
       }
     };
     
@@ -112,9 +113,10 @@ router.post(
         chapter: updatedChapter || result.chapter,
         content: result.content,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Story] Stream generation error:', err);
-      sendSSE('error', { error: err.message || 'Generation failed' });
+      const message = err instanceof Error ? err.message : 'Generation failed';
+      sendSSE('error', { error: message });
     } finally {
       activeGenerations.delete(playthroughId);
       if (!clientDisconnected) res.end();
@@ -142,9 +144,10 @@ router.post(
         chapter: result.chapter,
         content: result.content,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Story] Retry error:', err);
-      res.status(500).json({ error: err.message || 'Retry failed' });
+      const message = err instanceof Error ? err.message : 'Retry failed';
+      res.status(500).json({ error: message });
     }
   }
 );
@@ -169,9 +172,10 @@ router.post(
         chapter: result.chapter,
         content: result.content,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Story] Retry tools error:', err);
-      res.status(500).json({ error: err.message || 'Retry tools failed' });
+      const message = err instanceof Error ? err.message : 'Retry tools failed';
+      res.status(500).json({ error: message });
     }
   }
 );
@@ -229,10 +233,11 @@ router.get(
         isNewGame,
         isGenerating: activeGenerations.has(playthroughId as string),
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch story state';
       res
         .status(500)
-        .json({ error: err.message || 'Failed to fetch story state' });
+        .json({ error: message });
     }
   }
 );
@@ -252,9 +257,10 @@ router.post(
     try {
       const result = await summarizeCurrentArc(playthroughId, userId);
       res.json({ success: true, ...result });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Story] Summarize arc error:', err);
-      res.status(500).json({ error: err.message || 'Failed to summarize arc' });
+      const message = err instanceof Error ? err.message : 'Failed to summarize arc';
+      res.status(500).json({ error: message });
     }
   }
 );

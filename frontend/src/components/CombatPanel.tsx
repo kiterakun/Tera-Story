@@ -29,8 +29,11 @@ export function CombatPanel({ combat, onCombatUpdate, onCombatEnd }: CombatPanel
       if (result.combat.status !== 'active') {
         setTimeout(() => onCombatEnd(), 3000);
       }
-    } catch (err: any) {
-      setError(err?.response?.data?.error || err?.message || 'Action failed');
+    } catch (err: unknown) {
+      const message = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { error?: string } } }).response?.data?.error || 'Action failed'
+        : err instanceof Error ? err.message : 'Action failed';
+      setError(message);
     } finally {
       setIsResolving(false);
     }

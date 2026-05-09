@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
 import { AuthRequest } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 import { World } from '../models/World';
 import { Playthrough } from '../models/Playthrough';
 import { SpecialItemTemplate } from '../models/SpecialItemTemplate';
@@ -186,20 +187,10 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
 });
 
 // PUT /api/worlds/:id
-router.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+router.put('/:id', validate(updateWorldSchema), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
-
-    const parsed = updateWorldSchema.safeParse(req.body);
-
-    if (!parsed.success) {
-      res.status(400).json({
-        error: 'Validation failed',
-        details: parsed.error.issues,
-      });
-      return;
-    }
 
     const world = await World.findById(id);
 
@@ -215,7 +206,7 @@ router.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
 
     const updated = await World.findByIdAndUpdate(
       id,
-      { $set: parsed.data },
+      { $set: req.body },
       { new: true }
     );
 

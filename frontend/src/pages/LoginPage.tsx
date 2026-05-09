@@ -24,8 +24,11 @@ export default function LoginPage() {
     try {
       await login(email, password);
       navigate('/worlds');
-    } catch (err: any) {
-      setError(err.response?.data?.message || t.login.failed);
+    } catch (err: unknown) {
+      const message = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message || t.login.failed
+        : err instanceof Error ? err.message : t.login.failed;
+      setError(message);
     }
   };
 

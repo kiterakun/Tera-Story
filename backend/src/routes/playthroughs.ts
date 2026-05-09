@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 import { Playthrough } from '../models/Playthrough';
 import { World } from '../models/World';
 
@@ -49,20 +50,10 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
 });
 
 // POST /api/worlds/:worldId/playthroughs
-router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/', validate(createPlaythroughSchema), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
     const { worldId } = req.params;
-
-    const parsed = createPlaythroughSchema.safeParse(req.body);
-
-    if (!parsed.success) {
-      res.status(400).json({
-        error: 'Validation failed',
-        details: parsed.error.issues,
-      });
-      return;
-    }
 
     // Verify world exists and belongs to user
     const world = await World.findById(worldId);
@@ -78,7 +69,7 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
     }
 
     const playthrough = await Playthrough.create({
-      name: parsed.data.name,
+      name: req.body.name,
       worldId,
       userId,
     });
@@ -118,20 +109,10 @@ router.get('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
 });
 
 // PUT /api/playthroughs/:id
-router.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+router.put('/:id', validate(updatePlaythroughSchema), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
-
-    const parsed = updatePlaythroughSchema.safeParse(req.body);
-
-    if (!parsed.success) {
-      res.status(400).json({
-        error: 'Validation failed',
-        details: parsed.error.issues,
-      });
-      return;
-    }
 
     const playthrough = await Playthrough.findById(id);
 
@@ -147,7 +128,7 @@ router.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
 
     const updated = await Playthrough.findByIdAndUpdate(
       id,
-      { $set: parsed.data },
+      { $set: req.body },
       { new: true }
     );
 

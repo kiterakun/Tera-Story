@@ -15,8 +15,15 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      useAuthStore.getState().logout();
-      window.location.href = '/login';
+      const isAuthEndpoint = error.config?.url?.includes('/auth/me') || error.config?.url?.includes('/auth/login') || error.config?.url?.includes('/auth/logout');
+      const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
+      
+      // Clear state directly to avoid infinite loop from logout() API call
+      useAuthStore.setState({ user: null, isAuthenticated: false });
+      
+      if (!isAuthEndpoint && !isAuthPage) {
+        window.location.href = '/login';
+      }
     } else if (error.response?.status === 500) {
       showError('Server Error', error.response?.data?.error || 'An unexpected server error occurred.');
     } else if (!error.response && error.message === 'Network Error') {

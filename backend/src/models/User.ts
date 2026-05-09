@@ -8,6 +8,7 @@ export interface IUserDocument extends Document {
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidate: string): Promise<boolean>;
+  toPublicJSON(): { id: string; username: string; email: string; createdAt: Date; updatedAt: Date };
 }
 
 const UserSchema = new Schema<IUserDocument>(
@@ -48,6 +49,17 @@ UserSchema.methods.comparePassword = async function (
   candidate: string
 ): Promise<boolean> {
   return bcrypt.compare(candidate, this.password);
+};
+
+// Instance method: return safe public representation
+UserSchema.methods.toPublicJSON = function () {
+  return {
+    id: String(this._id),
+    username: this.username,
+    email: this.email,
+    createdAt: this.createdAt,
+    updatedAt: this.updatedAt,
+  };
 };
 
 export const User = mongoose.model<IUserDocument>('User', UserSchema);

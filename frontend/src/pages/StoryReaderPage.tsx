@@ -294,8 +294,11 @@ export default function StoryReaderPage() {
       await storyApi.summarizeArc(playthroughId);
       showSuccess(t.toast.arcSummarized);
       await loadStoryState();
-    } catch (err: any) {
-      showError(t.toast.arcSummarizeFailed, err?.response?.data?.error || err?.message);
+    } catch (err: unknown) {
+      const message = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { error?: string } } }).response?.data?.error || undefined
+        : err instanceof Error ? err.message : undefined;
+      showError(t.toast.arcSummarizeFailed, message);
     } finally {
       setIsSummarizingArc(false);
     }

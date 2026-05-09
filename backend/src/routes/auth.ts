@@ -39,16 +39,6 @@ function signToken(user: { _id: unknown; email: string; username: string }): str
   );
 }
 
-function sanitizeUser(user: { _id: unknown; username: string; email: string; createdAt: Date; updatedAt: Date }) {
-  return {
-    id: String(user._id),
-    username: user.username,
-    email: user.email,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-  };
-}
-
 // --- Routes ---
 
 // POST /api/auth/register
@@ -90,7 +80,7 @@ router.post('/register', validate(registerSchema), async (req: AuthRequest, res:
     path: '/',
   });
 
-  res.status(201).json({ user: sanitizeUser(user) });
+  res.status(201).json({ user: user.toPublicJSON() });
 });
 
 // POST /api/auth/login
@@ -119,7 +109,7 @@ router.post('/login', validate(loginSchema), async (req: AuthRequest, res: Respo
     path: '/',
   });
 
-  res.json({ user: sanitizeUser(user) });
+  res.json({ user: user.toPublicJSON() });
 });
 
 // GET /api/auth/me
@@ -134,7 +124,7 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response): Promi
     throw new AppError('User not found', 404);
   }
 
-  res.json({ user: sanitizeUser(user) });
+  res.json({ user: user.toPublicJSON() });
 });
 
 // POST /api/auth/logout

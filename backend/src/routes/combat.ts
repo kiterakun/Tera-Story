@@ -80,9 +80,10 @@ router.post(
         combat: result.encounter,
         stateChanges: result.stateChanges,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Combat action error:', err);
-      res.status(500).json({ error: err.message || 'Combat action failed' });
+      const message = err instanceof Error ? err.message : 'Combat action failed';
+      res.status(500).json({ error: message });
     }
   }
 );
