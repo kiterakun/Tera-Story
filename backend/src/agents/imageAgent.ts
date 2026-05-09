@@ -153,6 +153,7 @@ export async function generateImage(
         prompt,
         n: 1,
         size,
+        num_inference_steps: 4, // Mid-level steps for good quality without long wait
         response_format: "url",
       }),
     });

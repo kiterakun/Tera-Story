@@ -11,14 +11,22 @@ export function authMiddleware(
   res: Response,
   next: NextFunction
 ): void {
-  const authHeader = req.headers.authorization;
+  // Read token from httpOnly cookie first, fallback to Authorization header
+  let token: string | undefined;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (req.cookies?.token) {
+    token = req.cookies.token;
+  } else {
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+  }
+
+  if (!token) {
     res.status(401).json({ error: 'No token provided' });
     return;
   }
-
-  const token = authHeader.substring(7);
 
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET) as {

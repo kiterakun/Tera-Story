@@ -2,8 +2,12 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import path from 'path';
 import mongoose from 'mongoose';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 import { env } from './config/env';
 import { connectDatabase, disconnectDatabase } from './config/database';
+import { errorHandler } from './middleware/errorHandler';
 import authRouter from './routes/auth';
 import settingsRouter from './routes/settings';
 import worldsRouter from './routes/worlds';
@@ -22,12 +26,35 @@ import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
 
-// Middlewares
+// Security
+app.use(helmet());
+
+// CORS
 app.use(cors({
   origin: env.FRONTEND_URL,
   credentials: true
 }));
-app.use(express.json());
+
+// Parsers
+app.use(cookieParser());
+app.use(express.json({ limit: '1mb' }));
+
+// Rate Limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', apiLimiter);
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/auth/', authLimiter);
 
 // Static Files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -81,6 +108,9 @@ app.use('/api', authMiddleware, relationshipsRouter);
 
 // Combat Routes
 app.use('/api', authMiddleware, combatRouter);
+
+// Error handler (must be last middleware)
+app.use(errorHandler);
 
 // Start logic separated for testing
 if (require.main === module) {

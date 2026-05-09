@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { User } from '../models/User';
 import { UserSettings } from '../models/UserSettings';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { validate } from '../middleware/validate';
+import { AppError } from '../utils/AppError';
 import { env } from '../config/env';
 
 const router = Router();
@@ -50,113 +52,95 @@ function sanitizeUser(user: { _id: unknown; username: string; email: string; cre
 // --- Routes ---
 
 // POST /api/auth/register
-router.post('/register', async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const parsed = registerSchema.safeParse(req.body);
+router.post('/register', validate(registerSchema), async (req: AuthRequest, res: Response): Promise<void> => {
+  const { username, email, password } = req.body;
 
-    if (!parsed.success) {
-      res.status(400).json({
-        error: 'Validation failed',
-        details: parsed.error.issues,
-      });
-      return;
-    }
+  // Check for existing user
+  const existingUser = await User.findOne({
+    $or: [{ email }, { username }],
+  });
 
-    const { username, email, password } = parsed.data;
-
-    // Check for existing user
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }],
-    });
-
-    if (existingUser) {
-      const field = existingUser.email === email ? 'email' : 'username';
-      res.status(409).json({ error: `User with this ${field} already exists` });
-      return;
-    }
-
-    const user = await User.create({ username, email, password });
-
-    // Auto-create UserSettings after registration
-    await UserSettings.create({
-      userId: user._id,
-      language: 'en',
-      theme: 'dark',
-      aiSettings: {
-        contextAgent: { provider: 'openai', model: 'gpt-4o' },
-        writerAgent: { provider: 'openai', model: 'gpt-4o' },
-        supportAgent: { provider: 'openai', model: 'gpt-4o' },
-        imageAgent: { provider: 'openai', model: 'dall-e-3' },
-      },
-    });
-
-    const token = signToken(user);
-
-    res.status(201).json({ token, user: sanitizeUser(user) });
-  } catch (err) {
-    console.error('Register error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+  if (existingUser) {
+    const field = existingUser.email === email ? 'email' : 'username';
+    throw new AppError(`User with this ${field} already exists`, 409);
   }
+
+  const user = await User.create({ username, email, password });
+
+  // Auto-create UserSettings after registration
+  await UserSettings.create({
+    userId: user._id,
+    language: 'en',
+    theme: 'dark',
+    aiSettings: {
+      contextAgent: { provider: 'openai', model: 'gpt-4o' },
+      writerAgent: { provider: 'openai', model: 'gpt-4o' },
+      supportAgent: { provider: 'openai', model: 'gpt-4o' },
+      imageAgent: { provider: 'openai', model: 'dall-e-3' },
+    },
+  });
+
+  const token = signToken(user);
+
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/',
+  });
+
+  res.status(201).json({ user: sanitizeUser(user) });
 });
 
 // POST /api/auth/login
-router.post('/login', async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const parsed = loginSchema.safeParse(req.body);
+router.post('/login', validate(loginSchema), async (req: AuthRequest, res: Response): Promise<void> => {
+  const { email, password } = req.body;
 
-    if (!parsed.success) {
-      res.status(400).json({
-        error: 'Validation failed',
-        details: parsed.error.issues,
-      });
-      return;
-    }
+  const user = await User.findOne({ email });
 
-    const { email, password } = parsed.data;
-
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      res.status(401).json({ error: 'Invalid email or password' });
-      return;
-    }
-
-    const isMatch = await user.comparePassword(password);
-
-    if (!isMatch) {
-      res.status(401).json({ error: 'Invalid email or password' });
-      return;
-    }
-
-    const token = signToken(user);
-
-    res.json({ token, user: sanitizeUser(user) });
-  } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+  if (!user) {
+    throw new AppError('Invalid email or password', 401);
   }
+
+  const isMatch = await user.comparePassword(password);
+
+  if (!isMatch) {
+    throw new AppError('Invalid email or password', 401);
+  }
+
+  const token = signToken(user);
+
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/',
+  });
+
+  res.json({ user: sanitizeUser(user) });
 });
 
 // GET /api/auth/me
 router.get('/me', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
-      return;
-    }
-
-    const user = await User.findById(req.user.id).select('-password');
-
-    if (!user) {
-      res.status(404).json({ error: 'User not found' });
-      return;
-    }
-
-    res.json({ user: sanitizeUser(user) });
-  } catch (err) {
-    console.error('Get me error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+  if (!req.user) {
+    throw new AppError('Not authenticated', 401);
   }
+
+  const user = await User.findById(req.user.id).select('-password');
+
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  res.json({ user: sanitizeUser(user) });
+});
+
+// POST /api/auth/logout
+router.post('/logout', (_req: AuthRequest, res: Response): void => {
+  res.clearCookie('token', { path: '/' });
+  res.json({ success: true });
 });
 
 export default router;

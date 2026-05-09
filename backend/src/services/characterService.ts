@@ -1,11 +1,6 @@
-import mongoose from 'mongoose';
 import { Character } from '../models/Character';
+import { World } from '../models/World';
 import { IDynamicStat } from '../types/character.types';
-
-// Safe model access — World may be created by a parallel task (T9)
-function getWorldModel() {
-  return mongoose.models['World'] || mongoose.model('World', new mongoose.Schema({}, { strict: false }));
-}
 
 /**
  * Initialize dynamicStats from world resourceTemplates.
@@ -14,23 +9,20 @@ function getWorldModel() {
 export async function initializeDynamicStats(
   worldId: string
 ): Promise<IDynamicStat[]> {
-  const World = getWorldModel();
   const world = await World.findById(worldId).lean();
 
   if (!world) {
     throw new Error('World not found');
   }
 
-  const templates = (world as Record<string, unknown>).resourceTemplates as
-    | Array<{ key: string; type: string; defaultValue?: string | number; options?: string[] }>
-    | undefined;
+  const templates = world.resourceTemplates;
 
   if (!templates || !Array.isArray(templates)) {
     return [];
   }
 
   return templates.map((tpl) => {
-    let defaultVal: any = tpl.defaultValue;
+    let defaultVal: string | number | undefined = tpl.defaultValue;
     if (defaultVal === undefined || defaultVal === null) {
       if (tpl.type === 'enum' && tpl.options && tpl.options.length > 0) {
         defaultVal = tpl.options[0];
@@ -70,16 +62,13 @@ export async function updateStat(
   }
 
   // Verify stat key exists in world templates
-  const World = getWorldModel();
   const world = await World.findById(character.worldId).lean();
 
   if (!world) {
     throw new Error('World not found');
   }
 
-  const templates = (world as Record<string, unknown>).resourceTemplates as
-    | Array<{ key: string; type: string; min?: number; max?: number }>
-    | undefined;
+  const templates = world.resourceTemplates;
 
   const template = templates?.find((t) => t.key === key);
 

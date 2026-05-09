@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../stores/authStore';
 import { useChapterGeneration } from '../hooks/useChapterGeneration';
 import { StoryContent, type EntityRef } from '../components/StoryContent';
 import { EntityDetailModal, type EntityData } from '../components/EntityDetailModal';
@@ -50,7 +49,6 @@ export default function StoryReaderPage() {
   const t = useTranslation();
   const { playthroughId } = useParams<{ playthroughId: string }>();
   const navigate = useNavigate();
-  const token = useAuthStore(state => state.token);
   
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [choices, setChoices] = useState<Choice[]>([]);
@@ -251,7 +249,7 @@ export default function StoryReaderPage() {
   };
 
   const handleChoiceSelect = async (choiceText: string) => {
-    if (!playthroughId || !token) return;
+    if (!playthroughId) return;
     clearError();
     setChoices([]);
     setIsNewGame(false);
@@ -262,7 +260,7 @@ export default function StoryReaderPage() {
   };
 
   const handleBeginStory = async () => {
-    if (!playthroughId || !token) return;
+    if (!playthroughId) return;
     clearError();
     setIsNewGame(false);
     setChoices([]);

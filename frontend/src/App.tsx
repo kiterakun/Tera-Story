@@ -16,6 +16,7 @@ import CharacterCreatePage from './pages/CharacterCreatePage'
 import StoryReaderPage from './pages/StoryReaderPage'
 import SettingsPage from './pages/SettingsPage'
 import { Layout } from './components/Layout'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 function App() {
   const loadUser = useAuthStore(s => s.loadUser)
@@ -56,11 +57,12 @@ function App() {
   }, [serverLanguage, serverTheme, theme, setTheme])
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/*" element={
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/*" element={
           <Layout>
             <Routes>
               <Route path="/" element={<Navigate to="/worlds" replace />} />
@@ -76,17 +78,18 @@ function App() {
             </Routes>
           </Layout>
         } />
-      </Routes>
-      <Toaster
-        position="bottom-right"
-        theme="dark"
-        richColors
-        toastOptions={{
-          className: 'font-sans',
-          duration: 4000,
-        }}
-      />
-    </BrowserRouter>
+        </Routes>
+        <Toaster
+          position="bottom-right"
+          theme="dark"
+          richColors
+          toastOptions={{
+            className: 'font-sans',
+            duration: 4000,
+          }}
+        />
+      </BrowserRouter>
+    </ErrorBoundary>
   )
 }
 

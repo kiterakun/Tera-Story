@@ -1,5 +1,4 @@
 import { api } from './api';
-import { useAuthStore } from '../stores/authStore';
 
 export interface GenerateChapterResponse {
   success: boolean;
@@ -44,15 +43,14 @@ export function generateChapterStream(
   }
 ): { cancel: () => void } {
   const controller = new AbortController();
-  const token = useAuthStore.getState().token;
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
   fetch(`${baseUrl}/story/generate-stream`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
+    credentials: 'include',
     body: JSON.stringify({ playthroughId, choice }),
     signal: controller.signal,
   })

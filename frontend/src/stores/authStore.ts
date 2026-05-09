@@ -5,27 +5,25 @@ import * as authApi from '../services/authApi';
 interface User { id: string; username: string; email: string; }
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   loadUser: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
-      token: null,
       isAuthenticated: false,
       isLoading: false,
       login: async (email, password) => {
         set({ isLoading: true });
         try {
-          const { token, user } = await authApi.login(email, password);
-          set({ token, user, isAuthenticated: true, isLoading: false });
+          const { user } = await authApi.login(email, password);
+          set({ user, isAuthenticated: true, isLoading: false });
         } catch (error) {
           set({ isLoading: false });
           throw error;
@@ -34,30 +32,33 @@ export const useAuthStore = create<AuthState>()(
       register: async (username, email, password) => {
         set({ isLoading: true });
         try {
-          const { token, user } = await authApi.register(username, email, password);
-          set({ token, user, isAuthenticated: true, isLoading: false });
+          const { user } = await authApi.register(username, email, password);
+          set({ user, isAuthenticated: true, isLoading: false });
         } catch (error) {
           set({ isLoading: false });
           throw error;
         }
       },
-      logout: () => {
-        set({ user: null, token: null, isAuthenticated: false });
+      logout: async () => {
+        try {
+          await authApi.logout();
+        } catch {
+          // Ignore errors on logout
+        }
+        set({ user: null, isAuthenticated: false });
       },
       loadUser: async () => {
-        const { token } = get();
-        if (!token) return;
         try {
           const user = await authApi.getMe();
           set({ user, isAuthenticated: true });
         } catch {
-          set({ user: null, token: null, isAuthenticated: false });
+          set({ user: null, isAuthenticated: false });
         }
       },
     }),
     {
       name: 'tera-story-auth',
-      partialize: (state) => ({ token: state.token, user: state.user }),
+      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
     }
   )
 );
