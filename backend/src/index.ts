@@ -27,7 +27,9 @@ import { authMiddleware } from './middleware/auth';
 export const app: Express = express();
 
 // Security
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
 // CORS
 app.use(cors({
@@ -42,7 +44,7 @@ app.use(express.json({ limit: '1mb' }));
 // Rate Limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: env.NODE_ENV === 'production' ? 100 : 10000,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -50,7 +52,7 @@ app.use('/api/', apiLimiter);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: env.NODE_ENV === 'production' ? 20 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
 });
