@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import * as settingsApi from '../services/settingsApi';
+import type { AppTheme } from './uiStore';
 
 export interface AgentConfig {
   provider: 'openai' | 'anthropic' | 'google' | 'custom';
@@ -17,7 +18,7 @@ export interface AISettings {
 
 export interface UserSettings {
   language: string;
-  theme: string;
+  theme: AppTheme;
   aiSettings?: AISettings;
 }
 

@@ -11,10 +11,38 @@ interface RelationshipWebModalProps {
   characters: Character[];
 }
 
+interface RelationshipNode {
+  id: string;
+  name: string;
+  val: number;
+  color: string;
+  x?: number;
+  y?: number;
+}
+
+interface RelationshipLink {
+  source: string;
+  target: string;
+  type: Relationship['type'];
+  intensity: number;
+  color: string;
+}
+
+interface ForceGraphRef {
+  zoomToFit: (duration?: number, padding?: number) => void;
+  centerAt: (x?: number, y?: number, duration?: number) => void;
+  zoom: (scale: number, duration?: number) => void;
+}
+
+interface RelationshipGraphData {
+  nodes: RelationshipNode[];
+  links: RelationshipLink[];
+}
+
 export function RelationshipWebModal({ isOpen, onClose, relationships, characters }: RelationshipWebModalProps) {
   const t = useTranslation();
-  const fgRef = useRef<any>(null);
-  const [graphData, setGraphData] = useState({ nodes: [], links: [] });
+  const fgRef = useRef<ForceGraphRef | null>(null);
+  const [graphData, setGraphData] = useState<RelationshipGraphData>({ nodes: [], links: [] });
 
   useEffect(() => {
     if (!isOpen) return;

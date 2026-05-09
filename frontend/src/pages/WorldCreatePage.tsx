@@ -63,10 +63,10 @@ export default function WorldCreatePage() {
         .map((s) => s.trim())
         .filter(Boolean);
     } else if (field === "min" || field === "max" || field === "defaultValue") {
-      if (item.type !== "text" && item.type !== "enum" && value !== "") {
-        (item as any)[field] = Number(value);
+      if (field === "defaultValue") {
+        item.defaultValue = item.type !== "text" && item.type !== "enum" && value !== "" ? Number(value) : value;
       } else {
-        (item as any)[field] = value;
+        item[field] = value !== "" ? Number(value) : undefined;
       }
     }
 

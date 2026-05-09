@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/AppError';
 
+interface MongoError extends Error {
+  code?: number;
+}
+
 export function errorHandler(
   err: Error,
   _req: Request,
@@ -26,7 +30,7 @@ export function errorHandler(
   }
 
   // Handle duplicate key errors
-  if ((err as any).code === 11000) {
+  if ((err as MongoError).code === 11000) {
     res.status(409).json({ error: 'Duplicate entry' });
     return;
   }

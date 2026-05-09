@@ -12,7 +12,7 @@ export default function CharacterCard({ character }: { character: Character }) {
     <div className="bg-ink-800 border border-ink-700 rounded-2xl p-4 flex flex-col gap-3 hover:border-ink-600 transition-all duration-200">
       <div className="flex items-center gap-3">
         {/* Portrait */}
-        <div className="w-14 h-14 rounded-xl bg-ink-950 flex-shrink-0 flex items-center justify-center overflow-hidden border border-ink-700">
+        <div className="w-14 h-14 rounded-xl bg-ink-950 shrink-0 flex items-center justify-center overflow-hidden border border-ink-700">
           {character.imageUrl ? (
             <img src={getImageUrl(character.imageUrl)} alt={character.name} className="w-full h-full object-cover" />
           ) : (

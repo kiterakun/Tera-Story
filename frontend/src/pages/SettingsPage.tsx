@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useUIStore } from '../stores/uiStore';
+import type { AppTheme } from '../stores/uiStore';
 import { useTranslation, persistLanguage } from '../i18n';
 import { showSuccess, showError } from '../lib/toast';
 import type { AgentConfig, AISettings } from '../stores/settingsStore';
@@ -171,7 +172,7 @@ export default function SettingsPage() {
   const t = useTranslation();
   const { settings, isLoading, fetchSettings, updateSettings } = useSettingsStore();
   const { theme, toggleTheme } = useUIStore();
-  const [generalSettings, setGeneralSettings] = useState({ language: 'en', theme: 'dark' as string });
+  const [generalSettings, setGeneralSettings] = useState<{ language: string; theme: AppTheme }>({ language: 'en', theme: 'dark' });
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -186,11 +187,11 @@ export default function SettingsPage() {
 
   // Sync theme changes to uiStore immediately
   const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newTheme = e.target.value;
+    const newTheme = e.target.value as AppTheme;
     setGeneralSettings(prev => ({ ...prev, theme: newTheme }));
     if (newTheme !== theme) {
       // Direct call to avoid just toggling between two
-      useUIStore.getState().setTheme(newTheme as any);
+      useUIStore.getState().setTheme(newTheme);
     }
   };
 

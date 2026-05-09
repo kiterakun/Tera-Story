@@ -90,7 +90,7 @@ export async function updateStat(
   const result = await Character.findOneAndUpdate(
     { _id: characterId },
     { $set: { 'dynamicStats.$[elem].v': value } },
-    { arrayFilters: [{ 'elem.k': key }], new: true }
+    { arrayFilters: [{ 'elem.k': key }], returnDocument: 'after' }
   );
 
   if (!result) {

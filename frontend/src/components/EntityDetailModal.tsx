@@ -45,6 +45,7 @@ const SPECIAL_STATUS_CONFIG: Record<SpecialItemStatus, { text: string; bg: strin
 
 export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
   const t = useTranslation();
+  const entityStatusLabels: Record<string, string> = t.entityStatus;
   if (!entity) return null;
 
   // ── Hero image block (shared by all entity types) ───────────────────
@@ -112,7 +113,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
             </span>
             {char.status && char.status !== 'active' && (
               <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${CHARACTER_STATUS_CONFIG[char.status].text} ${CHARACTER_STATUS_CONFIG[char.status].bg}`}>
-                {(t.entityStatus as any)[char.status]}
+                {entityStatusLabels[char.status]}
               </span>
             )}
           </div>
@@ -172,7 +173,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
             </span>
             {item.status && item.status !== 'active' && (
               <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${ITEM_STATUS_CONFIG[item.status].text} ${ITEM_STATUS_CONFIG[item.status].bg}`}>
-                {(t.entityStatus as any)[item.status]}
+                {entityStatusLabels[item.status]}
               </span>
             )}
           </div>
@@ -223,7 +224,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
             </span>
             {si.status && si.status !== 'active' && (
               <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${SPECIAL_STATUS_CONFIG[si.status].text} ${SPECIAL_STATUS_CONFIG[si.status].bg}`}>
-                {(t.entityStatus as any)[si.status]}
+                {entityStatusLabels[si.status]}
               </span>
             )}
           </div>

@@ -101,7 +101,7 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
 
-    const worlds = await World.find({ userId }).sort({ updatedAt: -1 });
+    const worlds = await World.find({ userId }).sort({ updatedAt: -1 }).lean();
 
     res.json({ worlds });
   } catch (err) {
@@ -116,7 +116,7 @@ router.get('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const { id } = req.params;
 
-    const world = await World.findById(id);
+    const world = await World.findById(id).lean();
 
     if (!world) {
       res.status(404).json({ error: 'World not found' });
@@ -192,7 +192,7 @@ router.put('/:id', validate(updateWorldSchema), async (req: AuthRequest, res: Re
     const userId = req.user!.id;
     const { id } = req.params;
 
-    const world = await World.findById(id);
+    const world = await World.findById(id).lean();
 
     if (!world) {
       res.status(404).json({ error: 'World not found' });
@@ -207,7 +207,7 @@ router.put('/:id', validate(updateWorldSchema), async (req: AuthRequest, res: Re
     const updated = await World.findByIdAndUpdate(
       id,
       { $set: req.body },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     res.json({ world: updated });
@@ -223,7 +223,7 @@ router.delete('/:id', async (req: AuthRequest, res: Response): Promise<void> => 
     const userId = req.user!.id;
     const { id } = req.params;
 
-    const world = await World.findById(id);
+    const world = await World.findById(id).lean();
 
     if (!world) {
       res.status(404).json({ error: 'World not found' });

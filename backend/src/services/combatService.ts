@@ -12,6 +12,8 @@ interface CombatActionResult {
   stateChanges: Array<{ characterName: string; stat: string; oldValue: number; newValue: number }>;
 }
 
+type ChapterChoice = { text: string; type: 'continue' | 'new_arc' | 'custom' };
+
 export async function resolveCombatAction(
   combatId: string,
   playerAction: string,
@@ -173,7 +175,7 @@ RULES:
       
       // Add choices if combat ended
       if (parsed.combatEnded && parsed.choicesForNextChapter && parsed.choicesForNextChapter.length > 0) {
-        latestChapter.choices = parsed.choicesForNextChapter as any;
+        latestChapter.choices = parsed.choicesForNextChapter as ChapterChoice[];
       }
       
       await latestChapter.save();

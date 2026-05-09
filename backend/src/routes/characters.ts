@@ -157,7 +157,7 @@ router.put(
       const { id } = req.params;
       const { name, description, imageUrl } = req.body;
 
-      const character = await Character.findById(id);
+      const character = await Character.findById(id).lean();
 
       if (!character) {
         res.status(404).json({ error: 'Character not found' });
@@ -178,7 +178,7 @@ router.put(
       const updated = await Character.findByIdAndUpdate(
         id,
         { $set: update },
-        { new: true }
+        { returnDocument: 'after' }
       ).lean();
 
       res.json({ character: updated });

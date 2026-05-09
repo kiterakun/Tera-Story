@@ -178,7 +178,7 @@ router.put(
       const updated = await SpecialItemTemplate.findByIdAndUpdate(
         id,
         { $set: req.body },
-        { new: true }
+        { returnDocument: 'after' }
       );
 
       res.json({ specialItemTemplate: updated });

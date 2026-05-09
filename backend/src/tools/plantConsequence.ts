@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { tool } from 'ai';
 import { z } from 'zod';
 import { ConsequenceSeed } from '../models/ConsequenceSeed';
@@ -64,7 +65,7 @@ export function makeActivateConsequenceTool(playthroughId: string, chapterId: st
       if (!seed) return { activated: false, error: 'Consequence seed not found or already activated' };
 
       seed.activated = true;
-      seed.activatedInChapterId = chapterId as any;
+      seed.activatedInChapterId = new mongoose.Types.ObjectId(chapterId);
       await seed.save();
 
       return { activated: true, description: seed.description, impact: seed.impact };

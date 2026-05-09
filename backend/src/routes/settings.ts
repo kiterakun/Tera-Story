@@ -86,7 +86,7 @@ router.put('/', async (req: AuthRequest, res: Response): Promise<void> => {
         $set: update,
         $setOnInsert: { aiSettings: DEFAULT_AI_SETTINGS },
       },
-      { new: true, upsert: true }
+      { returnDocument: 'after', upsert: true }
     );
 
     if (!doc) {
@@ -154,7 +154,7 @@ router.put('/ai', async (req: AuthRequest, res: Response): Promise<void> => {
     const doc = await UserSettings.findOneAndUpdate(
       { userId },
       { $set: { aiSettings: updatedAI } },
-      { new: true, upsert: true }
+      { returnDocument: 'after', upsert: true }
     );
 
     if (!doc) {

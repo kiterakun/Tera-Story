@@ -86,7 +86,7 @@ export function ChoiceCards({ choices, isGenerating, playthroughId, onChoiceSele
             `}
           >
             <div className="flex items-start gap-3">
-              <span className="text-accent-400 mt-0.5 flex-shrink-0">
+              <span className="text-accent-400 mt-0.5 shrink-0">
                 {choice.type === 'new_arc' ? <Star size={16} /> : <ArrowRight size={16} />}
               </span>
               <span className="font-serif text-base leading-relaxed">{choice.text}</span>

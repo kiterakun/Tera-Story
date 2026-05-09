@@ -42,7 +42,7 @@ export function makeUpdateEntityStatusTool(playthroughId: string) {
         const result = await Character.findOneAndUpdate(
           { playthroughId, name: entityName },
           { status: newStatus },
-          { new: true }
+          { returnDocument: 'after' }
         );
         if (!result) return { updated: false, error: `Character "${entityName}" not found` };
         return { updated: true, entityType, entityName, newStatus, reason };
@@ -52,7 +52,7 @@ export function makeUpdateEntityStatusTool(playthroughId: string) {
         const result = await Item.findOneAndUpdate(
           { playthroughId, name: entityName },
           { status: newStatus },
-          { new: true }
+          { returnDocument: 'after' }
         );
         if (!result) return { updated: false, error: `Item "${entityName}" not found` };
         return { updated: true, entityType, entityName, newStatus, reason };
@@ -62,7 +62,7 @@ export function makeUpdateEntityStatusTool(playthroughId: string) {
         const result = await SpecialItem.findOneAndUpdate(
           { playthroughId, name: entityName },
           { status: newStatus },
-          { new: true }
+          { returnDocument: 'after' }
         );
         if (!result) return { updated: false, error: `Special item "${entityName}" not found` };
         return { updated: true, entityType, entityName, newStatus, reason };

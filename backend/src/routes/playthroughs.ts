@@ -28,7 +28,7 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
     const { worldId } = req.params;
 
     // Verify world exists and belongs to user
-    const world = await World.findById(worldId);
+    const world = await World.findById(worldId).lean();
 
     if (!world) {
       res.status(404).json({ error: 'World not found' });
@@ -40,7 +40,7 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
       return;
     }
 
-    const playthroughs = await Playthrough.find({ worldId, userId }).sort({ updatedAt: -1 });
+    const playthroughs = await Playthrough.find({ worldId, userId }).sort({ updatedAt: -1 }).lean();
 
     res.json({ playthroughs });
   } catch (err) {
@@ -56,7 +56,7 @@ router.post('/', validate(createPlaythroughSchema), async (req: AuthRequest, res
     const { worldId } = req.params;
 
     // Verify world exists and belongs to user
-    const world = await World.findById(worldId);
+    const world = await World.findById(worldId).lean();
 
     if (!world) {
       res.status(404).json({ error: 'World not found' });
@@ -89,7 +89,7 @@ router.get('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const { id } = req.params;
 
-    const playthrough = await Playthrough.findById(id).populate('worldId', 'name');
+    const playthrough = await Playthrough.findById(id).lean().populate('worldId', 'name');
 
     if (!playthrough) {
       res.status(404).json({ error: 'Playthrough not found' });
@@ -114,7 +114,7 @@ router.put('/:id', validate(updatePlaythroughSchema), async (req: AuthRequest, r
     const userId = req.user!.id;
     const { id } = req.params;
 
-    const playthrough = await Playthrough.findById(id);
+    const playthrough = await Playthrough.findById(id).lean();
 
     if (!playthrough) {
       res.status(404).json({ error: 'Playthrough not found' });
@@ -129,7 +129,7 @@ router.put('/:id', validate(updatePlaythroughSchema), async (req: AuthRequest, r
     const updated = await Playthrough.findByIdAndUpdate(
       id,
       { $set: req.body },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     res.json({ playthrough: updated });
@@ -145,7 +145,7 @@ router.delete('/:id', async (req: AuthRequest, res: Response): Promise<void> => 
     const userId = req.user!.id;
     const { id } = req.params;
 
-    const playthrough = await Playthrough.findById(id);
+    const playthrough = await Playthrough.findById(id).lean();
 
     if (!playthrough) {
       res.status(404).json({ error: 'Playthrough not found' });

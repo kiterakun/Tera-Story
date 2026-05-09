@@ -35,7 +35,7 @@ export function makeUpdateRelationshipTool(playthroughId: string) {
       await Relationship.findOneAndUpdate(
         { playthroughId, characterA: idA, characterB: idB },
         { type, intensity: Math.max(-100, Math.min(100, intensity)) },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
 
       return { updated: true, characterA: characterAName, characterB: characterBName, type, intensity };
