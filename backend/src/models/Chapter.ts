@@ -128,6 +128,6 @@ const ChapterSchema = new Schema<IChapterDocument>(
 
 // Indexes — chapters are SEPARATE documents, NOT embedded in Arc
 ChapterSchema.index({ playthroughId: 1, arcId: 1, chapterIndex: 1 }, { unique: true });
-ChapterSchema.index({ arcId: 1 });
+ChapterSchema.index({ arcId: 1, chapterIndex: 1 });
 
 export const Chapter = mongoose.model<IChapterDocument>('Chapter', ChapterSchema);

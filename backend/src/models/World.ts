@@ -70,6 +70,6 @@ const WorldSchema = new Schema<IWorldDocument>(
   { timestamps: true }
 );
 
-WorldSchema.index({ userId: 1 });
+WorldSchema.index({ userId: 1, createdAt: -1 });
 
 export const World = mongoose.model<IWorldDocument>('World', WorldSchema);

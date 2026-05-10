@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import mongoose from 'mongoose';
 import { queueImageGeneration } from '../../services/imageService';
 import { UserSettings } from '../../models/UserSettings';
@@ -131,7 +132,7 @@ describe('imageService – queueImageGeneration', () => {
         const worldCall = calls.find(
           (call) => call[2] === 'world-unknown',
         );
-        return !!worldCall;
+        expect(worldCall).toBeDefined();
       },
       { timeout: 5000 },
     );

@@ -39,6 +39,6 @@ const PlaythroughSchema = new Schema<IPlaythroughDocument>(
   { timestamps: true }
 );
 
-PlaythroughSchema.index({ worldId: 1, userId: 1 });
+PlaythroughSchema.index({ userId: 1, worldId: 1 });
 
 export const Playthrough = mongoose.model<IPlaythroughDocument>('Playthrough', PlaythroughSchema);
