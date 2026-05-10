@@ -3,16 +3,16 @@
 **Part of:** Tera-Story monorepo
 
 ## OVERVIEW
-Express + MongoDB/Mongoose + TypeScript REST API serving the Tera-Story frontend. 14 route modules, AI agent system via Vercel AI SDK, game mechanic tools, and image generation queue.
+Express + MongoDB/Mongoose + TypeScript REST API serving the Tera-Story frontend. 14 route modules, AI agent system via Vercel AI SDK, game mechanic tools, and in-memory image generation queue.
 
 ## STRUCTURE
 ```
 backend/src/
-├── agents/          # AI agents: writer, image, context, relationship
+├── agents/          # AI agents: writer, image, context, support
 ├── config/          # DB connection + app configuration
 ├── middleware/       # auth, errorHandler, upload, rateLimiter
 ├── models/          # Mongoose schemas (User, World, Character, etc.)
-├── providers/       # LLM provider configs (OpenAI, Gemini)
+├── providers/       # LLM provider configs (OpenAI, Gemini, Anthropic)
 ├── routes/          # 14 route modules under /api
 ├── seeds/           # Database seeding scripts
 ├── services/        # Business logic: story, combat, character, image
@@ -52,4 +52,3 @@ backend/src/
 - `uploads/images/` is gitignored; created at runtime
 - Rate limits: 15 req/15min for auth, 100 req/15min for API
 - ts-node-dev for development with `--respawn --transpile-only`
-- Graceful shutdown on SIGTERM/SIGINT (closes DB + HTTP server)

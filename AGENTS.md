@@ -4,22 +4,22 @@
 **Branch:** main
 
 ## OVERVIEW
-Tera-Story is an AI-powered interactive storytelling platform. Backend (Express + MongoDB/Mongoose + TypeScript) serves a REST API consumed by the React frontend (Vite + TailwindCSS + Zustand). AI agents (writer, image, context) generate narrative content via the Vercel AI SDK.
+Tera-Story is an AI-powered interactive storytelling platform. Backend (Express + MongoDB/Mongoose + TypeScript) serves a REST API consumed by the React frontend (Vite + TailwindCSS + Zustand). AI agents (writer, image, context, support) generate narrative content via the Vercel AI SDK.
 
 ## STRUCTURE
 ```
 Tera-Story/
 ├── backend/           # Express REST API server
 │   └── src/
-│       ├── agents/    # AI agents (writer, image, context, relationship)
+│       ├── agents/    # AI agents (writer, image, context, support)
 │       ├── config/    # Database & app configuration
 │       ├── middleware/ # Auth, error handling, uploads
 │       ├── models/    # Mongoose schemas
-│       ├── providers/ # LLM provider setup (OpenAI, Gemini)
+│       ├── providers/ # LLM provider setup (OpenAI, Gemini, Anthropic)
 │       ├── routes/    # 14 API route modules
 │       ├── services/  # Business logic layer
 │       ├── tools/     # Game mechanic tools (plant, combat, etc.)
-│       └── __tests__/ # Centralized tests (25 files)
+│       └── __tests__/ # Centralized tests (28 files)
 ├── frontend/          # React SPA
 │   └── src/
 │       ├── components/ # Reusable UI components
@@ -27,7 +27,7 @@ Tera-Story/
 │       ├── stores/    # Zustand state stores
 │       ├── services/  # API client functions
 │       ├── hooks/     # Custom React hooks
-│       └── i18n/      # Internationalization (DE/EN/VI)
+│       └── i18n/      # Internationalization (EN/VI)
 └── .sisyphus/         # Agent workspace (do not modify manually)
 ```
 
@@ -42,17 +42,19 @@ Tera-Story/
 | Add global state | `frontend/src/stores/` | Zustand stores with persist middleware |
 | Add API client | `frontend/src/services/` | Axios-based API functions |
 | Add UI component | `frontend/src/components/` | TailwindCSS + Lucide icons |
-| Add translation | `frontend/src/i18n/` | JSON key-value; DE, EN, VI |
+| Add translation | `frontend/src/i18n/` | JSON key-value; EN, VI |
 
 ## CODE MAP
 | Symbol | Type | Location | Role |
 |--------|------|----------|------|
 | `app` | Express App | `backend/src/index.ts` | Main server bootstrap |
-| `StoryEngine` | Class | `backend/src/services/storyEngine.ts` | Core storytelling loop |
+| `storyOrchestrator` | Module | `backend/src/services/storyOrchestrator.ts` | Core storytelling loop |
 | `CombatService` | Class | `backend/src/services/combatService.ts` | Combat mechanics |
 | `writerAgent` | Agent | `backend/src/agents/writerAgent.ts` | Narrative generation |
 | `imageAgent` | Agent | `backend/src/agents/imageAgent.ts` | Image generation/queue |
-| `PlantOutcome` | Tool | `backend/src/tools/plantConsequence.ts` | Plant mechanic tool |
+| `contextAgent` | Agent | `backend/src/agents/contextAgent.ts` | Story state analysis |
+| `supportAgent` | Agent | `backend/src/agents/supportAgent.ts` | World/character enrichment |
+| `PlantConsequence` | Tool | `backend/src/tools/plantConsequence.ts` | Plant consequence mechanic |
 | `App` | Component | `frontend/src/App.tsx` | Root with lazy routes |
 | `useAuthStore` | Store | `frontend/src/stores/authStore.ts` | Auth state |
 | `useStoryStore` | Store | `frontend/src/stores/storyStore.ts` | Narrative state |
@@ -97,6 +99,6 @@ npm test           # Run tests
 - No CI/CD pipeline configured — GitHub Actions recommended
 - No Docker setup — consider for deployment
 - Backend tests use MongoDB Memory Server
-- AI agents (writer, image) rely on environment variables for API keys
-- Image generation uses a queue system (model: `ImageTask`)
-- i18n supports German, English, Vietnamese
+- AI agents (writer, image, context, support) rely on environment variables for API keys
+- Image generation uses an in-memory queue system
+- i18n supports English and Vietnamese
