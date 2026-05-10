@@ -141,7 +141,14 @@ IMPORTANT: Call ALL tools at once in ONE response. Do NOT split across multiple 
 
 export async function runWriterAgent(
   params: WriterAgentParams
-): Promise<{ text: string }> {
+): Promise<{ 
+  text: string;
+  usage?: {
+    totalTokens: number;
+    promptTokens: number;
+    completionTokens: number;
+  };
+}> {
   const {
     contextOutput,
     playthroughId,
@@ -262,6 +269,7 @@ ${combatBlock ? `=== ACTIVE COMBAT ===\n${combatBlock}\n` : ''}
 Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]] markup for all entities.`.trim();
 
   let chapterContent: string;
+  let pass1Usage: any = null;
   const { Chapter } = await import('../models/Chapter');
 
   if (skipPass1) {
@@ -292,6 +300,8 @@ Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[speci
     } else {
       chapterContent = await writeStream.text;
     }
+
+    pass1Usage = await writeStream.usage;
 
     // Save content immediately so the user can start reading
     await Chapter.findByIdAndUpdate(chapterId, {
@@ -379,11 +389,37 @@ Call all applicable tools NOW in ONE step. Do NOT output any text — ONLY tool 
 
   // Wait for all tool calls to complete
   await toolStream.steps;
+  const pass2Usage = await toolStream.usage;
 
   // Mark tools as completed & notify caller
   await Chapter.findByIdAndUpdate(chapterId, { toolsStatus: 'completed' });
   onToolsComplete?.();
 
   console.log(`[Writer] Pass 2 complete — all tool calls executed for chapter=${chapterId}`);
-  return { text: chapterContent };
+
+  let totalPromptTokens = 0;
+  let totalCompletionTokens = 0;
+
+  const p1Usage = pass1Usage as any;
+  if (p1Usage) {
+    totalPromptTokens += p1Usage.promptTokens || p1Usage.inputTokens || 0;
+    totalCompletionTokens += p1Usage.completionTokens || p1Usage.outputTokens || 0;
+  }
+
+  const p2Usage = pass2Usage as any;
+  if (p2Usage) {
+    totalPromptTokens += p2Usage.promptTokens || p2Usage.inputTokens || 0;
+    totalCompletionTokens += p2Usage.completionTokens || p2Usage.outputTokens || 0;
+  }
+
+  const totalTokens = totalPromptTokens + totalCompletionTokens;
+
+  return {
+    text: chapterContent,
+    usage: {
+      totalTokens,
+      promptTokens: totalPromptTokens,
+      completionTokens: totalCompletionTokens,
+    },
+  };
 }

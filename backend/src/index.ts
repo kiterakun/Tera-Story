@@ -58,6 +58,15 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth/', authLimiter);
 
+// Story generation rate limit (stricter — costs LLM tokens)
+const storyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: env.NODE_ENV === 'production' ? 10 : 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/story/', storyLimiter);
+
 // Static Files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 

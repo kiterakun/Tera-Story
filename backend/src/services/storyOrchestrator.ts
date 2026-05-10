@@ -99,6 +99,15 @@ export async function generateChapter(
     // 8. Reload chapter to get choices populated by generateChoices tool
     const updatedChapter = await Chapter.findById(chapter._id).lean();
 
+    // Save writer token usage to chapter metadata
+    if (result.usage) {
+      await Chapter.findByIdAndUpdate(chapter._id, {
+        'metadata.writerTokens': result.usage.totalTokens,
+        'metadata.writerPromptTokens': result.usage.promptTokens,
+        'metadata.writerCompletionTokens': result.usage.completionTokens,
+      });
+    }
+    console.log(`[Story] Token usage — context: ${contextOutput.usage?.inputTokens || 0}, writer: ${result.usage?.totalTokens || 0} (${result.usage?.promptTokens || 0}p + ${result.usage?.completionTokens || 0}c)`);
     console.log(`[Story] Chapter generation completed: id=${chapter._id}, content length=${result.text.length}`);
     return {
       chapter: updatedChapter,
@@ -205,6 +214,15 @@ export async function generateChapterStream(
       onToolsComplete,
     });
 
+    // Save writer token usage to chapter metadata
+    if (result.usage) {
+      await Chapter.findByIdAndUpdate(chapter._id, {
+        'metadata.writerTokens': result.usage.totalTokens,
+        'metadata.writerPromptTokens': result.usage.promptTokens,
+        'metadata.writerCompletionTokens': result.usage.completionTokens,
+      });
+    }
+    console.log(`[Story] Token usage — context: ${contextOutput.usage?.inputTokens || 0}, writer: ${result.usage?.totalTokens || 0} (${result.usage?.promptTokens || 0}p + ${result.usage?.completionTokens || 0}c)`);
     const updatedChapter = await Chapter.findById(chapter._id).lean();
     return {
       chapter: updatedChapter,
