@@ -5,6 +5,7 @@ import { SpecialItemTemplate } from '../models/SpecialItemTemplate';
 import { Character } from '../models/Character';
 import { Playthrough } from '../models/Playthrough';
 import { queueImageGeneration } from '../services/imageService';
+import { createSpecialItemOutput, validateToolOutput } from './schemas';
 
 export function makeCreateSpecialItemTool(playthroughId: string, worldId: string, userId: string, chapterId?: string) {
   return tool({
@@ -32,7 +33,7 @@ export function makeCreateSpecialItemTool(playthroughId: string, worldId: string
       // 1. Resolve worldId from playthrough
       const playthrough = await Playthrough.findById(playthroughId).lean();
       if (!playthrough) {
-        return { error: 'Playthrough not found' };
+        return validateToolOutput({ error: 'Playthrough not found' }, createSpecialItemOutput, 'createSpecialItem');
       }
 
       // 2. Validate category against SpecialItemTemplate
@@ -114,12 +115,12 @@ export function makeCreateSpecialItemTool(playthroughId: string, worldId: string
         userId
       );
 
-      return {
+      return validateToolOutput({
         specialItemId: specialItem._id.toString(),
         name,
         category,
         templateMatched: !!template,
-      };
+      }, createSpecialItemOutput, 'createSpecialItem');
     },
   });
 }

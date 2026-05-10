@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { Character } from '../models/Character';
 import { initializeDynamicStats } from '../services/characterService';
 import { queueImageGeneration } from '../services/imageService';
+import { createCharacterOutput, validateToolOutput } from './schemas';
 
 export function makeCreateCharacterTool(
   playthroughId: string,
@@ -64,7 +65,7 @@ export function makeCreateCharacterTool(
         worldId,
         userId
       );
-      return { characterId: character._id.toString(), name };
+      return validateToolOutput({ characterId: character._id.toString(), name }, createCharacterOutput, 'createCharacter');
     },
   });
 }

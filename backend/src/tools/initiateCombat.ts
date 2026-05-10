@@ -2,6 +2,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { CombatEncounter } from '../models/CombatEncounter';
 import { Character } from '../models/Character';
+import { initiateCombatOutput, validateToolOutput } from './schemas';
 
 export function makeInitiateCombatTool(playthroughId: string, chapterId: string) {
   return tool({
@@ -26,7 +27,7 @@ export function makeInitiateCombatTool(playthroughId: string, chapterId: string)
     execute: async ({ context, enemies, availableActions }) => {
       // Resolve protagonist
       const protagonist = await Character.findOne({ playthroughId, role: 'protagonist' }).lean();
-      if (!protagonist) return { initiated: false, error: 'No protagonist found' };
+      if (!protagonist) return validateToolOutput({ initiated: false, error: 'No protagonist found' }, initiateCombatOutput, 'initiateCombat');
 
       // Get protagonist HP from dynamic stats
       const hpStat = protagonist.dynamicStats.find(
@@ -69,7 +70,7 @@ export function makeInitiateCombatTool(playthroughId: string, chapterId: string)
       }
 
       if (combatants.length < 2) {
-        return { initiated: false, error: 'Need at least one enemy combatant' };
+        return validateToolOutput({ initiated: false, error: 'Need at least one enemy combatant' }, initiateCombatOutput, 'initiateCombat');
       }
 
       const encounter = await CombatEncounter.create({
@@ -81,12 +82,12 @@ export function makeInitiateCombatTool(playthroughId: string, chapterId: string)
         status: 'active',
       });
 
-      return {
+      return validateToolOutput({
         initiated: true,
         combatId: encounter._id.toString(),
         combatants: combatants.map((c) => ({ name: c.name, side: c.side, hp: c.currentHp })),
         availableActions,
-      };
+      }, initiateCombatOutput, 'initiateCombat');
     },
   });
 }

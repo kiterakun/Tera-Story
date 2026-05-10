@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { Item } from '../models/Item';
 import { Character } from '../models/Character';
 import { queueImageGeneration } from '../services/imageService';
+import { createItemOutput, validateToolOutput } from './schemas';
 
 export function makeCreateItemTool(playthroughId: string, worldId: string, userId: string, chapterId?: string) {
   return tool({
@@ -49,7 +50,7 @@ export function makeCreateItemTool(playthroughId: string, worldId: string, userI
         userId
       );
 
-      return { itemId: item._id.toString(), name };
+      return validateToolOutput({ itemId: item._id.toString(), name }, createItemOutput, 'createItem');
     },
   });
 }

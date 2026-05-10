@@ -2,6 +2,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { Character } from '../models/Character';
 import { Relationship } from '../models/Relationship';
+import { updateRelationshipOutput, validateToolOutput } from './schemas';
 
 export function makeUpdateRelationshipTool(playthroughId: string) {
   return tool({
@@ -26,8 +27,8 @@ export function makeUpdateRelationshipTool(playthroughId: string) {
         Character.findOne({ playthroughId, name: characterBName }).lean(),
       ]);
 
-      if (!charA) return { updated: false, error: `Character "${characterAName}" not found` };
-      if (!charB) return { updated: false, error: `Character "${characterBName}" not found` };
+      if (!charA) return validateToolOutput({ updated: false, error: `Character "${characterAName}" not found` }, updateRelationshipOutput, 'updateRelationship');
+      if (!charB) return validateToolOutput({ updated: false, error: `Character "${characterBName}" not found` }, updateRelationshipOutput, 'updateRelationship');
 
       // Ensure consistent ordering (smaller ID first) to prevent A-B / B-A duplicates
       const [idA, idB] = [charA._id.toString(), charB._id.toString()].sort();
@@ -38,7 +39,7 @@ export function makeUpdateRelationshipTool(playthroughId: string) {
         { upsert: true, returnDocument: 'after' }
       );
 
-      return { updated: true, characterA: characterAName, characterB: characterBName, type, intensity };
+      return validateToolOutput({ updated: true, characterA: characterAName, characterB: characterBName, type, intensity }, updateRelationshipOutput, 'updateRelationship');
     },
   });
 }

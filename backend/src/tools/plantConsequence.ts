@@ -3,6 +3,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { ConsequenceSeed } from '../models/ConsequenceSeed';
 import { Chapter } from '../models/Chapter';
+import { plantConsequenceOutput, activateConsequenceOutput, validateToolOutput } from './schemas';
 
 export function makePlantConsequenceTool(playthroughId: string, chapterId: string) {
   return tool({
@@ -28,7 +29,7 @@ export function makePlantConsequenceTool(playthroughId: string, chapterId: strin
     execute: async ({ description, minChapterDelay, impact, tags }) => {
       // Get current chapter index
       const chapter = await Chapter.findById(chapterId).lean();
-      if (!chapter) return { planted: false, error: 'Chapter not found' };
+      if (!chapter) return validateToolOutput({ planted: false, error: 'Chapter not found' }, plantConsequenceOutput, 'plantConsequence');
 
       await ConsequenceSeed.create({
         playthroughId,
@@ -40,7 +41,7 @@ export function makePlantConsequenceTool(playthroughId: string, chapterId: strin
         tags,
       });
 
-      return { planted: true, description, minChapterDelay, impact };
+      return validateToolOutput({ planted: true, description, minChapterDelay, impact }, plantConsequenceOutput, 'plantConsequence');
     },
   });
 }
@@ -62,13 +63,13 @@ export function makeActivateConsequenceTool(playthroughId: string, chapterId: st
         description: { $regex: consequenceDescription.slice(0, 50), $options: 'i' },
       });
 
-      if (!seed) return { activated: false, error: 'Consequence seed not found or already activated' };
+      if (!seed) return validateToolOutput({ activated: false, error: 'Consequence seed not found or already activated' }, activateConsequenceOutput, 'activateConsequence');
 
       seed.activated = true;
       seed.activatedInChapterId = new mongoose.Types.ObjectId(chapterId);
       await seed.save();
 
-      return { activated: true, description: seed.description, impact: seed.impact };
+      return validateToolOutput({ activated: true, description: seed.description, impact: seed.impact }, activateConsequenceOutput, 'activateConsequence');
     },
   });
 }

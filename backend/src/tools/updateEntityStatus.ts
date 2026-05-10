@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { Character } from '../models/Character';
 import { Item } from '../models/Item';
 import { SpecialItem } from '../models/SpecialItem';
+import { updateEntityStatusOutput, validateToolOutput } from './schemas';
 
 export function makeUpdateEntityStatusTool(playthroughId: string) {
   return tool({
@@ -32,10 +33,10 @@ export function makeUpdateEntityStatusTool(playthroughId: string) {
 
       const allowed = validStatuses[entityType];
       if (!allowed || !allowed.includes(newStatus)) {
-        return {
+        return validateToolOutput({
           updated: false,
           error: `Invalid status "${newStatus}" for ${entityType}. Valid: ${allowed?.join(', ')}`,
-        };
+        }, updateEntityStatusOutput, 'updateEntityStatus');
       }
 
       if (entityType === 'character') {
@@ -44,8 +45,8 @@ export function makeUpdateEntityStatusTool(playthroughId: string) {
           { status: newStatus },
           { returnDocument: 'after' }
         );
-        if (!result) return { updated: false, error: `Character "${entityName}" not found` };
-        return { updated: true, entityType, entityName, newStatus, reason };
+        if (!result) return validateToolOutput({ updated: false, error: `Character "${entityName}" not found` }, updateEntityStatusOutput, 'updateEntityStatus');
+        return validateToolOutput({ updated: true, entityType, entityName, newStatus, reason }, updateEntityStatusOutput, 'updateEntityStatus');
       }
 
       if (entityType === 'item') {
@@ -54,8 +55,8 @@ export function makeUpdateEntityStatusTool(playthroughId: string) {
           { status: newStatus },
           { returnDocument: 'after' }
         );
-        if (!result) return { updated: false, error: `Item "${entityName}" not found` };
-        return { updated: true, entityType, entityName, newStatus, reason };
+        if (!result) return validateToolOutput({ updated: false, error: `Item "${entityName}" not found` }, updateEntityStatusOutput, 'updateEntityStatus');
+        return validateToolOutput({ updated: true, entityType, entityName, newStatus, reason }, updateEntityStatusOutput, 'updateEntityStatus');
       }
 
       if (entityType === 'special-item') {
@@ -64,11 +65,11 @@ export function makeUpdateEntityStatusTool(playthroughId: string) {
           { status: newStatus },
           { returnDocument: 'after' }
         );
-        if (!result) return { updated: false, error: `Special item "${entityName}" not found` };
-        return { updated: true, entityType, entityName, newStatus, reason };
+        if (!result) return validateToolOutput({ updated: false, error: `Special item "${entityName}" not found` }, updateEntityStatusOutput, 'updateEntityStatus');
+        return validateToolOutput({ updated: true, entityType, entityName, newStatus, reason }, updateEntityStatusOutput, 'updateEntityStatus');
       }
 
-      return { updated: false, error: 'Unknown entity type' };
+      return validateToolOutput({ updated: false, error: 'Unknown entity type' }, updateEntityStatusOutput, 'updateEntityStatus');
     },
   });
 }

@@ -2,6 +2,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { Character } from '../models/Character';
 import { updateStat } from '../services/characterService';
+import { updateStatsOutput, validateToolOutput } from './schemas';
 
 export function makeUpdateStatsTool(playthroughId: string, userId: string) {
   return tool({
@@ -26,7 +27,7 @@ export function makeUpdateStatsTool(playthroughId: string, userId: string) {
       }).lean();
 
       if (!character) {
-        return { updated: false, error: `Character "${characterName}" not found` };
+        return validateToolOutput({ updated: false, error: `Character "${characterName}" not found` }, updateStatsOutput, 'updateStats');
       }
 
       const characterId = character._id.toString();
@@ -39,7 +40,7 @@ export function makeUpdateStatsTool(playthroughId: string, userId: string) {
         }
       }
 
-      return { updated: true };
+      return validateToolOutput({ updated: true }, updateStatsOutput, 'updateStats');
     },
   });
 }

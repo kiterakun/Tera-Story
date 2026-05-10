@@ -1,6 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 import { Chapter } from '../models/Chapter';
+import { generateChoicesOutput, validateToolOutput } from './schemas';
 
 export function makeGenerateChoicesTool(chapterId: string) {
   return tool({
@@ -21,7 +22,7 @@ export function makeGenerateChoicesTool(chapterId: string) {
     execute: async ({ choices }) => {
       await Chapter.findByIdAndUpdate(chapterId, { choices });
 
-      return { choices };
+      return validateToolOutput({ choices }, generateChoicesOutput, 'generateChoices');
     },
   });
 }

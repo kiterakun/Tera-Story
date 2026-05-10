@@ -1,6 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 import { Arc } from '../models/Arc';
+import { summarizeArcOutput, validateToolOutput } from './schemas';
 
 export function makeSummarizeArcTool() {
   return tool({
@@ -18,7 +19,7 @@ export function makeSummarizeArcTool() {
         status: 'completed',
       });
 
-      return { arcId, summarized: true };
+      return validateToolOutput({ arcId, summarized: true }, summarizeArcOutput, 'summarizeArc');
     },
   });
 }
