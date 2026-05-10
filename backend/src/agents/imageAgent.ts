@@ -168,36 +168,45 @@ export async function generateImage(
     }
 
     const result = (await response.json()) as {
-      data: Array<{ url: string }>;
+      data: Array<{ url?: string; b64_json?: string }>;
     };
 
     const imageUrl = result.data?.[0]?.url;
-    if (!imageUrl) {
-      console.error("Image generation returned no URL");
+    const b64Json = result.data?.[0]?.b64_json;
+    
+    let buffer: Buffer;
+
+    if (imageUrl) {
+      // Download image bytes with optional auth fallback
+      // Some providers (OpenRouter, Azure) return URLs that require the API token
+      // OpenAI DALL-E returns pre-signed URLs that don't need auth
+      let imageResponse = await fetch(imageUrl);
+
+      // If 401, retry with Bearer token
+      if (imageResponse.status === 401) {
+        console.log(`[Image] URL returned 401, retrying with auth token...`);
+        imageResponse = await fetch(imageUrl, {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+        });
+      }
+
+      if (!imageResponse.ok) {
+        console.error(`Failed to download image: ${imageResponse.status}`);
+        return;
+      }
+
+      buffer = Buffer.from(await imageResponse.arrayBuffer());
+    } else if (b64Json) {
+      // Some providers might return a data URI prefix, remove it if present
+      const base64Data = b64Json.replace(/^data:image\/\w+;base64,/, "");
+      buffer = Buffer.from(base64Data, "base64");
+    } else {
+      console.error("Image generation returned no URL and no b64_json");
       return;
     }
 
-    // Download image bytes with optional auth fallback
-    // Some providers (OpenRouter, Azure) return URLs that require the API token
-    // OpenAI DALL-E returns pre-signed URLs that don't need auth
-    let imageResponse = await fetch(imageUrl);
-
-    // If 401, retry with Bearer token
-    if (imageResponse.status === 401) {
-      console.log(`[Image] URL returned 401, retrying with auth token...`);
-      imageResponse = await fetch(imageUrl, {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-        },
-      });
-    }
-
-    if (!imageResponse.ok) {
-      console.error(`Failed to download image: ${imageResponse.status}`);
-      return;
-    }
-
-    const buffer = Buffer.from(await imageResponse.arrayBuffer());
     const filePath = path.join(UPLOADS_BASE, entityType, `${entityId}.png`);
     fs.writeFileSync(filePath, buffer);
 
