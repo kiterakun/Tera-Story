@@ -1,5 +1,5 @@
-import { ReactElement } from 'react';
-import { render, RenderOptions } from '@testing-library/react';
+import { type ReactElement } from 'react';
+import { render, type RenderOptions } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 interface WrapperOptions {
@@ -14,7 +14,7 @@ export function renderWithRouter(
   ui: ReactElement,
   options?: RenderOptions & WrapperOptions,
 ) {
-  const { initialEntries = ['/'], ...renderOptions } = options || {};
+  const { initialEntries = ["/"], ...renderOptions } = options || {};
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
   );
@@ -22,4 +22,4 @@ export function renderWithRouter(
 }
 
 // Re-export everything from testing-library
-export * from '@testing-library/react';
+export * from "@testing-library/react";
