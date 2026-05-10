@@ -19,6 +19,7 @@ export interface IWorldDocument extends Document {
   resourceTemplates: IResourceTemplateDocument[];
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 }
 
 const ResourceTemplateSchema = new Schema<IResourceTemplateDocument>(
@@ -62,6 +63,7 @@ const WorldSchema = new Schema<IWorldDocument>(
     imageUrl: {
       type: String,
     },
+    deletedAt: { type: Date, default: null },
     resourceTemplates: {
       type: [ResourceTemplateSchema],
       default: [],
@@ -71,5 +73,13 @@ const WorldSchema = new Schema<IWorldDocument>(
 );
 
 WorldSchema.index({ userId: 1, createdAt: -1 });
+
+// Soft delete: auto-filter non-deleted documents
+WorldSchema.pre(['find', 'findOne', 'findOneAndUpdate', 'countDocuments'], function () {
+  const filter = this.getFilter() as Record<string, unknown>;
+  if (!('deletedAt' in filter)) {
+    this.setQuery({ ...filter, deletedAt: null });
+  }
+});
 
 export const World = mongoose.model<IWorldDocument>('World', WorldSchema);

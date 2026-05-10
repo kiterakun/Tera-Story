@@ -14,6 +14,7 @@ export interface ICharacterDocument extends Document {
   dynamicStats: IDynamicStat[];
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 }
 
 const DynamicStatSchema = new Schema(
@@ -72,6 +73,7 @@ const CharacterSchema = new Schema<ICharacterDocument>(
       type: [DynamicStatSchema],
       default: [],
     },
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
@@ -79,5 +81,13 @@ const CharacterSchema = new Schema<ICharacterDocument>(
 // Indexes
 CharacterSchema.index({ playthroughId: 1, role: 1 });
 CharacterSchema.index({ 'dynamicStats.k': 1, 'dynamicStats.v': 1 });
+
+// Soft delete: auto-filter non-deleted documents
+CharacterSchema.pre(['find', 'findOne', 'findOneAndUpdate', 'countDocuments'], function () {
+  const filter = this.getFilter() as Record<string, unknown>;
+  if (!('deletedAt' in filter)) {
+    this.setQuery({ ...filter, deletedAt: null });
+  }
+});
 
 export const Character = mongoose.model<ICharacterDocument>('Character', CharacterSchema);

@@ -7,6 +7,7 @@ export interface IUserDocument extends Document {
   password: string;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
   comparePassword(candidate: string): Promise<boolean>;
   toPublicJSON(): { id: string; username: string; email: string; createdAt: Date; updatedAt: Date };
 }
@@ -33,6 +34,7 @@ const UserSchema = new Schema<IUserDocument>(
       required: true,
       minlength: 6,
     },
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
@@ -42,6 +44,14 @@ UserSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+});
+
+// Soft delete: auto-filter non-deleted documents
+UserSchema.pre(['find', 'findOne', 'findOneAndUpdate', 'countDocuments'], function () {
+  const filter = this.getFilter() as Record<string, unknown>;
+  if (!('deletedAt' in filter)) {
+    this.setQuery({ ...filter, deletedAt: null });
+  }
 });
 
 // Instance method: compare password

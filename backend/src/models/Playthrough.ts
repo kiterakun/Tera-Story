@@ -8,6 +8,7 @@ export interface IPlaythroughDocument extends Document {
   currentArcIndex: number;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 }
 
 const PlaythroughSchema = new Schema<IPlaythroughDocument>(
@@ -35,10 +36,19 @@ const PlaythroughSchema = new Schema<IPlaythroughDocument>(
       type: Number,
       default: 0,
     },
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
 
 PlaythroughSchema.index({ userId: 1, worldId: 1 });
+
+// Soft delete: auto-filter non-deleted documents
+PlaythroughSchema.pre(['find', 'findOne', 'findOneAndUpdate', 'countDocuments'], function () {
+  const filter = this.getFilter() as Record<string, unknown>;
+  if (!('deletedAt' in filter)) {
+    this.setQuery({ ...filter, deletedAt: null });
+  }
+});
 
 export const Playthrough = mongoose.model<IPlaythroughDocument>('Playthrough', PlaythroughSchema);
