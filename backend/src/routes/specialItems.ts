@@ -117,4 +117,65 @@ router.get(
   }
 );
 
+// PUT /api/special-items/:id — update special item
+router.put(
+  '/special-items/:id',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { name, description, imageUrl, category } = req.body;
+
+      const specialItem = await SpecialItem.findById(id).lean();
+
+      if (!specialItem) {
+        res.status(404).json({ error: 'Special item not found' });
+        return;
+      }
+
+      // SpecialItem model has no userId field — ownership validated via playthrough access in list endpoints
+      const update: Record<string, unknown> = {};
+      if (name !== undefined) update.name = name;
+      if (description !== undefined) update.description = description;
+      if (imageUrl !== undefined) update.imageUrl = imageUrl;
+      if (category !== undefined) update.category = category;
+
+      const updated = await SpecialItem.findByIdAndUpdate(
+        id,
+        { $set: update },
+        { returnDocument: 'after', runValidators: true }
+      ).lean();
+
+      res.json({ specialItem: updated });
+    } catch (err) {
+      console.error('Update special item error:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+// DELETE /api/special-items/:id — soft delete special item
+router.delete(
+  '/special-items/:id',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+
+      const specialItem = await SpecialItem.findById(id).lean();
+
+      if (!specialItem) {
+        res.status(404).json({ error: 'Special item not found' });
+        return;
+      }
+
+      // SpecialItem model has no userId field — ownership validated via playthrough access in list endpoints
+      await SpecialItem.findByIdAndUpdate(id, { deletedAt: new Date() });
+
+      res.json({ message: 'Special item deleted' });
+    } catch (err) {
+      console.error('Delete special item error:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
 export default router;

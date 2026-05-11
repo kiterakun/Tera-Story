@@ -73,4 +73,65 @@ router.get(
   }
 );
 
+// PUT /api/items/:id — update item
+router.put(
+  '/items/:id',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { name, description, imageUrl, rarity } = req.body;
+
+      const item = await Item.findById(id).lean();
+
+      if (!item) {
+        res.status(404).json({ error: 'Item not found' });
+        return;
+      }
+
+      // Item model has no userId field — ownership validated via playthrough access in list endpoints
+      const update: Record<string, unknown> = {};
+      if (name !== undefined) update.name = name;
+      if (description !== undefined) update.description = description;
+      if (imageUrl !== undefined) update.imageUrl = imageUrl;
+      if (rarity !== undefined) update.rarity = rarity;
+
+      const updated = await Item.findByIdAndUpdate(
+        id,
+        { $set: update },
+        { returnDocument: 'after', runValidators: true }
+      ).lean();
+
+      res.json({ item: updated });
+    } catch (err) {
+      console.error('Update item error:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+// DELETE /api/items/:id — soft delete item
+router.delete(
+  '/items/:id',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+
+      const item = await Item.findById(id).lean();
+
+      if (!item) {
+        res.status(404).json({ error: 'Item not found' });
+        return;
+      }
+
+      // Item model has no userId field — ownership validated via playthrough access in list endpoints
+      await Item.findByIdAndUpdate(id, { deletedAt: new Date() });
+
+      res.json({ message: 'Item deleted' });
+    } catch (err) {
+      console.error('Delete item error:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
 export default router;

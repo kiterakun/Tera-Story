@@ -14,6 +14,7 @@ export interface IItemDocument extends Document {
   properties: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 }
 
 const ItemSchema = new Schema<IItemDocument>(
@@ -57,8 +58,17 @@ const ItemSchema = new Schema<IItemDocument>(
       type: Schema.Types.Mixed,
       default: {},
     },
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
+
+// Soft delete: auto-filter non-deleted documents
+ItemSchema.pre(['find', 'findOne', 'findOneAndUpdate', 'countDocuments'], function () {
+  const filter = this.getFilter() as Record<string, unknown>;
+  if (!('deletedAt' in filter)) {
+    this.setQuery({ ...filter, deletedAt: null });
+  }
+});
 
 export const Item = mongoose.model<IItemDocument>('Item', ItemSchema);

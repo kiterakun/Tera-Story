@@ -10,6 +10,7 @@ export interface IRelationshipDocument extends Document {
   playthroughId: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 }
 
 const RelationshipSchema = new Schema<IRelationshipDocument>(
@@ -40,6 +41,7 @@ const RelationshipSchema = new Schema<IRelationshipDocument>(
       ref: 'Playthrough',
       required: true,
     },
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
@@ -47,5 +49,13 @@ const RelationshipSchema = new Schema<IRelationshipDocument>(
 // Unique pair per playthrough (A-B, not B-A duplicates)
 RelationshipSchema.index({ playthroughId: 1, characterA: 1, characterB: 1 }, { unique: true });
 RelationshipSchema.index({ playthroughId: 1 });
+
+// Soft delete: auto-filter non-deleted documents
+RelationshipSchema.pre(['find', 'findOne', 'findOneAndUpdate', 'countDocuments'], function () {
+  const filter = this.getFilter() as Record<string, unknown>;
+  if (!('deletedAt' in filter)) {
+    this.setQuery({ ...filter, deletedAt: null });
+  }
+});
 
 export const Relationship = mongoose.model<IRelationshipDocument>('Relationship', RelationshipSchema);

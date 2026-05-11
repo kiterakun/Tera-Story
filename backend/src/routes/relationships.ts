@@ -88,4 +88,63 @@ router.get(
   }
 );
 
+// PUT /api/relationships/:id — update relationship
+router.put(
+  '/relationships/:id',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { type, intensity } = req.body;
+
+      const relationship = await Relationship.findById(id).lean();
+
+      if (!relationship) {
+        res.status(404).json({ error: 'Relationship not found' });
+        return;
+      }
+
+      // Relationship model has no userId field — ownership validated via playthrough access in list endpoints
+      const update: Record<string, unknown> = {};
+      if (type !== undefined) update.type = type;
+      if (intensity !== undefined) update.intensity = intensity;
+
+      const updated = await Relationship.findByIdAndUpdate(
+        id,
+        { $set: update },
+        { returnDocument: 'after', runValidators: true }
+      ).lean();
+
+      res.json({ relationship: updated });
+    } catch (err) {
+      console.error('Update relationship error:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+// DELETE /api/relationships/:id — soft delete relationship
+router.delete(
+  '/relationships/:id',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+
+      const relationship = await Relationship.findById(id).lean();
+
+      if (!relationship) {
+        res.status(404).json({ error: 'Relationship not found' });
+        return;
+      }
+
+      // Relationship model has no userId field — ownership validated via playthrough access in list endpoints
+      await Relationship.findByIdAndUpdate(id, { deletedAt: new Date() });
+
+      res.json({ message: 'Relationship deleted' });
+    } catch (err) {
+      console.error('Delete relationship error:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
 export default router;

@@ -157,14 +157,14 @@ router.get(
   }
 );
 
-// PUT /api/characters/:id — update name, description, imageUrl only
+// PUT /api/characters/:id — update character
 router.put(
   '/characters/:id',
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const userId = req.user!.id;
       const { id } = req.params;
-      const { name, description, imageUrl } = req.body;
+      const { name, description, imageUrl, status, role } = req.body;
 
       const character = await Character.findById(id).lean();
 
@@ -178,21 +178,52 @@ router.put(
         return;
       }
 
-      // Only allow updating name, description, imageUrl — NOT stats
       const update: Record<string, unknown> = {};
       if (name !== undefined) update.name = name;
       if (description !== undefined) update.description = description;
       if (imageUrl !== undefined) update.imageUrl = imageUrl;
+      if (status !== undefined) update.status = status;
+      if (role !== undefined) update.role = role;
 
       const updated = await Character.findByIdAndUpdate(
         id,
         { $set: update },
-        { returnDocument: 'after' }
+        { returnDocument: 'after', runValidators: true }
       ).lean();
 
       res.json({ character: updated });
     } catch (err) {
       console.error('Update character error:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+// DELETE /api/characters/:id — soft delete character
+router.delete(
+  '/characters/:id',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.id;
+      const { id } = req.params;
+
+      const character = await Character.findById(id).lean();
+
+      if (!character) {
+        res.status(404).json({ error: 'Character not found' });
+        return;
+      }
+
+      if (character.userId.toString() !== userId) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+
+      await Character.findByIdAndUpdate(id, { deletedAt: new Date() });
+
+      res.json({ message: 'Character deleted' });
+    } catch (err) {
+      console.error('Delete character error:', err);
       res.status(500).json({ error: 'Internal server error' });
     }
   }

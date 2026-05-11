@@ -16,6 +16,7 @@ export interface ISpecialItemDocument extends Document {
   customFields: Record<string, unknown>; // values matching SpecialItemTemplate.fields
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 }
 
 const SpecialItemSchema = new Schema<ISpecialItemDocument>(
@@ -67,6 +68,7 @@ const SpecialItemSchema = new Schema<ISpecialItemDocument>(
       type: Schema.Types.Mixed,
       default: {},
     },
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
@@ -74,5 +76,13 @@ const SpecialItemSchema = new Schema<ISpecialItemDocument>(
 // Indexes
 SpecialItemSchema.index({ playthroughId: 1, category: 1 });
 SpecialItemSchema.index({ ownerId: 1 });
+
+// Soft delete: auto-filter non-deleted documents
+SpecialItemSchema.pre(['find', 'findOne', 'findOneAndUpdate', 'countDocuments'], function () {
+  const filter = this.getFilter() as Record<string, unknown>;
+  if (!('deletedAt' in filter)) {
+    this.setQuery({ ...filter, deletedAt: null });
+  }
+});
 
 export const SpecialItem = mongoose.model<ISpecialItemDocument>('SpecialItem', SpecialItemSchema);
