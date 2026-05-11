@@ -11,7 +11,7 @@ import type {
 } from "../services/worldApi";
 import * as supportApi from "../services/supportApi";
 import { Sparkles, Loader2, Hash, Type, Gauge, Tags, Eye } from "lucide-react";
-import TagInput from "../components/TagInput";
+
 export default function WorldCreatePage() {
   const t = useTranslation();
   const navigate = useNavigate();
@@ -125,10 +125,7 @@ export default function WorldCreatePage() {
         key === "type"
           ? (value as SpecialItemFieldDefinition["type"])
           : key === "options"
-          ? (value as string)
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean)
+          ? (Array.isArray(value) ? value : (value as string).split(",").map((s) => s.trim()).filter(Boolean))
           : value,
     };
     updated[templateIndex] = { ...updated[templateIndex], fields };
@@ -371,17 +368,42 @@ export default function WorldCreatePage() {
             {resources.map((res, index) => (
               <div
                 key={index}
-                className={`flex gap-3 items-start bg-ink-950/50 p-4 border border-ink-700/50 rounded-xl border-l-2 ${typeColors[res.type]}`}
+                className={`bg-ink-950/50 p-4 border border-ink-700/50 rounded-xl border-l-2 ${typeColors[res.type]}`}
               >
-                <div className="flex-1 grid grid-cols-2 md:grid-cols-5 gap-3">
+                {/* Header with key + type + remove button */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    {typeIcons[res.type](16)}
+                    <span className="text-sm font-medium text-ink-100">{res.key || 'Unnamed'}</span>
+                    <span className={`text-[10px] font-medium uppercase ${typeLabelColors[res.type]}`}>{res.type}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveResource(index)}
+                    className="text-ink-200/40 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-400/10 transition-all shrink-0"
+                    title={t.worldCreate.removeResource}
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="space-y-4">
                   {/* Key */}
-                  <div className="col-span-2">
-                    <label className="block text-xs text-ink-200/60 mb-1">
+                  <div>
+                    <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
                       {t.worldCreate.nameKey}
                     </label>
                     <input
                       required
-                      className="w-full bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-accent-400 outline-none transition-all"
+                      className="w-full bg-ink-800 border border-ink-700 rounded-lg px-4 py-3 text-base text-ink-100 placeholder:text-ink-500 focus:border-accent-400 outline-none transition-all"
                       placeholder={t.worldCreate.nameKeyPlaceholder}
                       value={res.key}
                       onChange={(e) =>
@@ -391,12 +413,12 @@ export default function WorldCreatePage() {
                   </div>
 
                   {/* Type */}
-                  <div className="col-span-1">
-                    <label className="block text-xs text-ink-200/60 mb-1">
+                  <div>
+                    <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
                       {t.worldCreate.type}
                     </label>
                     <select
-                      className="w-full bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-accent-400 outline-none transition-all"
+                      className="w-full bg-ink-800 border border-ink-700 rounded-lg px-4 py-3 text-base text-ink-100 focus:border-accent-400 outline-none transition-all"
                       value={res.type}
                       onChange={(e) =>
                         handleResourceChange(index, "type", e.target.value)
@@ -409,21 +431,17 @@ export default function WorldCreatePage() {
                       <option value="text">{t.worldCreate.typeText}</option>
                       <option value="enum">{t.worldCreate.typeEnum}</option>
                     </select>
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      {typeIcons[res.type](12)}
-                      <span className={`text-[10px] font-medium uppercase ${typeLabelColors[res.type]}`}>{res.type}</span>
-                    </div>
                   </div>
 
                   {res.type === "number" || res.type === "progress" ? (
                     <>
-                      <div className="col-span-1">
-                        <label className="block text-xs text-ink-200/60 mb-1">
+                      <div>
+                        <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
                           {t.worldCreate.defaultVal}
                         </label>
                         <input
                           type="number"
-                          className="w-full bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-accent-400 outline-none transition-all"
+                          className="w-full bg-ink-800 border border-ink-700 rounded-lg px-4 py-3 text-base text-ink-100 focus:border-accent-400 outline-none transition-all"
                           value={res.defaultValue ?? ""}
                           onChange={(e) =>
                             handleResourceChange(
@@ -434,27 +452,27 @@ export default function WorldCreatePage() {
                           }
                         />
                       </div>
-                      <div className="col-span-1 flex gap-2">
-                        <div className="w-1/2">
-                          <label className="block text-xs text-ink-200/60 mb-1">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
                             {t.worldCreate.min}
                           </label>
                           <input
                             type="number"
-                            className="w-full bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-accent-400 outline-none transition-all"
+                            className="w-full bg-ink-800 border border-ink-700 rounded-lg px-4 py-3 text-base text-ink-100 focus:border-accent-400 outline-none transition-all"
                             value={res.min ?? ""}
                             onChange={(e) =>
                               handleResourceChange(index, "min", e.target.value)
                             }
                           />
                         </div>
-                        <div className="w-1/2">
-                          <label className="block text-xs text-ink-200/60 mb-1">
+                        <div>
+                          <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
                             {t.worldCreate.max}
                           </label>
                           <input
                             type="number"
-                            className="w-full bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-accent-400 outline-none transition-all"
+                            className="w-full bg-ink-800 border border-ink-700 rounded-lg px-4 py-3 text-base text-ink-100 focus:border-accent-400 outline-none transition-all"
                             value={res.max ?? ""}
                             onChange={(e) =>
                               handleResourceChange(index, "max", e.target.value)
@@ -465,13 +483,13 @@ export default function WorldCreatePage() {
                     </>
                   ) : res.type === "enum" ? (
                     <>
-                      <div className="col-span-1">
-                        <label className="block text-xs text-ink-200/60 mb-1">
+                      <div>
+                        <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
                           {t.worldCreate.defaultVal}
                         </label>
                         <input
                           type="text"
-                          className="w-full bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-accent-400 outline-none transition-all"
+                          className="w-full bg-ink-800 border border-ink-700 rounded-lg px-4 py-3 text-base text-ink-100 focus:border-accent-400 outline-none transition-all"
                           value={res.defaultValue ?? ""}
                           onChange={(e) =>
                             handleResourceChange(
@@ -482,30 +500,58 @@ export default function WorldCreatePage() {
                           }
                         />
                       </div>
-                      <div className="col-span-1">
-                        <label
-                          className="block text-xs text-ink-200/60 mb-1 truncate"
-                          title={t.worldCreate.options}
-                        >
+                      <div>
+                        <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
                           {t.worldCreate.options}
                         </label>
-                        <TagInput
-                          tags={res.options ?? []}
-                          onChange={(tags) =>
-                            handleResourceChange(index, "options", tags)
-                          }
-                          placeholder={t.worldCreate.optionsPlaceholder}
-                        />
+                        <div className="space-y-2">
+                          {(res.options ?? []).map((opt, optIdx) => (
+                            <div key={optIdx} className="flex gap-2 items-center">
+                              <input
+                                className="w-full bg-ink-800 border border-ink-700 rounded-lg px-4 py-3 text-base text-ink-100 placeholder:text-ink-500 focus:border-accent-400 outline-none transition-all"
+                                placeholder={t.worldCreate.optionsPlaceholder}
+                                value={opt}
+                                onChange={(e) => {
+                                  const newOptions = [...(res.options ?? [])];
+                                  newOptions[optIdx] = e.target.value;
+                                  handleResourceChange(index, "options", newOptions);
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newOptions = (res.options ?? []).filter((_, i) => i !== optIdx);
+                                  handleResourceChange(index, "options", newOptions);
+                                }}
+                                className="text-ink-200/40 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-400/10 transition-all shrink-0"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                  <path d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newOptions = [...(res.options ?? []), ""];
+                              handleResourceChange(index, "options", newOptions);
+                            }}
+                            className="text-sm text-accent-400 hover:text-accent-300 transition-colors"
+                          >
+                            + {t.worldCreate.addOption}
+                          </button>
+                        </div>
                       </div>
                     </>
                   ) : (
-                    <div className="col-span-2">
-                      <label className="block text-xs text-ink-200/60 mb-1">
+                    <div>
+                      <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
                         {t.worldCreate.defaultText}
                       </label>
                       <input
                         type="text"
-                        className="w-full bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-accent-400 outline-none transition-all"
+                        className="w-full bg-ink-800 border border-ink-700 rounded-lg px-4 py-3 text-base text-ink-100 focus:border-accent-400 outline-none transition-all"
                         value={res.defaultValue ?? ""}
                         onChange={(e) =>
                           handleResourceChange(
@@ -518,23 +564,6 @@ export default function WorldCreatePage() {
                     </div>
                   )}
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleRemoveResource(index)}
-                  className="mt-5 text-ink-200/40 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-400/10 transition-all"
-                  title={t.worldCreate.removeResource}
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
               </div>
             ))}
 
@@ -655,58 +684,85 @@ export default function WorldCreatePage() {
                     </button>
                   </div>
                   {sit.fields.map((field, fIdx) => (
-                    <div key={fIdx} className="flex gap-2 items-center mb-2">
-                      <input
-                        className="flex-1 bg-ink-800 border border-ink-700 rounded-lg px-3 py-1.5 text-xs text-ink-100 focus:border-purple-400 outline-none transition-all"
-                        placeholder={t.worldCreate.fieldName}
-                        value={field.name}
-                        onChange={(e) =>
-                          handleFieldChange(tIdx, fIdx, "name", e.target.value)
-                        }
-                      />
-                      <select
-                        className="bg-ink-800 border border-ink-700 rounded-lg px-2 py-1.5 text-xs text-ink-100 focus:border-purple-400 outline-none transition-all"
-                        value={field.type}
-                        onChange={(e) =>
-                          handleFieldChange(tIdx, fIdx, "type", e.target.value)
-                        }
-                      >
-                        <option value="text">{t.worldCreate.typeText}</option>
-                        <option value="number">
-                          {t.worldCreate.typeNumber}
-                        </option>
-                        <option value="enum">{t.worldCreate.typeEnum}</option>
-                      </select>
-                      {field.type === "enum" && (
+                    <div key={fIdx} className="mb-2">
+                      <div className="flex gap-2 items-center">
                         <input
                           className="flex-1 bg-ink-800 border border-ink-700 rounded-lg px-3 py-1.5 text-xs text-ink-100 focus:border-purple-400 outline-none transition-all"
-                          placeholder={t.worldCreate.optionsPlaceholder}
-                          value={field.options?.join(", ") ?? ""}
+                          placeholder={t.worldCreate.fieldName}
+                          value={field.name}
                           onChange={(e) =>
-                            handleFieldChange(
-                              tIdx,
-                              fIdx,
-                              "options",
-                              e.target.value,
-                            )
+                            handleFieldChange(tIdx, fIdx, "name", e.target.value)
                           }
                         />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveField(tIdx, fIdx)}
-                        className="text-ink-200/40 hover:text-red-400 p-1 rounded transition-all"
-                      >
-                        <svg
-                          className="w-3.5 h-3.5"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          viewBox="0 0 24 24"
+                        <select
+                          className="bg-ink-800 border border-ink-700 rounded-lg px-2 py-1.5 text-xs text-ink-100 focus:border-purple-400 outline-none transition-all"
+                          value={field.type}
+                          onChange={(e) =>
+                            handleFieldChange(tIdx, fIdx, "type", e.target.value)
+                          }
                         >
-                          <path d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                          <option value="text">{t.worldCreate.typeText}</option>
+                          <option value="number">
+                            {t.worldCreate.typeNumber}
+                          </option>
+                          <option value="enum">{t.worldCreate.typeEnum}</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveField(tIdx, fIdx)}
+                          className="text-ink-200/40 hover:text-red-400 p-1 rounded transition-all shrink-0"
+                        >
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      {field.type === "enum" && (
+                        <div className="mt-2 ml-2 space-y-1.5">
+                          {(field.options ?? []).map((opt, optIdx) => (
+                            <div key={optIdx} className="flex gap-1.5 items-center">
+                              <input
+                                className="flex-1 bg-ink-800 border border-ink-700 rounded-lg px-3 py-1.5 text-xs text-ink-100 placeholder:text-ink-500 focus:border-purple-400 outline-none transition-all"
+                                placeholder={t.worldCreate.optionsPlaceholder}
+                                value={opt}
+                                onChange={(e) => {
+                                  const newOptions = [...(field.options ?? [])];
+                                  newOptions[optIdx] = e.target.value;
+                                  handleFieldChange(tIdx, fIdx, "options", newOptions);
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newOptions = (field.options ?? []).filter((_, i) => i !== optIdx);
+                                  handleFieldChange(tIdx, fIdx, "options", newOptions);
+                                }}
+                                className="text-ink-200/40 hover:text-red-400 p-1 rounded transition-all shrink-0"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                  <path d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newOptions = [...(field.options ?? []), ""];
+                              handleFieldChange(tIdx, fIdx, "options", newOptions);
+                            }}
+                            className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+                          >
+                            + {t.worldCreate.addOption}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -806,12 +862,18 @@ export default function WorldCreatePage() {
                         </div>
                       )}
                       {res.type === 'enum' && (
-                        <div className="pl-6 flex flex-wrap gap-1">
+                        <div className="pl-6">
                           {(res.options?.length ?? 0) > 0 ? (
-                            <>
+                            <div className="space-y-1">
                               <span className="text-sm text-ink-100 font-mono">{String(res.defaultValue ?? res.options?.[0] ?? '')}</span>
-                              <span className="text-xs text-ink-200/50 self-center">({res.options?.join(', ')})</span>
-                            </>
+                              <div className="flex flex-wrap gap-1">
+                                {res.options?.map((opt, i) => (
+                                  <span key={i} className="inline-block text-[10px] text-purple-300 bg-purple-400/10 border border-purple-400/20 rounded-md px-1.5 py-0.5">
+                                    {opt}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
                           ) : (
                             <span className="text-sm text-ink-200/50 italic">No options defined</span>
                           )}
