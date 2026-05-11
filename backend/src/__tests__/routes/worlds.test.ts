@@ -10,7 +10,7 @@ import { registerAndGetAgent } from '../helpers';
 import { User } from '../../models/User';
 
 describe('Worlds routes', () => {
-  let agent: request.SuperAgentTest;
+  let agent: ReturnType<typeof request.agent>;
 
   beforeAll(async () => {
     await User.syncIndexes();

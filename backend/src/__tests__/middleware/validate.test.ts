@@ -53,6 +53,6 @@ describe('validate middleware', () => {
 
     expect(next).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json.mock.calls[0][0].details.length).toBeGreaterThan(0);
+    expect(vi.mocked(res.json).mock.calls[0]![0].details.length).toBeGreaterThan(0);
   });
 });

@@ -45,8 +45,17 @@ router.get(
         return;
       }
 
-      const templates = await SpecialItemTemplate.find({ worldId }).sort({ createdAt: 1 }).lean();
-      res.json({ specialItemTemplates: templates });
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+      const filter = { worldId };
+
+      const [templates, total] = await Promise.all([
+        SpecialItemTemplate.find(filter).sort({ createdAt: 1 }).skip(skip).limit(limit).lean(),
+        SpecialItemTemplate.countDocuments(filter),
+      ]);
+
+      res.json({ specialItemTemplates: templates, total, page, limit, totalPages: Math.ceil(total / limit) });
     } catch (err) {
       console.error('List special item templates error:', err);
       res.status(500).json({ error: 'Internal server error' });

@@ -26,10 +26,19 @@ router.get(
       if (!playthrough) { res.status(404).json({ error: 'Playthrough not found' }); return; }
       if ((playthrough as Record<string, unknown>).userId?.toString() !== userId) { res.status(403).json({ error: 'Forbidden' }); return; }
 
-      const relationships = await Relationship.find({ playthroughId })
-        .populate('characterA', 'name')
-        .populate('characterB', 'name')
-        .lean();
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+      const filter = { playthroughId };
+
+      const [relationships, total] = await Promise.all([
+        Relationship.find(filter)
+          .populate('characterA', 'name')
+          .populate('characterB', 'name')
+          .skip(skip).limit(limit)
+          .lean(),
+        Relationship.countDocuments(filter),
+      ]);
 
       // Transform for frontend: include character names
       const result = relationships.map((r) => ({
@@ -40,7 +49,7 @@ router.get(
         intensity: r.intensity,
       }));
 
-      res.json({ relationships: result });
+      res.json({ relationships: result, total, page, limit, totalPages: Math.ceil(total / limit) });
     } catch (err) {
       console.error('List relationships error:', err);
       res.status(500).json({ error: 'Internal server error' });
@@ -61,11 +70,17 @@ router.get(
       if (!playthrough) { res.status(404).json({ error: 'Playthrough not found' }); return; }
       if ((playthrough as Record<string, unknown>).userId?.toString() !== userId) { res.status(403).json({ error: 'Forbidden' }); return; }
 
-      const consequences = await ConsequenceSeed.find({ playthroughId })
-        .sort({ createdAt: -1 })
-        .lean();
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+      const filter = { playthroughId };
 
-      res.json({ consequences });
+      const [consequences, total] = await Promise.all([
+        ConsequenceSeed.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        ConsequenceSeed.countDocuments(filter),
+      ]);
+
+      res.json({ consequences, total, page, limit, totalPages: Math.ceil(total / limit) });
     } catch (err) {
       console.error('List consequences error:', err);
       res.status(500).json({ error: 'Internal server error' });

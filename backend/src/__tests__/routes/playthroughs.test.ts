@@ -10,7 +10,7 @@ import { registerAndGetAgent } from '../helpers';
 import { User } from '../../models/User';
 
 describe('Playthroughs routes', () => {
-  let agent: request.SuperAgentTest;
+  let agent: ReturnType<typeof request.agent>;
   let worldId: string;
 
   beforeAll(async () => {

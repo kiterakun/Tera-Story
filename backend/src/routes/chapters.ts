@@ -36,9 +36,17 @@ router.get(
         return;
       }
 
-      const arcs = await Arc.find({ playthroughId }).sort({ arcIndex: 1 }).lean();
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+      const filter = { playthroughId };
 
-      // Get chapter counts per arc
+      const [arcs, total] = await Promise.all([
+        Arc.find(filter).sort({ arcIndex: 1 }).skip(skip).limit(limit).lean(),
+        Arc.countDocuments(filter),
+      ]);
+
+      // Get chapter counts per arc (only for current page)
       const arcIds = arcs.map((a) => a._id);
       const chapterCounts = await Chapter.aggregate([
         { $match: { arcId: { $in: arcIds } } },
@@ -57,7 +65,7 @@ router.get(
         chapterCount: countMap.get(arc._id.toString()) || 0,
       }));
 
-      res.json({ arcs: arcsWithCounts });
+      res.json({ arcs: arcsWithCounts, total, page, limit, totalPages: Math.ceil(total / limit) });
     } catch (err) {
       console.error('List arcs error:', err);
       res.status(500).json({ error: 'Internal server error' });
@@ -80,11 +88,17 @@ router.get(
         return;
       }
 
-      const chapters = await Chapter.find({ arcId })
-        .sort({ chapterIndex: 1 })
-        .lean();
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+      const filter = { arcId };
 
-      res.json({ chapters });
+      const [chapters, total] = await Promise.all([
+        Chapter.find(filter).sort({ chapterIndex: 1 }).skip(skip).limit(limit).lean(),
+        Chapter.countDocuments(filter),
+      ]);
+
+      res.json({ chapters, total, page, limit, totalPages: Math.ceil(total / limit) });
     } catch (err) {
       console.error('List chapters error:', err);
       res.status(500).json({ error: 'Internal server error' });

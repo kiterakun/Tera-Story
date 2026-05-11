@@ -6,7 +6,7 @@ import { Chapter } from '../../models/Chapter';
 import { User } from '../../models/User';
 
 describe('Chapters routes', () => {
-  let agent: request.SuperAgentTest;
+  let agent: ReturnType<typeof request.agent>;
   let playthroughId: string;
   let arcId: string;
   let chapterId: string;

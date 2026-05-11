@@ -105,8 +105,8 @@ describe('World model', () => {
       ],
     });
     expect(world.resourceTemplates).toHaveLength(1);
-    expect(world.resourceTemplates[0].key).toBe('mana');
-    expect(world.resourceTemplates[0].type).toBe('number');
+    expect(world.resourceTemplates![0]!.key).toBe('mana');
+    expect(world.resourceTemplates![0]!.type).toBe('number');
   });
 
   it('rejects resourceTemplate with invalid type enum', async () => {

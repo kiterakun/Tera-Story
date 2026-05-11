@@ -40,8 +40,16 @@ router.get(
         filter.category = category;
       }
 
-      const specialItems = await SpecialItem.find(filter).sort({ createdAt: -1 }).lean();
-      res.json({ specialItems });
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+
+      const [specialItems, total] = await Promise.all([
+        SpecialItem.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        SpecialItem.countDocuments(filter),
+      ]);
+
+      res.json({ specialItems, total, page, limit, totalPages: Math.ceil(total / limit) });
     } catch (err) {
       console.error('List special items error:', err);
       res.status(500).json({ error: 'Internal server error' });
@@ -91,14 +99,17 @@ router.get(
         return;
       }
 
-      const specialItems = await SpecialItem.find({
-        playthroughId,
-        ownerId: characterId,
-      })
-        .sort({ createdAt: -1 })
-        .lean();
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+      const filter = { playthroughId, ownerId: characterId };
 
-      res.json({ specialItems });
+      const [specialItems, total] = await Promise.all([
+        SpecialItem.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        SpecialItem.countDocuments(filter),
+      ]);
+
+      res.json({ specialItems, total, page, limit, totalPages: Math.ceil(total / limit) });
     } catch (err) {
       console.error('List special items by owner error:', err);
       res.status(500).json({ error: 'Internal server error' });

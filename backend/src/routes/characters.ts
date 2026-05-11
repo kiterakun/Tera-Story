@@ -37,8 +37,17 @@ router.get(
         return;
       }
 
-      const characters = await Character.find({ playthroughId }).lean();
-      res.json({ characters });
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+      const filter = { playthroughId };
+
+      const [characters, total] = await Promise.all([
+        Character.find(filter).skip(skip).limit(limit).lean(),
+        Character.countDocuments(filter),
+      ]);
+
+      res.json({ characters, total, page, limit, totalPages: Math.ceil(total / limit) });
     } catch (err) {
       console.error('List characters error:', err);
       res.status(500).json({ error: 'Internal server error' });

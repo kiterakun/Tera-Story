@@ -34,8 +34,17 @@ router.get(
         return;
       }
 
-      const items = await Item.find({ playthroughId }).sort({ createdAt: -1 }).lean();
-      res.json({ items });
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+      const skip = (page - 1) * limit;
+      const filter = { playthroughId };
+
+      const [items, total] = await Promise.all([
+        Item.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        Item.countDocuments(filter),
+      ]);
+
+      res.json({ items, total, page, limit, totalPages: Math.ceil(total / limit) });
     } catch (err) {
       console.error('List items error:', err);
       res.status(500).json({ error: 'Internal server error' });

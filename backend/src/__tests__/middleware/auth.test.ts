@@ -68,7 +68,7 @@ describe('authMiddleware', () => {
     const req = {
       cookies: { token: cookieToken },
       headers: { authorization: `Bearer ${headerToken}` },
-    } as AuthRequest;
+    } as unknown as AuthRequest;
     const res = mockResponse();
     const next = vi.fn();
 

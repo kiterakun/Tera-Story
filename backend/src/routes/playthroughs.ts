@@ -40,9 +40,17 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
       return;
     }
 
-    const playthroughs = await Playthrough.find({ worldId, userId }).sort({ updatedAt: -1 }).lean();
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const skip = (page - 1) * limit;
+    const filter = { worldId, userId };
 
-    res.json({ playthroughs });
+    const [playthroughs, total] = await Promise.all([
+      Playthrough.find(filter).sort({ updatedAt: -1 }).skip(skip).limit(limit).lean(),
+      Playthrough.countDocuments(filter),
+    ]);
+
+    res.json({ playthroughs, total, page, limit, totalPages: Math.ceil(total / limit) });
   } catch (err) {
     console.error('List playthroughs error:', err);
     res.status(500).json({ error: 'Internal server error' });

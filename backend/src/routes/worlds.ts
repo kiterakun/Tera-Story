@@ -101,9 +101,17 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
 
-    const worlds = await World.find({ userId }).sort({ updatedAt: -1 }).lean();
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const skip = (page - 1) * limit;
+    const filter = { userId };
 
-    res.json({ worlds });
+    const [worlds, total] = await Promise.all([
+      World.find(filter).sort({ updatedAt: -1 }).skip(skip).limit(limit).lean(),
+      World.countDocuments(filter),
+    ]);
+
+    res.json({ worlds, total, page, limit, totalPages: Math.ceil(total / limit) });
   } catch (err) {
     console.error('List worlds error:', err);
     res.status(500).json({ error: 'Internal server error' });
