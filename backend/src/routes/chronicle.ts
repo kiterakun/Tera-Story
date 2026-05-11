@@ -1,7 +1,5 @@
 import { Router, Response } from 'express';
-import { z } from 'zod';
 import { AuthRequest } from '../middleware/auth';
-import { validate } from '../middleware/validate';
 import { Playthrough } from '../models/Playthrough';
 import {
   getChronicle,

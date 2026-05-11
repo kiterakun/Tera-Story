@@ -21,7 +21,14 @@ export function useGallery(params?: {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await galleryApi.fetchGallery(params);
+      const res = await galleryApi.fetchGallery({
+        page: params?.page,
+        limit: params?.limit,
+        worldId: params?.worldId,
+        rarity: params?.rarity,
+        category: params?.category,
+        sort: params?.sort,
+      });
       setCards(res.data.cards);
       setTotal(res.data.total);
       setTotalPages(res.data.totalPages);

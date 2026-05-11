@@ -16,7 +16,11 @@ export function useAchievements(params?: {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await achievementApi.fetchAchievements(params);
+      const res = await achievementApi.fetchAchievements({
+        category: params?.category,
+        status: params?.status,
+        rarity: params?.rarity,
+      });
       setAchievements(res.data.achievements);
       setStats(res.data.stats);
     } catch {

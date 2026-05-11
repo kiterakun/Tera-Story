@@ -1,23 +1,9 @@
 import { Router, Response } from 'express';
-import { z } from 'zod';
 import crypto from 'crypto';
 import { AuthRequest } from '../middleware/auth';
-import { validate } from '../middleware/validate';
 import { StoryCard } from '../models/StoryCard';
-import { StoryCard as StoryCardModel } from '../models/StoryCard';
 
 const router = Router();
-
-// --- Validation Schemas ---
-
-const listQuerySchema = z.object({
-  page: z.string().optional(),
-  limit: z.string().optional(),
-  worldId: z.string().optional(),
-  rarity: z.enum(['common', 'uncommon', 'rare', 'epic']).optional(),
-  category: z.enum(['story', 'combat', 'character', 'discovery', 'milestone']).optional(),
-  sort: z.enum(['newest', 'rarity']).optional(),
-});
 
 // --- Routes ---
 
