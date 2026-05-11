@@ -30,8 +30,11 @@ describe('encryption service', () => {
     expect(decrypt(c2)).toBe(text);
   });
 
-  it('decrypt throws for malformed input', () => {
-    expect(() => decrypt('not-valid')).toThrow();
+  it('decrypt returns plaintext for backward compatibility if no colon present', () => {
+    expect(decrypt('not-valid')).toBe('not-valid');
+  });
+
+  it('decrypt throws for malformed encrypted input', () => {
     expect(() => decrypt(':')).toThrow();
     expect(() => decrypt('abc:def')).toThrow();
   });

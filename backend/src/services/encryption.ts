@@ -12,6 +12,10 @@ export function encrypt(text: string): string {
 }
 
 export function decrypt(encryptedText: string): string {
+  // If not in "iv:data" format, treat as plaintext (backward compat)
+  if (!encryptedText.includes(':')) {
+    return encryptedText;
+  }
   const [ivHex, dataHex] = encryptedText.split(':');
   const iv = Buffer.from(ivHex, 'hex');
   const data = Buffer.from(dataHex, 'hex');

@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { IAISettings } from '../types/user.types';
+import { encrypt } from '../services/encryption';
 
 export interface IUserSettingsDocument extends Document {
   userId: mongoose.Types.ObjectId;
@@ -48,6 +49,17 @@ const UserSettingsSchema = new Schema<IUserSettingsDocument>(
   },
   { timestamps: true }
 );
+
+// Encrypt apiKey fields before save — skip if already in "iv:data" encrypted format
+UserSettingsSchema.pre('save', function () {
+  const agentNames = ['contextAgent', 'writerAgent', 'supportAgent', 'imageAgent'] as const;
+  for (const name of agentNames) {
+    const config = this.aiSettings?.[name];
+    if (config?.apiKey && typeof config.apiKey === 'string' && !/^[0-9a-f]{32}:/.test(config.apiKey)) {
+      config.apiKey = encrypt(config.apiKey);
+    }
+  }
+});
 
 export const UserSettings = mongoose.model<IUserSettingsDocument>(
   'UserSettings',
