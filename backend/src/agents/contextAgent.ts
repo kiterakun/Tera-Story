@@ -2,6 +2,7 @@ import { streamText } from 'ai';
 import type { LanguageModel } from 'ai';
 import { z } from 'zod';
 import { extractJson } from '../utils/jsonExtractor';
+import { renderPrompt } from './prompts/renderPrompt';
 import { Chapter } from '../models/Chapter';
 import { Arc } from '../models/Arc';
 import { Character } from '../models/Character';
@@ -26,16 +27,7 @@ export interface ContextAgentParams {
 
 export type ContextOutput = IContextOutput;
 
-const SYSTEM_PROMPT = `You are a story intelligence analyst for an interactive novel. Analyze the current story state and produce a focused context for the next chapter writer. Respond ONLY with valid JSON — no markdown fences, no explanation.
-
-Output JSON schema:
-{
-  "outline": "string",
-  "filteredContext": "string",
-  "activeCharacters": ["string"],
-  "currentScene": "string",
-  "relevantPlotPoints": ["string"]
-}`;
+const SYSTEM_PROMPT = renderPrompt('context.prompt.md');
 
 export async function runContextAgent(
   params: ContextAgentParams

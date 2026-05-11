@@ -1,6 +1,7 @@
 import { streamText } from 'ai';
 import type { LanguageModel } from 'ai';
 import { extractJson } from '../utils/jsonExtractor';
+import { renderPrompt } from './prompts/renderPrompt';
 import { IResourceTemplate } from '../types/world.types';
 import { IDynamicStat } from '../types/character.types';
 
@@ -29,33 +30,7 @@ export async function enrichWorld(
 ): Promise<EnrichWorldResult> {
   const result = streamText({
     model,
-    system: `You are a world-building assistant for an interactive novel RPG. Given a user's idea or description, create a COMPLETE and DETAILED world with name, genre, rich description, resource templates (RPG stats like HP, MP, Gold, Experience, etc.), and special item templates (categories of special abilities/skills/techniques the AI story writer can create during gameplay).
-
-Respond ONLY with valid JSON matching this schema:
-{
-  "name": "string",
-  "description": "string (rich, evocative, 2-4 paragraphs describing the world's lore, atmosphere, and key features)",
-  "genre": "fantasy|sci-fi|wuxia|modern|custom",
-  "resourceTemplates": [
-    { "key": "string", "type": "number|text|progress|enum", "min": 0, "max": 100, "defaultValue": 0, "options": ["string (if type is enum)"] }
-  ],
-  "specialItemTemplates": [
-    {
-      "category": "string (e.g. Skill, Technique, Spell, Mutation)",
-      "description": "string (what this category represents in the world)",
-      "fields": [
-        { "name": "string (e.g. Element, Cooldown, Damage)", "type": "text|number|enum", "options": ["string (if type is enum)"] }
-      ]
-    }
-  ]
-}
-
-Guidelines:
-- Create 4-8 meaningful resource templates appropriate for the genre
-- Create 2-4 special item template categories that fit the world's theme
-- Each special item category should have 2-4 custom fields
-- Use the user's language for all content
-Language: ${language}`,
+    system: renderPrompt('support-world.prompt.md', { language }),
     prompt: description,
     temperature: 0.7,
   });
@@ -72,24 +47,7 @@ export async function enrichCharacter(
 ): Promise<EnrichCharacterResult> {
   const result = streamText({
     model,
-    system: `You are an expert character creator for an interactive novel RPG. Given a user's description/idea and the FULL world context, create a character that FITS PERFECTLY into this world.
-
-CRITICAL RULES:
-- The character MUST be consistent with the world's genre, lore, atmosphere, and setting
-- The character's stats (suggestedStats) MUST use the EXACT same keys as the world's resource templates — do NOT invent new stat keys
-- The description should reference elements from the world (locations, factions, magic systems, technology, etc.)
-- If the world has special item categories (skills, techniques, etc.), consider mentioning relevant abilities the character might have or aspire to
-- Make the character feel like a natural inhabitant of this specific world, not a generic RPG character
-
-Respond ONLY with valid JSON matching this schema:
-{
-  "characterName": "string (a name that fits the world's culture and genre)",
-  "characterDescription": "string (2-3 paragraphs: appearance, personality, backstory rooted in the world's lore)",
-  "suggestedStats": [
-    { "k": "string (MUST match a resource template key from the world)", "v": "string|number (appropriate starting value)", "t": "string (type matching the template: number|text|progress|enum)" }
-  ]
-}
-Language: ${language}`,
+    system: renderPrompt('support-character.prompt.md', { language }),
     prompt: worldContext
       ? `Character idea: ${description}\n\n=== WORLD CONTEXT (character MUST fit this world) ===\n${worldContext}`
       : `Character idea: ${description}`,
