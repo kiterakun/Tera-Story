@@ -12,7 +12,7 @@ interface UIState {
   setSidebarOpen: (open: boolean) => void;
 }
 
-const THEMES: AppTheme[] = ['light', 'dark', 'cyberpunk', 'sepia', 'abyssal'];
+
 
 export const useUIStore = create<UIState>()(
   persist(

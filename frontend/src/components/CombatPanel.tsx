@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Swords, Shield, Heart, Skull, Wind } from 'lucide-react';
+import { Swords, Shield, Heart, Skull } from 'lucide-react';
 import type { CombatEncounter, CombatActionResponse } from '../services/playthroughApi';
 import { performCombatAction } from '../services/playthroughApi';
 

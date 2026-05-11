@@ -3,22 +3,14 @@ import {
   ImageJobDetails,
   WorldContext,
 } from "../agents/imageAgent";
+import { ImageTask } from "../models/ImageTask";
 import { UserSettings } from "../models/UserSettings";
 import { World } from "../models/World";
 import { createUserProviderRegistry } from "../providers/registry";
 
 type EntityType = "character" | "item" | "special-item" | "world";
 
-interface ImageJob {
-  entityDetails: ImageJobDetails;
-  entityType: EntityType;
-  entityId: string;
-  worldId: string;
-  userId: string;
-}
-
-const queue: ImageJob[] = [];
-let processing = false;
+const MAX_RETRIES = 3;
 
 /**
  * Queue an image generation job. Non-blocking — returns immediately.
@@ -31,63 +23,139 @@ export function queueImageGeneration(
   worldId: string,
   userId: string,
 ): void {
-  queue.push({ entityDetails, entityType, entityId, worldId, userId });
-  if (!processing) {
-    processQueue();
-  }
+  ImageTask.create({
+    entityDetails,
+    entityType,
+    entityId,
+    worldId,
+    userId,
+    status: "pending",
+  })
+    .then(() => processQueue())
+    .catch((error: unknown) => {
+      console.error("Image queue: failed to create task:", error);
+    });
 }
 
 async function processQueue(): Promise<void> {
-  processing = true;
-
-  while (queue.length > 0) {
-    const job = queue.shift()!;
-    try {
-      const settings = await UserSettings.findOne({ userId: job.userId });
-      if (!settings) {
-        console.error(
-          `Image queue: no settings found for user ${job.userId}`,
-        );
-        continue;
-      }
-
-      const registry = createUserProviderRegistry(settings.aiSettings);
-      const imageConfig = registry.getImageConfig();
-
-      // Load world context for genre/style matching
-      let worldContext: WorldContext = {
-        name: "Unknown World",
-        description: "",
-        genre: "custom",
-      };
-
-      const world = await World.findById(job.worldId).lean();
-      if (world) {
-        worldContext = {
-          name: world.name,
-          description: world.description || "",
-          genre: world.genre,
-        };
-      } else if (job.entityType === "world") {
-        // For world images where we can't find the World doc yet, use entity details
-        worldContext = {
-          name: job.entityDetails.name,
-          description: job.entityDetails.description,
-          genre: "custom",
-        };
-      }
-
-      await generateImage(
-        job.entityDetails,
-        job.entityType,
-        job.entityId,
-        worldContext,
-        imageConfig,
-      );
-    } catch (e) {
-      console.error("Image queue error:", e);
-    }
+  const job = await claimNextPendingJob();
+  if (!job) {
+    return;
   }
 
-  processing = false;
+  try {
+    const settings = await UserSettings.findOne({ userId: job.userId });
+    if (!settings) {
+      throw new Error(`No settings found for user ${String(job.userId)}`);
+    }
+
+    const registry = createUserProviderRegistry(settings.aiSettings);
+    const imageConfig = registry.getImageConfig();
+    const worldContext = await buildWorldContext(job);
+
+    await generateImage(
+      job.entityDetails,
+      job.entityType,
+      job.entityId,
+      worldContext,
+      imageConfig,
+    );
+
+    await ImageTask.findByIdAndUpdate(job._id, {
+      $set: { status: "completed" },
+      $unset: { error: "" },
+    });
+  } catch (error) {
+    await handleJobFailure(job._id, job.retryCount, getErrorMessage(error));
+  }
+
+  await processQueue();
+}
+
+async function claimNextPendingJob() {
+  const now = new Date();
+
+  return ImageTask.findOneAndUpdate(
+    {
+      status: "pending",
+      $or: [{ nextRetryAt: null }, { nextRetryAt: { $lte: now } }],
+    },
+    { $set: { status: "processing" } },
+    { sort: { createdAt: 1 }, returnDocument: "after" },
+  );
+}
+
+async function buildWorldContext(job: {
+  entityDetails: ImageJobDetails;
+  entityType: EntityType;
+  worldId: string;
+}): Promise<WorldContext> {
+  const world = await World.findById(job.worldId).lean();
+  if (world) {
+    return {
+      name: world.name,
+      description: world.description || "",
+      genre: world.genre,
+    };
+  }
+
+  if (job.entityType === "world") {
+    return {
+      name: job.entityDetails.name,
+      description: job.entityDetails.description,
+      genre: "custom",
+    };
+  }
+
+  return {
+    name: "Unknown World",
+    description: "",
+    genre: "custom",
+  };
+}
+
+async function handleJobFailure(
+  jobId: unknown,
+  currentRetryCount: number,
+  errorMessage: string,
+): Promise<void> {
+  const nextRetryCount = currentRetryCount + 1;
+
+  if (nextRetryCount < MAX_RETRIES) {
+    const delayMs = Math.pow(2, currentRetryCount) * 1000;
+    const nextRetryAt = new Date(Date.now() + delayMs);
+
+    await ImageTask.findByIdAndUpdate(jobId, {
+      $set: {
+        status: "pending",
+        error: errorMessage,
+        retryCount: nextRetryCount,
+        nextRetryAt,
+      },
+    });
+
+    setTimeout(() => {
+      processQueue().catch((error: unknown) => {
+        console.error("Image queue retry error:", error);
+      });
+    }, delayMs);
+
+    return;
+  }
+
+  await ImageTask.findByIdAndUpdate(jobId, {
+    $set: {
+      status: "failed",
+      error: errorMessage,
+      retryCount: nextRetryCount,
+    },
+  });
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
 }

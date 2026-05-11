@@ -63,7 +63,7 @@ function parseContent(text: string): Segment[] {
     if (match.index > lastIndex) {
       segments.push({ kind: 'text', content: text.slice(lastIndex, match.index) });
     }
-    segments.push({ kind: 'entity', entity: parseEntityTag(match[1], match[2]) });
+    segments.push({ kind: 'entity', entity: parseEntityTag(match[1] || '', match[2] || '') });
     lastIndex = match.index + match[0].length;
   }
 

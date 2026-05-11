@@ -22,15 +22,15 @@ export async function initializeDynamicStats(
   }
 
   return templates.map((tpl) => {
-    let defaultVal: string | number | undefined = tpl.defaultValue;
-    if (defaultVal === undefined || defaultVal === null) {
-      if (tpl.type === 'enum' && tpl.options && tpl.options.length > 0) {
-        defaultVal = tpl.options[0];
-      } else if (tpl.type === 'text') {
-        defaultVal = '';
-      } else {
-        defaultVal = 0;
-      }
+    let defaultVal: string | number | boolean = 0;
+    if (tpl.defaultValue !== undefined && tpl.defaultValue !== null) {
+      defaultVal = tpl.defaultValue as string | number | boolean;
+    } else if (tpl.type === 'enum' && tpl.options && tpl.options.length > 0) {
+      defaultVal = tpl.options[0] || '';
+    } else if (tpl.type === 'text') {
+      defaultVal = '';
+    } else {
+      defaultVal = 0;
     }
     return {
       k: tpl.key,

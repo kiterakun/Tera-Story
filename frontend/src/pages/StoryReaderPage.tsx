@@ -9,7 +9,7 @@ import * as storyApi from '../services/storyApi';
 import * as playthroughApi from '../services/playthroughApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useTranslation } from '../i18n';
-import { Swords, X, BookOpen, ChevronLeft, ChevronRight, RefreshCw, AlertTriangle, List, GitBranch } from 'lucide-react';
+import { Swords, X, BookOpen, ChevronLeft, ChevronRight, RefreshCw, AlertTriangle, List } from 'lucide-react';
 import type { CombatEncounter, Relationship, ConsequenceSeed } from '../services/playthroughApi';
 import RPGPanel from '../components/RPGPanel';
 import ChapterNav from '../components/ChapterNav';
@@ -61,7 +61,7 @@ export default function StoryReaderPage() {
   const [flashbackQueue, setFlashbackQueue] = useState<ConsequenceSeed[]>([]);
   const [isRelationshipModalOpen, setIsRelationshipModalOpen] = useState(false);
   
-  const { isGenerating, isRetryingTools, isStreaming, streamingText, streamPhase, error, generateChapter, generateChapterStream, retryChapter, retryTools, clearError } = useChapterGeneration();
+  const { isGenerating, isRetryingTools, isStreaming, streamingText, streamPhase, error, generateChapterStream, retryChapter, retryTools, clearError } = useChapterGeneration();
   
   // Individual selectors to avoid getSnapshot infinite loop
   const characters = useStoryStore(s => s.characters);
@@ -130,6 +130,7 @@ export default function StoryReaderPage() {
       loadActiveCombat();
       loadConsequences();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playthroughId]);
 
   // Poll for chapter updates during generation
@@ -152,7 +153,7 @@ export default function StoryReaderPage() {
         if (stateChapters.length > 0) {
           const latest = stateChapters[stateChapters.length - 1];
           // If the latest chapter now has content (Pass 1 done), update UI so user can start reading
-          if (latest.content) {
+          if (latest?.content) {
             setChapters(stateChapters);
             setChoices(state.choices || []);
           }

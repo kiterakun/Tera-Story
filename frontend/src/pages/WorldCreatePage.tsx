@@ -46,7 +46,7 @@ export default function WorldCreatePage() {
   const handleResourceChange = (
     index: number,
     field: keyof ResourceTemplate,
-    value: any,
+    value: unknown,
   ) => {
     const updated = [...resources];
     const item = updated[index];
@@ -117,7 +117,7 @@ export default function WorldCreatePage() {
     templateIndex: number,
     fieldIndex: number,
     key: keyof SpecialItemFieldDefinition,
-    value: any,
+    value: unknown,
   ) => {
     const updated = [...specialItemTemplates];
     const fields = [...updated[templateIndex].fields];

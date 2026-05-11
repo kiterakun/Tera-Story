@@ -171,7 +171,7 @@ function AgentConfigCard({ agentKey }: { agentKey: keyof AISettings }) {
 export default function SettingsPage() {
   const t = useTranslation();
   const { settings, isLoading, fetchSettings, updateSettings } = useSettingsStore();
-  const { theme, toggleTheme } = useUIStore();
+  const { theme } = useUIStore();
   const [generalSettings, setGeneralSettings] = useState<{ language: string; theme: AppTheme }>({ language: 'en', theme: 'dark' });
   const [isSaving, setIsSaving] = useState(false);
 

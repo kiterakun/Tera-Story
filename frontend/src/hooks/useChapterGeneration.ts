@@ -58,7 +58,7 @@ export function useChapterGeneration(): UseChapterGenerationReturn {
         onToken: (token) => {
           setStreamingText((prev) => prev + token);
         },
-        onPhase: (phase, _message) => {
+        onPhase: (phase) => {
           setStreamPhase(phase);
         },
         onComplete: (data) => {

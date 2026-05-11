@@ -1,4 +1,4 @@
-import { X, UserRound, Package, Sparkles, Crown, Skull, AlertTriangle, HelpCircle, ShieldOff, Ban } from 'lucide-react';
+import { X, UserRound, Package, Sparkles, Skull, AlertTriangle, HelpCircle } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import type { Character, Item, SpecialItem, ItemRarity, CharacterStatus, ItemStatus, SpecialItemStatus } from '../services/playthroughApi';
 import { getImageUrl } from '../utils/url';

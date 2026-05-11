@@ -4,6 +4,7 @@ import { queueImageGeneration } from '../../services/imageService';
 import { UserSettings } from '../../models/UserSettings';
 import { World } from '../../models/World';
 import { User } from '../../models/User';
+import { ImageTask } from '../../models/ImageTask';
 import { generateImage } from '../../agents/imageAgent';
 import { createUserProviderRegistry } from '../../providers/registry';
 

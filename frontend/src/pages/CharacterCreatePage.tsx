@@ -5,7 +5,6 @@ import { useTranslation } from "../i18n";
 import { showSuccess, showError } from "../lib/toast";
 import {
   ChevronLeft,
-  Zap,
   XCircle,
   UserRound,
   Users,

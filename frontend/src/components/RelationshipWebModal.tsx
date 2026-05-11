@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { X, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import ForceGraph2D from 'react-force-graph-2d';
 import type { Relationship, Character } from '../services/playthroughApi';
@@ -42,10 +42,9 @@ interface RelationshipGraphData {
 export function RelationshipWebModal({ isOpen, onClose, relationships, characters }: RelationshipWebModalProps) {
   const t = useTranslation();
   const fgRef = useRef<ForceGraphRef | null>(null);
-  const [graphData, setGraphData] = useState<RelationshipGraphData>({ nodes: [], links: [] });
 
-  useEffect(() => {
-    if (!isOpen) return;
+  const graphData = useMemo(() => {
+    if (!isOpen) return { nodes: [], links: [] };
 
     // Build nodes from characters that have relationships
     const charIdsInRels = new Set<string>();
@@ -81,13 +80,17 @@ export function RelationshipWebModal({ isOpen, onClose, relationships, character
       };
     });
 
-    setGraphData({ nodes, links } as any);
+    return { nodes, links };
+  }, [isOpen, relationships, characters]);
 
+  useEffect(() => {
+    if (!isOpen) return;
     // Zoom to fit after a short delay
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       fgRef.current?.zoomToFit(400, 50);
     }, 500);
-  }, [isOpen, relationships, characters]);
+    return () => clearTimeout(timer);
+  }, [isOpen, graphData]);
 
   if (!isOpen) return null;
 
@@ -122,16 +125,16 @@ export function RelationshipWebModal({ isOpen, onClose, relationships, character
             nodeColor="color"
             nodeRelSize={6}
             linkColor="color"
-            linkWidth={(link: any) => 1 + (link.intensity / 2)}
-            linkDirectionalParticles={(link: any) => link.intensity / 2}
-            linkDirectionalParticleSpeed={(link: any) => link.intensity * 0.001}
+            linkWidth={(link: { intensity: number }) => 1 + (link.intensity / 2)}
+            linkDirectionalParticles={(link: { intensity: number }) => link.intensity / 2}
+            linkDirectionalParticleSpeed={(link: { intensity: number }) => link.intensity * 0.001}
             d3AlphaDecay={0.02}
             d3VelocityDecay={0.3}
-            onNodeClick={(node: any) => {
+            onNodeClick={(node: { x?: number; y?: number }) => {
               fgRef.current?.centerAt(node.x, node.y, 1000);
               fgRef.current?.zoom(3, 2000);
             }}
-            nodeCanvasObject={(node: any, ctx, globalScale) => {
+            nodeCanvasObject={(node: { name: string }, ctx, globalScale) => {
               const label = node.name;
               const fontSize = 12 / globalScale;
               ctx.font = `${fontSize}px Sans-Serif`;

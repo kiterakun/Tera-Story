@@ -17,6 +17,9 @@ export function decrypt(encryptedText: string): string {
     return encryptedText;
   }
   const [ivHex, dataHex] = encryptedText.split(':');
+  if (!ivHex || !dataHex) {
+    throw new Error('Invalid encrypted text format');
+  }
   const iv = Buffer.from(ivHex, 'hex');
   const data = Buffer.from(dataHex, 'hex');
   const decipher = crypto.createDecipheriv(ALGO, KEY, iv);

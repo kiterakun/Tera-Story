@@ -6,7 +6,7 @@ import { RetryImageButton } from './RetryImageButton';
 
 export interface DynamicStat {
   k: string;
-  v: any;
+  v: string | number | boolean;
   t: string;
 }
 

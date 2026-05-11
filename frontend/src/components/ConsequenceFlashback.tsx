@@ -17,9 +17,17 @@ export function ConsequenceFlashback({ consequences }: ConsequenceFlashbackProps
     }
   }, [consequences]);
 
+  function handleDismiss() {
+    setIsVisible(false);
+    setTimeout(() => {
+      setActiveNotification(null);
+    }, 500); // Wait for exit animation
+  }
+
   useEffect(() => {
     if (queue.length > 0 && !activeNotification) {
       const next = queue[0];
+      if (!next) return;
       setQueue((prev) => prev.slice(1));
       setActiveNotification(next);
       setIsVisible(true);
@@ -32,13 +40,6 @@ export function ConsequenceFlashback({ consequences }: ConsequenceFlashbackProps
       return () => clearTimeout(timer);
     }
   }, [queue, activeNotification]);
-
-  const handleDismiss = () => {
-    setIsVisible(false);
-    setTimeout(() => {
-      setActiveNotification(null);
-    }, 500); // Wait for exit animation
-  };
 
   if (!activeNotification) return null;
 

@@ -15,7 +15,7 @@ interface WorldState {
   deleteWorld: (id: string) => Promise<void>;
 }
 
-export const useWorldStore = create<WorldState>()((set, _get) => ({
+export const useWorldStore = create<WorldState>()((set) => ({
   worlds: [],
   currentWorld: null,
   currentWorldTemplates: [],
