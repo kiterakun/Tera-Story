@@ -1,9 +1,10 @@
-import { Heart, Network, Package, Skull, Sparkles, UserRound, Users } from 'lucide-react';
+import { Heart, Network, Package, Skull, Sparkles, UserRound, Users, AlertTriangle } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { EntityData } from './EntityDetailModal';
 import type { Character, Item, ItemRarity, Relationship, SpecialItem } from '../services/playthroughApi';
 import { useTranslation } from '../i18n';
 import { getImageUrl } from '../utils/url';
+import type { ResourceTemplate } from './CharacterPanel';
 
 const rarityColor: Record<ItemRarity, string> = {
   common: 'text-ink-200/70',
@@ -29,6 +30,7 @@ interface RPGPanelProps {
   setIsRelationshipModalOpen: Dispatch<SetStateAction<boolean>>;
   isRelationshipModalOpen: boolean;
   t: ReturnType<typeof useTranslation>;
+  resourceTemplates?: ResourceTemplate[];
 }
 
 export default function RPGPanel({
@@ -45,10 +47,12 @@ export default function RPGPanel({
   setIsRelationshipModalOpen,
   isRelationshipModalOpen,
   t,
+  resourceTemplates,
 }: RPGPanelProps) {
   void isRelationshipModalOpen;
 
   const npcs = characters.filter(c => c.role === 'npc');
+  const getTemplate = (key: string) => resourceTemplates?.find(t => t.key === key);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -95,19 +99,26 @@ export default function RPGPanel({
                 </div>
               </button>
               <div className="space-y-1.5">
-                {protagonist.dynamicStats.map(stat => (
-                  <div key={stat.k}>
-                    <div className="flex justify-between text-xs mb-0.5">
-                      <span className="text-ink-200/70">{stat.k}</span>
-                      <span className="text-ink-100 font-mono">{String(stat.v)}</span>
-                    </div>
-                    {stat.t === 'progress' && (
-                      <div className="h-1.5 bg-ink-700 rounded-full overflow-hidden">
-                        <div className="h-full bg-accent-600 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Number(stat.v))}%` }} />
+                {protagonist.dynamicStats.map(stat => {
+                  const template = getTemplate(stat.k);
+                  const isEnumInvalid = stat.t === 'enum' && template?.options && !template.options.includes(String(stat.v));
+                  return (
+                    <div key={stat.k}>
+                      <div className="flex justify-between text-xs mb-0.5">
+                        <span className="text-ink-200/70">{stat.k}</span>
+                        <span className={`font-mono flex items-center gap-1 ${isEnumInvalid ? 'text-red-400 border border-red-500/40 rounded px-1 -mx-1' : 'text-ink-100'}`}>
+                          {String(stat.v)}
+                          {isEnumInvalid && <AlertTriangle size={12} className="text-red-400 shrink-0" title={`Valid: ${template?.options?.join(', ')}`} />}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                ))}
+                      {stat.t === 'progress' && (
+                        <div className="h-1.5 bg-ink-700 rounded-full overflow-hidden">
+                          <div className="h-full bg-accent-600 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Number(stat.v))}%` }} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

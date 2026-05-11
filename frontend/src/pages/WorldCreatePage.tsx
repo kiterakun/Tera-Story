@@ -10,7 +10,8 @@ import type {
   World,
 } from "../services/worldApi";
 import * as supportApi from "../services/supportApi";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, Hash, Type, Gauge, Tags, Eye } from "lucide-react";
+import TagInput from "../components/TagInput";
 export default function WorldCreatePage() {
   const t = useTranslation();
   const navigate = useNavigate();
@@ -58,10 +59,7 @@ export default function WorldCreatePage() {
     } else if (field === "displayFormat") {
       item.displayFormat = value as string;
     } else if (field === "options") {
-      item.options = (value as string)
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
+      item.options = value as string[];
     } else if (field === "min" || field === "max" || field === "defaultValue") {
       if (field === "defaultValue") {
         item.defaultValue = item.type !== "text" && item.type !== "enum" && value !== "" ? Number(value) : value;
@@ -215,8 +213,29 @@ export default function WorldCreatePage() {
     }
   };
 
+  const typeColors: Record<ResourceTemplate['type'], string> = {
+    number: 'border-l-blue-400',
+    text: 'border-l-green-400',
+    progress: 'border-l-amber-400',
+    enum: 'border-l-purple-400',
+  };
+
+  const typeIcons: Record<ResourceTemplate['type'], (size?: number) => JSX.Element> = {
+    number: (s = 14) => <Hash size={s} className="text-blue-400" />,
+    text: (s = 14) => <Type size={s} className="text-green-400" />,
+    progress: (s = 14) => <Gauge size={s} className="text-amber-400" />,
+    enum: (s = 14) => <Tags size={s} className="text-purple-400" />,
+  };
+
+  const typeLabelColors: Record<ResourceTemplate['type'], string> = {
+    number: 'text-blue-400',
+    text: 'text-green-400',
+    progress: 'text-amber-400',
+    enum: 'text-purple-400',
+  };
+
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 animate-fade-in">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 animate-fade-in">
       <div className="mb-8">
         <h1 className="text-3xl sm:text-4xl font-display text-ink-100">
           {t.worldCreate.title}
@@ -225,8 +244,9 @@ export default function WorldCreatePage() {
         <div className="mt-3 h-px bg-gradient-to-r from-accent-400/60 via-accent-600/30 to-transparent" />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* AI World Generation */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        <form onSubmit={handleSubmit} className="space-y-6 flex-1 min-w-0">
+          {/* AI World Generation */}
         <div className="bg-gradient-to-br from-accent-600/10 to-purple-600/10 border border-accent-400/20 rounded-2xl p-6">
           <h2 className="text-lg font-display text-ink-100 mb-3 flex items-center gap-2">
             <Sparkles size={18} className="text-accent-400" />
@@ -351,7 +371,7 @@ export default function WorldCreatePage() {
             {resources.map((res, index) => (
               <div
                 key={index}
-                className="flex gap-3 items-start bg-ink-950/50 p-4 border border-ink-700/50 rounded-xl"
+                className={`flex gap-3 items-start bg-ink-950/50 p-4 border border-ink-700/50 rounded-xl border-l-2 ${typeColors[res.type]}`}
               >
                 <div className="flex-1 grid grid-cols-2 md:grid-cols-5 gap-3">
                   {/* Key */}
@@ -389,6 +409,10 @@ export default function WorldCreatePage() {
                       <option value="text">{t.worldCreate.typeText}</option>
                       <option value="enum">{t.worldCreate.typeEnum}</option>
                     </select>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      {typeIcons[res.type](12)}
+                      <span className={`text-[10px] font-medium uppercase ${typeLabelColors[res.type]}`}>{res.type}</span>
+                    </div>
                   </div>
 
                   {res.type === "number" || res.type === "progress" ? (
@@ -465,14 +489,12 @@ export default function WorldCreatePage() {
                         >
                           {t.worldCreate.options}
                         </label>
-                        <input
-                          type="text"
-                          className="w-full bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-accent-400 outline-none transition-all"
-                          placeholder={t.worldCreate.optionsPlaceholder}
-                          value={res.options?.join(", ") ?? ""}
-                          onChange={(e) =>
-                            handleResourceChange(index, "options", e.target.value)
+                        <TagInput
+                          tags={res.options ?? []}
+                          onChange={(tags) =>
+                            handleResourceChange(index, "options", tags)
                           }
+                          placeholder={t.worldCreate.optionsPlaceholder}
                         />
                       </div>
                     </>
@@ -743,6 +765,71 @@ export default function WorldCreatePage() {
           </button>
         </div>
       </form>
+        <aside className="lg:w-80 shrink-0">
+          <div className="lg:sticky lg:top-8">
+            {resources.length > 0 ? (
+              <div className="bg-ink-800/50 border border-ink-700 rounded-2xl p-5">
+                <h2 className="text-lg font-display text-ink-100 mb-4 flex items-center gap-2">
+                  <Eye size={18} className="text-accent-400" />
+                  Preview
+                </h2>
+                <div className="space-y-3">
+                  {resources.map((res) => (
+                    <div key={res.key} className={`flex flex-col gap-1.5 p-3 bg-ink-950/50 border rounded-xl border-l-2 ${typeColors[res.type]}`}>
+                      <div className="flex items-center gap-2">
+                        {typeIcons[res.type](14)}
+                        <span className="text-xs text-ink-200/70">{res.key}</span>
+                        <span className={`text-[10px] font-medium uppercase ${typeLabelColors[res.type]}`}>{res.type}</span>
+                      </div>
+                      {res.type === 'number' && (
+                        <div className="text-sm text-ink-100 font-mono pl-6">
+                          {res.defaultValue ?? 0}
+                        </div>
+                      )}
+                      {res.type === 'text' && (
+                        <div className="text-sm text-ink-100 pl-6">
+                          {String(res.defaultValue ?? 'Sample text')}
+                        </div>
+                      )}
+                      {res.type === 'progress' && (
+                        <div className="pl-6">
+                          <div className="flex justify-between text-xs mb-0.5">
+                            <span className="text-ink-200/70">{res.key}</span>
+                            <span className="text-ink-100 font-mono">{res.defaultValue ?? 0} / {res.max ?? 100}</span>
+                          </div>
+                          <div className="h-1.5 bg-ink-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                              style={{ width: `${Math.min(100, ((Number(res.defaultValue) || 0) / (res.max || 100)) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {res.type === 'enum' && (
+                        <div className="pl-6 flex flex-wrap gap-1">
+                          {(res.options?.length ?? 0) > 0 ? (
+                            <>
+                              <span className="text-sm text-ink-100 font-mono">{String(res.defaultValue ?? res.options?.[0] ?? '')}</span>
+                              <span className="text-xs text-ink-200/50 self-center">({res.options?.join(', ')})</span>
+                            </>
+                          ) : (
+                            <span className="text-sm text-ink-200/50 italic">No options defined</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-ink-800/50 border border-ink-700 rounded-2xl p-5 text-center">
+                <Eye size={24} className="text-ink-500 mx-auto mb-3" />
+                <p className="text-ink-200/40 text-sm italic">Add a resource to preview</p>
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

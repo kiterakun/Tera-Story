@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Swords, UserRound, Users, X } from 'lucide-react';
+import { Swords, UserRound, Users, X, AlertTriangle } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { getImageUrl } from '../utils/url';
 import { RetryImageButton } from './RetryImageButton';
@@ -89,11 +89,15 @@ export function CharacterPanel({ protagonist, npcs, resourceTemplates }: Charact
               <div className="space-y-2">
                 {protagonist.dynamicStats.map(stat => {
                   const template = getTemplate(stat.k);
+                  const isEnumInvalid = stat.t === 'enum' && template?.options && !template.options.includes(String(stat.v));
                   return (
                     <div key={stat.k}>
                       <div className="flex justify-between text-sm mb-0.5">
                         <span className="text-ink-200/70 text-xs">{stat.k}</span>
-                        <span className="text-ink-100 text-xs font-mono">{formatStat(stat, template)}</span>
+                        <span className={`text-xs font-mono flex items-center gap-1 ${isEnumInvalid ? 'text-red-400 border border-red-500/40 rounded px-1 -mx-1' : 'text-ink-100'}`}>
+                          {formatStat(stat, template)}
+                          {isEnumInvalid && <AlertTriangle size={12} className="text-red-400 shrink-0" title={`Valid: ${template?.options?.join(', ')}`} />}
+                        </span>
                       </div>
                       {stat.t === 'progress' && template?.max && (
                         <div className="h-1.5 bg-ink-700 rounded-full overflow-hidden">
