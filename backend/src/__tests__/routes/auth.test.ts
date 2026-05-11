@@ -111,7 +111,7 @@ describe('Auth routes', () => {
     const res = await loggedInAgent.post('/api/auth/logout');
 
     expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
+    expect(res.body.message).toBe('Logged out');
     const cookies = res.headers['set-cookie'];
     const tokenCookie = (Array.isArray(cookies) ? cookies : [cookies]).find((cookie: string) =>
       cookie.startsWith('token='),

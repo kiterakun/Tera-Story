@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { CombatEncounter, ICombatEncounterDocument } from '../models/CombatEncounter';
 import { Character } from '../models/Character';
 import { updateStat } from './characterService';
+import { emit } from './sseManager';
 
 interface CombatActionResult {
   narrative: string;
@@ -183,6 +184,16 @@ RULES:
   } catch (err) {
     console.error('Failed to append combat narrative to chapter:', err);
   }
+
+  // Emit SSE event for real-time push notification
+  const playthroughId = encounter.playthroughId.toString();
+  emit(playthroughId, 'combat:resolved', {
+    playthroughId,
+    combatId: encounter._id.toString(),
+    result: encounter.status,
+    combatEnded: parsed.combatEnded,
+    stateChanges,
+  });
 
   return {
     narrative: parsed.narrative || '',

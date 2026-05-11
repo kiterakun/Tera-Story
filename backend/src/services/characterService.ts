@@ -1,5 +1,7 @@
 import { Character } from '../models/Character';
+import { Playthrough } from '../models/Playthrough';
 import { World } from '../models/World';
+import type { IResourceTemplateDocument } from '../models/World';
 import { IDynamicStat } from '../types/character.types';
 
 /**
@@ -40,16 +42,55 @@ export async function initializeDynamicStats(
   });
 }
 
+function validateStatValue(
+  template: IResourceTemplateDocument,
+  key: string,
+  value: unknown
+): void {
+  if (template.type === 'enum') {
+    if (typeof value !== 'string') {
+      throw new Error(`Stat "${key}" requires a string enum value`);
+    }
+    if (!template.options?.includes(value)) {
+      throw new Error(`Stat "${key}" must be one of: ${(template.options || []).join(', ')}`);
+    }
+    return;
+  }
+
+  if (template.type === 'number') {
+    if (typeof value !== 'number') {
+      throw new Error(`Stat "${key}" requires a number value`);
+    }
+    if (template.min !== undefined && value < template.min) {
+      throw new Error(`Value ${value} is below minimum ${template.min}`);
+    }
+    if (template.max !== undefined && value > template.max) {
+      throw new Error(`Value ${value} is above maximum ${template.max}`);
+    }
+    return;
+  }
+
+  if (template.type === 'progress') {
+    if (typeof value !== 'number') {
+      throw new Error(`Stat "${key}" requires a number value`);
+    }
+    if (value < 0 || value > 100) {
+      throw new Error(`Progress stat "${key}" must be between 0 and 100`);
+    }
+  }
+}
+
 /**
  * Update a single dynamic stat for a character.
- * Validates that the stat key exists in the world's resourceTemplates,
- * and enforces min/max for 'number' type stats.
+ * Validates values against the world's resourceTemplates before saving.
+ * Unknown stat keys are allowed for custom stats.
  */
 export async function updateStat(
   characterId: string,
   key: string,
   value: unknown,
-  userId: string
+  userId: string,
+  playthroughId?: string
 ): Promise<void> {
   const character = await Character.findById(characterId);
 
@@ -61,29 +102,26 @@ export async function updateStat(
     throw new Error('Unauthorized');
   }
 
-  // Verify stat key exists in world templates
-  const world = await World.findById(character.worldId).lean();
+  let worldId = character.worldId;
+
+  if (playthroughId) {
+    const playthrough = await Playthrough.findById(playthroughId).select('worldId').lean();
+    if (!playthrough) {
+      throw new Error('Playthrough not found');
+    }
+    worldId = playthrough.worldId;
+  }
+
+  const world = await World.findById(worldId).lean();
 
   if (!world) {
     throw new Error('World not found');
   }
 
-  const templates = world.resourceTemplates;
+  const template = world.resourceTemplates?.find((t) => t.key === key);
 
-  const template = templates?.find((t) => t.key === key);
-
-  if (!template) {
-    throw new Error(`Stat key "${key}" does not exist in world templates`);
-  }
-
-  // Validate min/max for number type
-  if (template.type === 'number' && typeof value === 'number') {
-    if (template.min !== undefined && value < template.min) {
-      throw new Error(`Value ${value} is below minimum ${template.min}`);
-    }
-    if (template.max !== undefined && value > template.max) {
-      throw new Error(`Value ${value} is above maximum ${template.max}`);
-    }
+  if (template) {
+    validateStatValue(template, key, value);
   }
 
   // Update the specific dynamicStats entry using arrayFilters

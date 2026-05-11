@@ -22,6 +22,7 @@ import imagesRouter from './routes/images';
 import specialItemTemplatesRouter from './routes/specialItemTemplates';
 import relationshipsRouter from './routes/relationships';
 import combatRouter from './routes/combat';
+import eventsRouter from './routes/events';
 import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
@@ -84,6 +85,9 @@ app.use('/api/auth', authRouter);
 
 // Settings Routes
 app.use('/api/settings', authMiddleware, settingsRouter);
+
+// SSE Events Route (auth handled inside route for EventSource query/cookie support)
+app.use('/api/events', eventsRouter);
 
 // World Routes
 app.use('/api/worlds', authMiddleware, worldsRouter);

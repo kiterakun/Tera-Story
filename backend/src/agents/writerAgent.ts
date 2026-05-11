@@ -110,7 +110,7 @@ export async function runWriterAgent(
       }).join('\n')
     : 'No special item categories defined.';
 
-  const resourceTemplatesBlock = contextOutput.resourceTemplates.length > 0
+  const resourceTemplatesBlock = contextOutput.resourceTemplates && contextOutput.resourceTemplates.length > 0
     ? contextOutput.resourceTemplates.map(rt => {
         let desc = `- ${rt.key} (${rt.type}`;
         if (rt.min !== undefined) desc += `, min: ${rt.min}`;

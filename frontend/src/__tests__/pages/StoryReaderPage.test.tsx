@@ -33,6 +33,10 @@ vi.mock('../../hooks/useChapterGeneration', () => ({
   }),
 }));
 
+vi.mock('../../hooks/useSSE', () => ({
+  useSSE: () => ({ isConnected: false }),
+}));
+
 vi.mock('../../services/storyApi', () => ({
   getStoryState: vi.fn().mockResolvedValue({ chapters: [], choices: [], isNewGame: false }),
   summarizeArc: vi.fn(),

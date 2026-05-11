@@ -5,6 +5,7 @@ import * as authApi from '../services/authApi';
 interface User { id: string; username: string; email: string; }
 interface AuthState {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -17,13 +18,14 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      token: null,
       isAuthenticated: false,
       isLoading: false,
       login: async (email, password) => {
         set({ isLoading: true });
         try {
-          const { user } = await authApi.login(email, password);
-          set({ user, isAuthenticated: true, isLoading: false });
+          const { user, token } = await authApi.login(email, password);
+          set({ user, token, isAuthenticated: true, isLoading: false });
         } catch (error) {
           set({ isLoading: false });
           throw error;
@@ -32,8 +34,8 @@ export const useAuthStore = create<AuthState>()(
       register: async (username, email, password) => {
         set({ isLoading: true });
         try {
-          const { user } = await authApi.register(username, email, password);
-          set({ user, isAuthenticated: true, isLoading: false });
+          const { user, token } = await authApi.register(username, email, password);
+          set({ user, token, isAuthenticated: true, isLoading: false });
         } catch (error) {
           set({ isLoading: false });
           throw error;
@@ -45,20 +47,20 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           // Ignore errors on logout
         }
-        set({ user: null, isAuthenticated: false });
+        set({ user: null, token: null, isAuthenticated: false });
       },
       loadUser: async () => {
         try {
           const user = await authApi.getMe();
           set({ user, isAuthenticated: true });
         } catch {
-          set({ user: null, isAuthenticated: false });
+          set({ user: null, token: null, isAuthenticated: false });
         }
       },
     }),
     {
       name: 'tera-story-auth',
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      partialize: (state) => ({ user: state.user, token: state.token, isAuthenticated: state.isAuthenticated }),
     }
   )
 );

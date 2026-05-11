@@ -47,7 +47,7 @@ describe('authMiddleware', () => {
 
     expect(next).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid or expired token' });
+    expect(res.json).toHaveBeenCalledWith({ error: 'Token expired', code: 'token_expired' });
   });
 
   it('returns 401 for invalid token', () => {
@@ -59,7 +59,7 @@ describe('authMiddleware', () => {
 
     expect(next).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid or expired token' });
+    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid token', code: 'token_invalid' });
   });
 
   it('reads cookie token before Authorization header', () => {

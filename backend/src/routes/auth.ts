@@ -1,7 +1,8 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import { User } from '../models/User';
+import { User, IUserDocument } from '../models/User';
 import { UserSettings } from '../models/UserSettings';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -9,6 +10,7 @@ import { AppError } from '../utils/AppError';
 import { env } from '../config/env';
 
 const router = Router();
+const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 // --- Validation Schemas ---
 
@@ -35,8 +37,45 @@ function signToken(user: { _id: unknown; email: string; username: string }): str
   return jwt.sign(
     { id: String(user._id), email: user.email, username: user.username },
     env.JWT_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: '15m' }
   );
+}
+
+function generateRefreshToken(): string {
+  return crypto.randomBytes(40).toString('hex');
+}
+
+function setAuthCookies(res: Response, token: string, refreshToken: string): void {
+  const cookieOptions = {
+    httpOnly: true,
+    secure: env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    path: '/',
+  };
+
+  res.cookie('token', token, {
+    ...cookieOptions,
+    maxAge: 15 * 60 * 1000,
+  });
+
+  res.cookie('refreshToken', refreshToken, {
+    ...cookieOptions,
+    maxAge: REFRESH_TOKEN_MAX_AGE,
+  });
+}
+
+async function issueRefreshToken(user: IUserDocument): Promise<string> {
+  const refreshToken = generateRefreshToken();
+  user.refreshToken = refreshToken;
+  user.refreshTokenExpires = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE);
+  await user.save();
+  return refreshToken;
+}
+
+function readRefreshToken(req: Request): string | undefined {
+  const body = req.body as { refreshToken?: unknown } | undefined;
+  const bodyToken = typeof body?.refreshToken === 'string' ? body.refreshToken : undefined;
+  return req.cookies?.refreshToken ?? bodyToken;
 }
 
 // --- Routes ---
@@ -71,16 +110,11 @@ router.post('/register', validate(registerSchema), async (req: AuthRequest, res:
   });
 
   const token = signToken(user);
+  const refreshToken = await issueRefreshToken(user);
 
-  res.cookie('token', token, {
-    httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    path: '/',
-  });
+  setAuthCookies(res, token, refreshToken);
 
-  res.status(201).json({ user: user.toPublicJSON() });
+  res.status(201).json({ user: user.toPublicJSON(), token, refreshToken });
 });
 
 // POST /api/auth/login
@@ -100,16 +134,38 @@ router.post('/login', validate(loginSchema), async (req: AuthRequest, res: Respo
   }
 
   const token = signToken(user);
+  const refreshToken = await issueRefreshToken(user);
 
-  res.cookie('token', token, {
-    httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    path: '/',
+  setAuthCookies(res, token, refreshToken);
+
+  res.json({ user: user.toPublicJSON(), token, refreshToken });
+});
+
+// POST /api/auth/refresh
+router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
+  const currentRefreshToken = readRefreshToken(req);
+
+  if (!currentRefreshToken) {
+    res.status(401).json({ error: 'Invalid refresh token', code: 'token_expired' });
+    return;
+  }
+
+  const user = await User.findOne({
+    refreshToken: currentRefreshToken,
+    refreshTokenExpires: { $gt: new Date() },
   });
 
-  res.json({ user: user.toPublicJSON() });
+  if (!user) {
+    res.status(401).json({ error: 'Invalid refresh token', code: 'token_expired' });
+    return;
+  }
+
+  const token = signToken(user);
+  const refreshToken = await issueRefreshToken(user);
+
+  setAuthCookies(res, token, refreshToken);
+
+  res.json({ user: user.toPublicJSON(), token, refreshToken });
 });
 
 // GET /api/auth/me
@@ -128,9 +184,20 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response): Promi
 });
 
 // POST /api/auth/logout
-router.post('/logout', (_req: AuthRequest, res: Response): void => {
+router.post('/logout', async (req: AuthRequest, res: Response): Promise<void> => {
+  const refreshToken = readRefreshToken(req);
+
+  if (refreshToken) {
+    await User.findOneAndUpdate(
+      { refreshToken },
+      { $unset: { refreshToken: '', refreshTokenExpires: '' } },
+      { returnDocument: 'after' }
+    );
+  }
+
   res.clearCookie('token', { path: '/' });
-  res.json({ success: true });
+  res.clearCookie('refreshToken', { path: '/' });
+  res.json({ message: 'Logged out' });
 });
 
 export default router;

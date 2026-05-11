@@ -23,6 +23,11 @@
     <rule number="4" tool="updateStats">updateStats — For each character whose stats changed during the chapter:</rule>
     <detail>Reference CURRENT stat values and calculate realistic NEW values based on story events</detail>
     <detail>Values must match data types: numbers for 'number'/'progress' type, strings for 'text'/'enum' type</detail>
+    <stat-validation>
+      <rule>For 'enum' type stats: choose the value ONLY from the stat's options array listed in resourceTemplates</rule>
+      <rule>For 'number' type stats: the value must be within the [min, max] range specified in resourceTemplates</rule>
+      <rule>For 'progress' type stats: the value must be a number from 0 to 100</rule>
+    </stat-validation>
 
     <rule number="5" tool="updateEntityStatus">updateEntityStatus — For state changes:</rule>
     <detail>Character DIES → ('character', name, 'dead')</detail>

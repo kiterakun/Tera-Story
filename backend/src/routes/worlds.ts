@@ -19,11 +19,44 @@ router.use('/:worldId/playthroughs', playthroughsRouter);
 const resourceTemplateSchema = z.object({
   key: z.string().min(1),
   type: z.enum(['number', 'text', 'progress', 'enum']),
-  min: z.number().optional(),
-  max: z.number().optional(),
-  defaultValue: z.union([z.string(), z.number()]).optional(),
+  min: z.number(),
+  max: z.number(),
+  defaultValue: z.union([z.string(), z.number()]),
   displayFormat: z.string().optional(),
   options: z.array(z.string()).optional(),
+}).superRefine((data, ctx) => {
+  if (data.type === 'enum') {
+    if (!data.options || data.options.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'options array is required and must be non-empty for enum type',
+        path: ['options'],
+      });
+    }
+    if (data.defaultValue !== undefined) {
+      if (typeof data.defaultValue !== 'string') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'defaultValue must be a string for enum type',
+          path: ['defaultValue'],
+        });
+      } else if (data.options && data.options.length > 0 && !data.options.includes(data.defaultValue)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `defaultValue "${data.defaultValue}" must be one of the options`,
+          path: ['defaultValue'],
+        });
+      }
+    }
+  } else {
+    if (data.defaultValue !== undefined && typeof data.defaultValue !== 'number') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'defaultValue must be a number for non-enum types',
+        path: ['defaultValue'],
+      });
+    }
+  }
 });
 
 

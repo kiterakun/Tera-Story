@@ -1,3 +1,5 @@
+import type { IResourceTemplate } from './world.types';
+
 export interface IEntityRef {
   name: string;
   rarity: string;
@@ -46,7 +48,7 @@ export interface IContextOutput {
   specialItemTemplateCategories: Array<{ category: string; description: string; fields: Array<{ name: string; type: string; options?: string[]; required?: boolean }> }>;
   currentScene: string;
   relevantPlotPoints: string[];
-  resourceTemplates: Array<{ key: string; type: string; min?: number; max?: number; defaultValue?: string | number; options?: string[] }>;
+  resourceTemplates?: IResourceTemplate[];
   relationships: IRelationshipRef[];
   matureConsequences: IConsequenceSeedRef[];
   activeCombat: ICombatRef | null;

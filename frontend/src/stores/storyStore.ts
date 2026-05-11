@@ -14,11 +14,14 @@ interface StoryState {
   fetchArcs: (playthroughId: string) => Promise<void>;
   fetchItems: (playthroughId: string) => Promise<void>;
   fetchSpecialItems: (playthroughId: string, category?: string) => Promise<void>;
+  invalidateCharacters: () => Promise<void>;
+  invalidateItems: () => Promise<void>;
+  invalidateSpecialItems: () => Promise<void>;
   createCharacter: (playthroughId: string, data: { name: string; description: string; role: 'protagonist' | 'npc' }) => Promise<Character>;
   refreshAll: (playthroughId: string) => Promise<void>;
 }
 
-export const useStoryStore = create<StoryState>((set) => ({
+export const useStoryStore = create<StoryState>((set, get) => ({
   currentPlaythrough: null,
   characters: [],
   arcs: [],
@@ -75,6 +78,24 @@ export const useStoryStore = create<StoryState>((set) => ({
     } catch (error) {
       console.error('Failed to fetch special items:', error);
     }
+  },
+
+  invalidateCharacters: async () => {
+    const playthroughId = get().currentPlaythrough?._id;
+    if (!playthroughId) return;
+    await get().fetchCharacters(playthroughId);
+  },
+
+  invalidateItems: async () => {
+    const playthroughId = get().currentPlaythrough?._id;
+    if (!playthroughId) return;
+    await get().fetchItems(playthroughId);
+  },
+
+  invalidateSpecialItems: async () => {
+    const playthroughId = get().currentPlaythrough?._id;
+    if (!playthroughId) return;
+    await get().fetchSpecialItems(playthroughId);
   },
 
   createCharacter: async (playthroughId: string, data) => {

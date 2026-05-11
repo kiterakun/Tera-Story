@@ -231,6 +231,14 @@ export async function generateImage(
     console.log(
       `[Image] Generated ${entityType}/${entityId}: ${relativeUrl} (${size})`,
     );
+    // TODO: SSE — emit "image:completed" event here.
+    // The generateImage function does not currently receive the playthroughId.
+    // To enable SSE for image completion, either:
+    //   1. Add playthroughId field to ImageTask model and pass through the queue chain
+    //   2. Or derive playthroughId from entityId via a lookup
+    // Once playthroughId is available, emit:
+    //   import { emit } from '../services/sseManager';
+    //   emit(playthroughId, 'image:completed', { entityType, entityId, imageUrl: relativeUrl });
   } catch (error) {
     console.error(
       `Image generation failed for ${entityType}/${entityId}:`,

@@ -1,6 +1,6 @@
 import { api } from './api';
 
-interface AuthResponse { user: { id: string; username: string; email: string } }
+interface AuthResponse { user: { id: string; username: string; email: string }; token: string; refreshToken: string }
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
   const res = await api.post<AuthResponse>('/auth/login', { email, password });

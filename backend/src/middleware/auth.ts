@@ -36,7 +36,12 @@ export function authMiddleware(
     };
     req.user = decoded;
     next();
-  } catch {
-    res.status(401).json({ error: 'Invalid or expired token' });
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      res.status(401).json({ error: 'Token expired', code: 'token_expired' });
+      return;
+    }
+
+    res.status(401).json({ error: 'Invalid token', code: 'token_invalid' });
   }
 }

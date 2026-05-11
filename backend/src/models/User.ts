@@ -8,6 +8,8 @@ export interface IUserDocument extends Document {
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
+  refreshToken?: string;
+  refreshTokenExpires?: Date;
   comparePassword(candidate: string): Promise<boolean>;
   toPublicJSON(): { id: string; username: string; email: string; createdAt: Date; updatedAt: Date };
 }
@@ -35,6 +37,8 @@ const UserSchema = new Schema<IUserDocument>(
       minlength: 6,
     },
     deletedAt: { type: Date, default: null },
+    refreshToken: { type: String },
+    refreshTokenExpires: { type: Date },
   },
   { timestamps: true }
 );

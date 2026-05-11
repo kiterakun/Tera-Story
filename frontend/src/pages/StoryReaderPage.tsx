@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useChapterGeneration } from '../hooks/useChapterGeneration';
+import { useSSE } from '../hooks/useSSE';
 import { StoryContent, type EntityRef } from '../components/StoryContent';
 import { EntityDetailModal, type EntityData } from '../components/EntityDetailModal';
 import { ChoiceCards } from '../components/ChoiceCards';
@@ -8,6 +9,7 @@ import { CombatPanel } from '../components/CombatPanel';
 import * as storyApi from '../services/storyApi';
 import * as playthroughApi from '../services/playthroughApi';
 import { useStoryStore } from '../stores/storyStore';
+import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
 import { Swords, X, BookOpen, ChevronLeft, ChevronRight, RefreshCw, AlertTriangle, List } from 'lucide-react';
 import type { CombatEncounter, Relationship, ConsequenceSeed } from '../services/playthroughApi';
@@ -37,6 +39,62 @@ interface Chapter {
 interface Choice {
   text: string;
   type: 'continue' | 'new_arc' | 'custom';
+}
+
+interface ImageCompletedEvent {
+  entityType?: string;
+  entityId?: string;
+  imageUrl?: string;
+}
+
+interface ChapterCompletedEvent {
+  chapterIndex?: number;
+  chapterId?: string;
+}
+
+interface CombatResolvedEvent {
+  result?: string;
+  combatEnded?: boolean;
+}
+
+interface EntityUpdatedEvent {
+  entityType?: string;
+  entityId?: string;
+  name?: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function toImageCompletedEvent(value: unknown): ImageCompletedEvent {
+  return isRecord(value) ? {
+    entityType: typeof value.entityType === 'string' ? value.entityType : undefined,
+    entityId: typeof value.entityId === 'string' ? value.entityId : undefined,
+    imageUrl: typeof value.imageUrl === 'string' ? value.imageUrl : undefined,
+  } : {};
+}
+
+function toChapterCompletedEvent(value: unknown): ChapterCompletedEvent {
+  return isRecord(value) ? {
+    chapterIndex: typeof value.chapterIndex === 'number' ? value.chapterIndex : undefined,
+    chapterId: typeof value.chapterId === 'string' ? value.chapterId : undefined,
+  } : {};
+}
+
+function toCombatResolvedEvent(value: unknown): CombatResolvedEvent {
+  return isRecord(value) ? {
+    result: typeof value.result === 'string' ? value.result : undefined,
+    combatEnded: typeof value.combatEnded === 'boolean' ? value.combatEnded : undefined,
+  } : {};
+}
+
+function toEntityUpdatedEvent(value: unknown): EntityUpdatedEvent {
+  return isRecord(value) ? {
+    entityType: typeof value.entityType === 'string' ? value.entityType : undefined,
+    entityId: typeof value.entityId === 'string' ? value.entityId : undefined,
+    name: typeof value.name === 'string' ? value.name : undefined,
+  } : {};
 }
 
 export default function StoryReaderPage() {
@@ -70,6 +128,10 @@ export default function StoryReaderPage() {
   const fetchCharacters = useStoryStore(s => s.fetchCharacters);
   const fetchItems = useStoryStore(s => s.fetchItems);
   const fetchSpecialItems = useStoryStore(s => s.fetchSpecialItems);
+  const invalidateCharacters = useStoryStore(s => s.invalidateCharacters);
+  const invalidateItems = useStoryStore(s => s.invalidateItems);
+  const invalidateSpecialItems = useStoryStore(s => s.invalidateSpecialItems);
+  const token = useAuthStore(s => s.token ?? undefined);
   
   const protagonist = characters.find(c => c.role === 'protagonist') || null;
   const npcs = characters.filter(c => c.role === 'npc');
@@ -242,6 +304,50 @@ export default function StoryReaderPage() {
       setActiveCombat(combat);
     } catch { /* non-critical */ }
   };
+
+  useSSE(playthroughId, token, {
+    onImageCompleted: async (payload) => {
+      const event = toImageCompletedEvent(payload);
+      showSuccess('Image ready', `${event.entityType ?? 'Entity'} image has been generated.`);
+
+      await Promise.all([
+        invalidateCharacters(),
+        invalidateItems(),
+        invalidateSpecialItems(),
+      ]);
+    },
+    onChapterCompleted: async (payload) => {
+      const event = toChapterCompletedEvent(payload);
+      const chapterLabel = typeof event.chapterIndex === 'number'
+        ? `Chapter ${event.chapterIndex + 1} completed`
+        : 'Chapter completed';
+
+      showSuccess(chapterLabel, 'Story data refreshed.');
+      await reloadAfterGeneration();
+    },
+    onCombatResolved: async (payload) => {
+      const event = toCombatResolvedEvent(payload);
+      const result = event.result ? event.result.replace(/_/g, ' ') : 'resolved';
+
+      showSuccess('Combat resolved', `Result: ${result}`);
+      await Promise.all([
+        loadActiveCombat(),
+        invalidateCharacters(),
+        loadStoryState(),
+      ]);
+    },
+    onEntityUpdated: async (payload) => {
+      const event = toEntityUpdatedEvent(payload);
+      const name = event.name ?? event.entityType ?? 'Entity';
+
+      showSuccess('Entity updated', `${name} changed.`);
+      await Promise.all([
+        invalidateCharacters(),
+        invalidateItems(),
+        invalidateSpecialItems(),
+      ]);
+    },
+  });
 
   const handleChoiceSelect = async (choiceText: string) => {
     if (!playthroughId) return;

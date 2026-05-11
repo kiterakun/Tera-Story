@@ -8,6 +8,7 @@ import { UserSettings } from '../models/UserSettings';
 import { createUserProviderRegistry } from '../providers/registry';
 import { runContextAgent } from '../agents/contextAgent';
 import { runWriterAgent } from '../agents/writerAgent';
+import { emit } from './sseManager';
 
 export async function generateChapter(
   playthroughId: string,
@@ -109,6 +110,14 @@ export async function generateChapter(
     }
     console.log(`[Story] Token usage — context: ${contextOutput.usage?.inputTokens || 0}, writer: ${result.usage?.totalTokens || 0} (${result.usage?.promptTokens || 0}p + ${result.usage?.completionTokens || 0}c)`);
     console.log(`[Story] Chapter generation completed: id=${chapter._id}, content length=${result.text.length}`);
+
+    // Emit SSE event for real-time push notification
+    emit(playthroughId, 'chapter:completed', {
+      playthroughId,
+      chapterId: chapter._id.toString(),
+      chapterIndex: chapterCount,
+      arcId: arc._id.toString(),
+    });
     return {
       chapter: updatedChapter,
       content: result.text,
