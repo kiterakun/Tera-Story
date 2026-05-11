@@ -1,6 +1,20 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+export type XpSource =
+  | 'scene_complete'
+  | 'choice_made'
+  | 'combat_win'
+  | 'achievement_unlock'
+  | 'playthrough_complete'
+  | 'daily_login';
+
+export interface IXpHistoryEntry {
+  amount: number;
+  source: XpSource;
+  timestamp: Date;
+}
+
 export interface IUserDocument extends Document {
   username: string;
   email: string;
@@ -10,8 +24,30 @@ export interface IUserDocument extends Document {
   deletedAt: Date | null;
   refreshToken?: string;
   refreshTokenExpires?: Date;
+  // Progression
+  xp: number;
+  level: number;
+  totalScenesCompleted: number;
+  totalChoicesMade: number;
+  totalCombatWon: number;
+  totalPlaythroughsCompleted: number;
+  totalAchievementsUnlocked: number;
+  xpHistory?: IXpHistoryEntry[];
   comparePassword(candidate: string): Promise<boolean>;
-  toPublicJSON(): { id: string; username: string; email: string; createdAt: Date; updatedAt: Date };
+  toPublicJSON(): {
+    id: string;
+    username: string;
+    email: string;
+    createdAt: Date;
+    updatedAt: Date;
+    xp: number;
+    level: number;
+    totalScenesCompleted: number;
+    totalChoicesMade: number;
+    totalCombatWon: number;
+    totalPlaythroughsCompleted: number;
+    totalAchievementsUnlocked: number;
+  };
 }
 
 const UserSchema = new Schema<IUserDocument>(
@@ -39,6 +75,26 @@ const UserSchema = new Schema<IUserDocument>(
     deletedAt: { type: Date, default: null },
     refreshToken: { type: String },
     refreshTokenExpires: { type: Date },
+    // Progression
+    xp: { type: Number, default: 0, min: 0 },
+    level: { type: Number, default: 1, min: 1 },
+    totalScenesCompleted: { type: Number, default: 0, min: 0 },
+    totalChoicesMade: { type: Number, default: 0, min: 0 },
+    totalCombatWon: { type: Number, default: 0, min: 0 },
+    totalPlaythroughsCompleted: { type: Number, default: 0, min: 0 },
+    totalAchievementsUnlocked: { type: Number, default: 0, min: 0 },
+    xpHistory: [
+      {
+        _id: false,
+        amount: { type: Number, required: true },
+        source: {
+          type: String,
+          enum: ['scene_complete', 'choice_made', 'combat_win', 'achievement_unlock', 'playthrough_complete', 'daily_login'],
+          required: true,
+        },
+        timestamp: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );
@@ -73,6 +129,13 @@ UserSchema.methods.toPublicJSON = function () {
     email: this.email,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
+    xp: this.xp,
+    level: this.level,
+    totalScenesCompleted: this.totalScenesCompleted,
+    totalChoicesMade: this.totalChoicesMade,
+    totalCombatWon: this.totalCombatWon,
+    totalPlaythroughsCompleted: this.totalPlaythroughsCompleted,
+    totalAchievementsUnlocked: this.totalAchievementsUnlocked,
   };
 };
 

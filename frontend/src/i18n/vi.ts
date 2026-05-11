@@ -446,6 +446,16 @@ const vi: Translations = {
     // Info
     toolsFailedButContentOk: 'Nội dung chương đã được lưu, nhưng cập nhật trạng thái trò chơi thất bại. Bạn có thể thử lại.',
   },
+
+  // Progression
+  progression: {
+    scenesCompleted: 'Cảnh',
+    choicesMade: 'Lựa chọn',
+    combatWon: 'Chiến thắng',
+    achievements: 'Thành tựu',
+    playthroughs: 'Lượt chơi',
+    recentActivity: 'Hoạt động gần đây',
+  },
 };
 
 export default vi;

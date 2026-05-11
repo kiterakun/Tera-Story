@@ -23,6 +23,9 @@ import specialItemTemplatesRouter from './routes/specialItemTemplates';
 import relationshipsRouter from './routes/relationships';
 import combatRouter from './routes/combat';
 import eventsRouter from './routes/events';
+import progressionRouter from './routes/progression';
+import echoesRouter from './routes/echoes';
+import whispersRouter from './routes/whispers';
 import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
@@ -86,6 +89,9 @@ app.use('/api/auth', authRouter);
 // Settings Routes
 app.use('/api/settings', authMiddleware, settingsRouter);
 
+// Progression Routes
+app.use('/api/user', progressionRouter);
+
 // SSE Events Route (auth handled inside route for EventSource query/cookie support)
 app.use('/api/events', eventsRouter);
 
@@ -94,6 +100,12 @@ app.use('/api/worlds', authMiddleware, worldsRouter);
 
 // Playthrough Routes (standalone)
 app.use('/api/playthroughs', authMiddleware, playthroughsRouter);
+
+// Echoes Routes (nested under playthroughs)
+app.use('/api/playthroughs/:playthroughId/echoes', authMiddleware, echoesRouter);
+
+// Whispers Routes (nested under playthroughs)
+app.use('/api/playthroughs/:playthroughId/whispers', authMiddleware, whispersRouter);
 
 // Character Routes (nested under playthroughs + standalone)
 app.use('/api', authMiddleware, charactersRouter);

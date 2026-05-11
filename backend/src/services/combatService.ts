@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { CombatEncounter, ICombatEncounterDocument } from '../models/CombatEncounter';
 import { Character } from '../models/Character';
 import { updateStat } from './characterService';
+import { addXp, XP_REWARDS } from './progressionService';
 import { emit } from './sseManager';
 
 interface CombatActionResult {
@@ -163,6 +164,17 @@ RULES:
   }
 
   await encounter.save();
+
+  // Award XP for combat victory
+  if (encounter.status === 'victory') {
+    try {
+      await addXp(userId, XP_REWARDS.combat_win!, 'combat_win', {
+        playthroughId: encounter.playthroughId.toString(),
+      });
+    } catch (err) {
+      console.error('Failed to award combat XP:', err);
+    }
+  }
 
   // Append narrative to the latest chapter
   try {

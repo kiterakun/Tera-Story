@@ -113,3 +113,61 @@ Language: ${language}`,
   const text = await result.text;
   return extractJson<EnrichCustomChoiceResult>(text);
 }
+
+export interface GenerateWhispersResult {
+  whispers: Array<{
+    type: 'rumor' | 'letter' | 'diary' | 'news';
+    content: string;
+    relatedEntityType?: 'character' | 'location' | 'item' | 'arc';
+    relatedEntityId?: string;
+    attribution?: string;
+  }>;
+}
+
+/**
+ * Generate whispers for a playthrough when user returns after extended absence.
+ * Called by the whispers API route after verifying the user was away > 24h.
+ */
+export async function generateWhispers(
+  playthroughContext: string,
+  daysAway: number,
+  model: LanguageModel,
+  language: string
+): Promise<GenerateWhispersResult> {
+  const result = streamText({
+    model,
+    system: `You are a world storyteller for an interactive RPG novel. The player has been away for ${daysAway} day(s). Generate 3-5 short "whispers" — world news, rumors, letters, or diary entries about what happened in the world during their absence.
+
+Whisper types:
+- rumor: Hearsay from villagers or travelers (curious, mysterious tone)
+- letter: A message from a known NPC (personal, urgent tone)
+- diary: A diary entry from someone affected by events (reflective, nostalgic tone)
+- news: A public announcement or news bulletin (informative, impactful tone)
+
+Rules:
+- Whispers MUST be consistent with the existing story context
+- Each whisper should feel like the world continued without the player
+- Include subtle hooks that make the player curious about what they missed
+- Do NOT resolve major plot points — only hint at developments
+
+Respond ONLY with valid JSON matching this schema:
+{
+  "whispers": [
+    {
+      "type": "rumor",
+      "content": "string (50-500 characters, vivid and engaging)",
+      "relatedEntityType": "character"|"location"|"item"|"arc",
+      "relatedEntityId": "string (if mentioned in context)",
+      "attribution": "string (NPC name or source, for rumor/letter types)"
+    }
+  ]
+}
+
+Language: ${language}`,
+    prompt: playthroughContext,
+    temperature: 0.9,
+  });
+
+  const text = await result.text;
+  return extractJson<GenerateWhispersResult>(text);
+}

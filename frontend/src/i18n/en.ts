@@ -444,6 +444,16 @@ const en = {
     // Info
     toolsFailedButContentOk: 'Chapter content was saved, but game state update failed. You can retry the update.',
   },
+
+  // Progression
+  progression: {
+    scenesCompleted: 'Scenes',
+    choicesMade: 'Choices',
+    combatWon: 'Combat Wins',
+    achievements: 'Achievements',
+    playthroughs: 'Playthroughs',
+    recentActivity: 'Recent Activity',
+  },
 };
 
 export type Translations = typeof en;

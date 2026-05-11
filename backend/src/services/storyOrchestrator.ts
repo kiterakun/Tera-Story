@@ -8,7 +8,49 @@ import { UserSettings } from '../models/UserSettings';
 import { createUserProviderRegistry } from '../providers/registry';
 import { runContextAgent } from '../agents/contextAgent';
 import { runWriterAgent } from '../agents/writerAgent';
+import { addXp, XP_REWARDS } from './progressionService';
+import { Echo } from '../models/Echo';
 import { emit } from './sseManager';
+
+const ECHO_DELAYS = [5, 10, 20] as const;
+const ECHO_TYPES = ['mercy', 'betrayal', 'discovery', 'consequence'] as const;
+
+async function plantEcho(
+  playthroughId: string,
+  chapterId: string,
+  chapterIndex: number,
+  playerChoice: string
+): Promise<void> {
+  const delay = ECHO_DELAYS[Math.floor(Math.random() * ECHO_DELAYS.length)]!;
+  const echoType = ECHO_TYPES[Math.floor(Math.random() * ECHO_TYPES.length)]!;
+
+  const echo = new Echo({
+    playthroughId,
+    triggerChapterId: chapterId,
+    triggerChapterIndex: chapterIndex,
+    targetChapterIndex: chapterIndex + delay,
+    type: echoType,
+    description: `Consequence of choice: "${playerChoice.slice(0, 200)}"`,
+    minChapterDelay: delay,
+    maxChapterDelay: delay + 5,
+  });
+
+  await echo.save();
+
+  // Increment echoes counter on playthrough
+  await Playthrough.findByIdAndUpdate(playthroughId, {
+    $inc: { echoesCount: 1 },
+  });
+
+  // Emit SSE event for real-time echo notification
+  emit(playthroughId, 'echo:planted', {
+    playthroughId,
+    echoId: echo._id.toString(),
+    type: echoType,
+    triggerChapterIndex: chapterIndex,
+    targetChapterIndex: chapterIndex + delay,
+  });
+}
 
 export async function generateChapter(
   playthroughId: string,
@@ -118,6 +160,38 @@ export async function generateChapter(
       chapterIndex: chapterCount,
       arcId: arc._id.toString(),
     });
+
+    // Award XP for scene completion
+    try {
+      addXp(userId, XP_REWARDS.scene_complete!, 'scene_complete', {
+        playthroughId,
+        sceneId: chapter._id.toString(),
+      });
+    } catch (err) {
+      console.error('Failed to award scene XP:', err);
+    }
+
+    // Award XP for making a choice (if not the initial chapter)
+    if (playerChoice && playerChoice.trim().length > 0) {
+      try {
+        addXp(userId, XP_REWARDS.choice_made!, 'choice_made', {
+          playthroughId,
+          sceneId: chapter._id.toString(),
+        });
+      } catch (err) {
+        console.error('Failed to award choice XP:', err);
+      }
+    }
+
+    // Plant Echo for major choices
+    if (playerChoice && playerChoice.length > 200) {
+      try {
+        await plantEcho(playthroughId, chapter._id.toString(), chapterCount, playerChoice);
+      } catch (err) {
+        console.error('Failed to plant echo:', err);
+      }
+    }
+
     return {
       chapter: updatedChapter,
       content: result.text,
@@ -233,6 +307,38 @@ export async function generateChapterStream(
     }
     console.log(`[Story] Token usage — context: ${contextOutput.usage?.inputTokens || 0}, writer: ${result.usage?.totalTokens || 0} (${result.usage?.promptTokens || 0}p + ${result.usage?.completionTokens || 0}c)`);
     const updatedChapter = await Chapter.findById(chapter._id).lean();
+
+    // Award XP for scene completion (stream variant)
+    try {
+      addXp(userId, XP_REWARDS.scene_complete!, 'scene_complete', {
+        playthroughId,
+        sceneId: chapter._id.toString(),
+      });
+    } catch (err) {
+      console.error('Failed to award scene XP (stream):', err);
+    }
+
+    // Award XP for making a choice (if not initial chapter)
+    if (playerChoice && playerChoice.trim().length > 0) {
+      try {
+        addXp(userId, XP_REWARDS.choice_made!, 'choice_made', {
+          playthroughId,
+          sceneId: chapter._id.toString(),
+        });
+      } catch (err) {
+        console.error('Failed to award choice XP (stream):', err);
+      }
+    }
+
+    // Plant Echo for major choices (stream variant)
+    if (playerChoice && playerChoice.length > 200) {
+      try {
+        await plantEcho(playthroughId, chapter._id.toString(), chapterCount, playerChoice);
+      } catch (err) {
+        console.error('Failed to plant echo (stream):', err);
+      }
+    }
+
     return {
       chapter: updatedChapter,
       content: result.text,
