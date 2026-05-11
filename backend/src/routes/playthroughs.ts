@@ -5,6 +5,8 @@ import { AuthRequest } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { Playthrough } from '../models/Playthrough';
 import { World } from '../models/World';
+import { generateChronicleCache } from '../services/chronicleService';
+import { checkAchievements } from '../services/achievementService';
 
 const router = Router({ mergeParams: true });
 
@@ -139,6 +141,23 @@ router.put('/:id', validate(updatePlaythroughSchema), async (req: AuthRequest, r
       { $set: req.body },
       { returnDocument: 'after' }
     );
+
+    // Trigger chronicle generation + achievement check on completion
+    if (req.body.status === 'completed') {
+      try {
+        await generateChronicleCache(id as string);
+        await Playthrough.findByIdAndUpdate(id, {
+          $set: { completedAt: new Date() },
+        });
+        // Check achievements for playthrough completion
+        checkAchievements(userId, {
+          type: 'playthrough_completed',
+          data: { playthroughId: id },
+        });
+      } catch (err) {
+        console.error('Failed to generate chronicle:', err);
+      }
+    }
 
     res.json({ playthrough: updated });
   } catch (err) {

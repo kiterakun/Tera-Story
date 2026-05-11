@@ -22,9 +22,15 @@
 - **📖 AI Story Generation**: Experience dynamically generated stories tailored to your choices.
 - **🛤️ Playthrough System**: Embark on interactive journeys, track your inventory, and make branching choices.
 - **🎨 AI Image Generation**: Automatically generate beautiful visuals for characters, items, and worlds.
+- **🎯 Player Progression**: Earn XP, level up, and unlock stat boosts as you play (Supports Level 1-50+).
+- **🗣️ Whispers of the World**: AI-generated world rumors, letters, and news that evolve based on your story.
+- **⏳ Echoes System**: Delayed consequences — choices made early in a playthrough return to affect later chapters.
 - **🌐 Localization**: Full support for English and Vietnamese (i18n).
 - **🔒 Security**: Secure user authentication and authorization using JWT.
 - **⚙️ Customization**: Comprehensive settings management to tailor your experience.
+- **🏆 Achievement System**: Unlock 40+ achievements across 6 categories with progress tracking and toast notifications.
+- **🃏 Story Gallery**: Collect unique story cards from pivotal scenes — each with rarity tiers and social sharing.
+- **📜 Chronicle**: Auto-generated playthrough timeline with arc summaries, stats, and shareable recap.
 
 ---
 
@@ -174,6 +180,11 @@ VITE_API_URL=http://localhost:3000
 | | `POST /api/stories/:id/chapters` | Generate a new story chapter via AI |
 | **Playthroughs**| `POST /api/playthroughs` | Start a new playthrough |
 | | `POST /api/playthroughs/:id/choice`| Submit a user choice & advance story |
+| | `GET /api/playthroughs/:id/echoes`| List echoes for a playthrough |
+| | `GET /api/playthroughs/:id/whispers`| Get cached whispers for a playthrough |
+| **Progression**| `GET /api/user/progress` | Get user XP, level, and stats |
+| | `POST /api/user/xp` | Award XP to a user |
+| | `GET /api/user/level-history`| Get level-up history |
 | **Images** | `POST /api/images/generate`| Generate AI images |
 
 > *Note: This is a partial list. Most resources support full CRUD operations.*

@@ -11,9 +11,48 @@ import { runWriterAgent } from '../agents/writerAgent';
 import { addXp, XP_REWARDS } from './progressionService';
 import { Echo } from '../models/Echo';
 import { emit } from './sseManager';
+import { checkAchievements } from './achievementService';
+import { StoryCard } from '../models/StoryCard';
+import type { StoryCardRarity } from '../models/StoryCard';
 
 const ECHO_DELAYS = [5, 10, 20] as const;
 const ECHO_TYPES = ['mercy', 'betrayal', 'discovery', 'consequence'] as const;
+
+async function createStoryCard(params: {
+  userId: string;
+  playthroughId: string;
+  worldId: string;
+  sceneId: string;
+  chapterIndex: number;
+  content: string;
+}): Promise<void> {
+  const { userId, playthroughId, worldId, sceneId, chapterIndex, content } =
+    params;
+
+  const pivotIndex = chapterIndex + 1;
+  const rarity: StoryCardRarity =
+    pivotIndex >= 20 ? 'epic' : pivotIndex >= 15 ? 'rare' : pivotIndex >= 10 ? 'uncommon' : 'common';
+  const category =
+    pivotIndex % 10 === 0 ? 'milestone' : 'story';
+
+  const firstLine = content.split('\n')[0]?.slice(0, 120) ?? '';
+  const title = firstLine || `Scene ${pivotIndex}`;
+
+  const secondLine = content.split('\n')[1]?.slice(0, 200) ?? '';
+
+  await StoryCard.create({
+    userId,
+    playthroughId,
+    worldId,
+    sceneId,
+    imageUrl: `https://placehold.co/512x512/png?text=Scene+${pivotIndex}`,
+    title,
+    description: secondLine || `A pivotal moment from scene ${pivotIndex}.`,
+    rarity,
+    category,
+    unlockedAt: new Date(),
+  });
+}
 
 async function plantEcho(
   playthroughId: string,
@@ -189,6 +228,38 @@ export async function generateChapter(
         await plantEcho(playthroughId, chapter._id.toString(), chapterCount, playerChoice);
       } catch (err) {
         console.error('Failed to plant echo:', err);
+      }
+    }
+
+    // Check achievements for scene completed + choice made
+    try {
+      checkAchievements(userId, {
+        type: 'scene_completed',
+        data: { playthroughId, sceneId: chapter._id.toString(), chapterIndex: chapterCount },
+      });
+      if (playerChoice && playerChoice.trim().length > 0) {
+        checkAchievements(userId, {
+          type: 'choice_made',
+          data: { playthroughId, sceneId: chapter._id.toString(), chapterIndex: chapterCount },
+        });
+      }
+    } catch (err) {
+      console.error('Failed to check achievements:', err);
+    }
+
+    // Create story card for pivotal scenes (every 5th chapter)
+    if ((chapterCount + 1) % 5 === 0) {
+      try {
+        await createStoryCard({
+          userId,
+          playthroughId,
+          worldId: playthrough.worldId.toString(),
+          sceneId: chapter._id.toString(),
+          chapterIndex: chapterCount,
+          content: result.text,
+        });
+      } catch (err) {
+        console.error('Failed to create story card:', err);
       }
     }
 

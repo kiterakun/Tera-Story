@@ -1,5 +1,32 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+interface IArcSummary {
+  arcId: mongoose.Types.ObjectId;
+  title: string;
+  summary: string;
+  sceneCount: number;
+  keyScenes: IKeyScene[];
+}
+
+interface IKeyScene {
+  sceneId: mongoose.Types.ObjectId;
+  title: string;
+  thumbnailUrl?: string;
+}
+
+interface IChronicleStats {
+  totalScenes: number;
+  totalChoices: number;
+  totalCombats: number;
+  totalPlayTimeMinutes: number;
+}
+
+interface IChronicleCache {
+  generatedAt: Date;
+  arcSummaries: IArcSummary[];
+  stats: IChronicleStats;
+}
+
 export interface IPlaythroughDocument extends Document {
   name: string;
   worldId: mongoose.Types.ObjectId;
@@ -12,6 +39,10 @@ export interface IPlaythroughDocument extends Document {
   // Whispers
   lastActiveAt: Date;
   lastWhispersViewedAt: Date | null;
+  // Chronicle
+  chronicleCache?: IChronicleCache;
+  completedAt?: Date;
+  shareId?: string;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
@@ -48,6 +79,10 @@ const PlaythroughSchema = new Schema<IPlaythroughDocument>(
     // Whispers
     lastActiveAt: { type: Date, default: Date.now },
     lastWhispersViewedAt: { type: Date, default: null },
+    // Chronicle
+    chronicleCache: { type: Schema.Types.Mixed, default: null },
+    completedAt: { type: Date, default: null },
+    shareId: { type: String, default: null },
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true }

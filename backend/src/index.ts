@@ -26,6 +26,9 @@ import eventsRouter from './routes/events';
 import progressionRouter from './routes/progression';
 import echoesRouter from './routes/echoes';
 import whispersRouter from './routes/whispers';
+import galleryRouter from './routes/gallery';
+import achievementsRouter from './routes/achievements';
+import chronicleRouter from './routes/chronicle';
 import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
@@ -106,6 +109,39 @@ app.use('/api/playthroughs/:playthroughId/echoes', authMiddleware, echoesRouter)
 
 // Whispers Routes (nested under playthroughs)
 app.use('/api/playthroughs/:playthroughId/whispers', authMiddleware, whispersRouter);
+
+// Gallery Routes
+app.use('/api/gallery', authMiddleware, galleryRouter);
+
+// Achievements Routes
+app.use('/api/achievements', authMiddleware, achievementsRouter);
+
+// Chronicle Routes (nested under playthroughs)
+app.use('/api/playthroughs/:playthroughId/chronicle', authMiddleware, chronicleRouter);
+
+// Public Chronicle Share (no auth)
+app.get('/api/share/chronicle/:shareId', async (req, res) => {
+  try {
+    const { Playthrough } = await import('./models/Playthrough');
+    const { shareId } = req.params;
+    const playthrough = await Playthrough.findOne({ shareId }).lean();
+    if (!playthrough) {
+      res.status(404).json({ status: 'error', message: 'Chronicle not found' });
+      return;
+    }
+    res.json({
+      status: 'success',
+      data: {
+        chronicle: playthrough.chronicleCache ?? null,
+        worldId: playthrough.worldId,
+        ownerId: playthrough.userId,
+      },
+    });
+  } catch (err) {
+    console.error('Public chronicle error:', err);
+    res.status(500).json({ status: 'error', message: 'Internal server error' });
+  }
+});
 
 // Character Routes (nested under playthroughs + standalone)
 app.use('/api', authMiddleware, charactersRouter);
