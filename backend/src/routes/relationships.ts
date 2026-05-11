@@ -34,8 +34,8 @@ router.get(
       // Transform for frontend: include character names
       const result = relationships.map((r) => ({
         _id: r._id,
-        characterA: { _id: (r.characterA as any)?._id, name: (r.characterA as any)?.name },
-        characterB: { _id: (r.characterB as any)?._id, name: (r.characterB as any)?.name },
+        characterA: { _id: (r.characterA as { _id?: unknown; name?: string })?._id, name: (r.characterA as { _id?: unknown; name?: string })?.name },
+        characterB: { _id: (r.characterB as { _id?: unknown; name?: string })?._id, name: (r.characterB as { _id?: unknown; name?: string })?.name },
         type: r.type,
         intensity: r.intensity,
       }));

@@ -2,14 +2,14 @@ import { errorHandler } from '../../middleware/errorHandler';
 import { AppError } from '../../utils/AppError';
 
 function mockResponse() {
-  const res: any = {};
+  const res: Record<string, unknown> = {};
   res.status = vi.fn().mockReturnValue(res);
   res.json = vi.fn().mockReturnValue(res);
-  return res;
+  return res as unknown as import('express').Response;
 }
 
 describe('errorHandler middleware', () => {
-  const req: any = {};
+  const req = {} as import('express').Request;
   const next = vi.fn();
 
   it('handles AppError with statusCode and message', () => {
@@ -46,7 +46,7 @@ describe('errorHandler middleware', () => {
 
   it('handles duplicate key error code 11000 as 409', () => {
     const res = mockResponse();
-    const err: any = new Error('duplicate key');
+    const err = new Error('duplicate key') as Error & { code: number };
     err.code = 11000;
 
     errorHandler(err, req, res, next);

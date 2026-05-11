@@ -73,8 +73,8 @@ router.post('/enrich-character', async (req: AuthRequest, res: Response): Promis
         const { SpecialItemTemplate } = await import('../models/SpecialItemTemplate');
         const sitDocs = await SpecialItemTemplate.find({ worldId: world._id }).lean();
         if (sitDocs.length > 0) {
-          const sitInfo = sitDocs.map((sit: any) => {
-            const fields = sit.fields?.map((f: any) => `${f.name}(${f.type})`).join(', ') || 'none';
+          const sitInfo = sitDocs.map((sit: { category: string; description: string; fields?: { name: string; type: string }[] }) => {
+            const fields = sit.fields?.map((f: { name: string; type: string }) => `${f.name}(${f.type})`).join(', ') || 'none';
             return `${sit.category}: ${sit.description} [fields: ${fields}]`;
           }).join('; ');
           worldContext += `\nSpecial Item Categories: ${sitInfo}`;

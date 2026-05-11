@@ -2,10 +2,10 @@ import { z } from 'zod';
 import { validate } from '../../middleware/validate';
 
 function mockResponse() {
-  const res: any = {};
+  const res: Record<string, unknown> = {};
   res.status = vi.fn().mockReturnValue(res);
   res.json = vi.fn().mockReturnValue(res);
-  return res;
+  return res as unknown as import('express').Response;
 }
 
 describe('validate middleware', () => {
@@ -15,7 +15,7 @@ describe('validate middleware', () => {
   });
 
   it('passes valid data, replaces body with parsed data, and calls next', () => {
-    const req: any = { body: { name: 'Aria', age: '21' } };
+    const req = { body: { name: 'Aria', age: '21' } } as import('express').Request;
     const res = mockResponse();
     const next = vi.fn();
 
@@ -27,7 +27,7 @@ describe('validate middleware', () => {
   });
 
   it('returns 400 with formatted issues for invalid data', () => {
-    const req: any = { body: { name: 'A', age: -1 } };
+    const req = { body: { name: 'A', age: -1 } } as import('express').Request;
     const res = mockResponse();
     const next = vi.fn();
 
@@ -45,7 +45,7 @@ describe('validate middleware', () => {
   });
 
   it('handles missing body as validation failure', () => {
-    const req: any = {};
+    const req = {} as import('express').Request;
     const res = mockResponse();
     const next = vi.fn();
 

@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import { encrypt, decrypt } from '../../services/encryption';
 
 describe('encryption service', () => {

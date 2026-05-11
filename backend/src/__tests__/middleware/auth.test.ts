@@ -3,10 +3,10 @@ import { authMiddleware, AuthRequest } from '../../middleware/auth';
 import { env } from '../../config/env';
 
 function mockResponse() {
-  const res: any = {};
+  const res: Record<string, unknown> = {};
   res.status = vi.fn().mockReturnValue(res);
   res.json = vi.fn().mockReturnValue(res);
-  return res;
+  return res as unknown as import('express').Response;
 }
 
 describe('authMiddleware', () => {

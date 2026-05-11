@@ -152,7 +152,6 @@ export async function runWriterAgent(
   const {
     contextOutput,
     playthroughId,
-    arcId,
     chapterId,
     worldId,
     userId,
@@ -269,7 +268,7 @@ ${combatBlock ? `=== ACTIVE COMBAT ===\n${combatBlock}\n` : ''}
 Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]] markup for all entities.`.trim();
 
   let chapterContent: string;
-  let pass1Usage: any = null;
+  let pass1Usage: { promptTokens?: number; inputTokens?: number; completionTokens?: number; outputTokens?: number } | null = null;
   const { Chapter } = await import('../models/Chapter');
 
   if (skipPass1) {
@@ -400,13 +399,13 @@ Call all applicable tools NOW in ONE step. Do NOT output any text — ONLY tool 
   let totalPromptTokens = 0;
   let totalCompletionTokens = 0;
 
-  const p1Usage = pass1Usage as any;
+  const p1Usage = pass1Usage;
   if (p1Usage) {
     totalPromptTokens += p1Usage.promptTokens || p1Usage.inputTokens || 0;
     totalCompletionTokens += p1Usage.completionTokens || p1Usage.outputTokens || 0;
   }
 
-  const p2Usage = pass2Usage as any;
+  const p2Usage = pass2Usage as { promptTokens?: number; inputTokens?: number; completionTokens?: number; outputTokens?: number } | undefined;
   if (p2Usage) {
     totalPromptTokens += p2Usage.promptTokens || p2Usage.inputTokens || 0;
     totalCompletionTokens += p2Usage.completionTokens || p2Usage.outputTokens || 0;

@@ -35,7 +35,7 @@ export function makeUpdateStatsTool(playthroughId: string, userId: string) {
       for (const { key, value } of updates) {
         try {
           await updateStat(characterId, key, value, userId);
-        } catch (err) {
+        } catch {
           // Skip stats that don't exist in template — non-fatal
         }
       }

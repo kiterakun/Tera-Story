@@ -297,7 +297,7 @@ export async function retryChapterTools(
   if (playthrough.userId.toString() !== userId) throw new Error('Unauthorized');
 
   // 3. Load user settings
-  let settings = await UserSettings.findOne({ userId });
+  const settings = await UserSettings.findOne({ userId });
   if (!settings) throw new Error('User settings not found');
   const registry = createUserProviderRegistry(settings.aiSettings);
 

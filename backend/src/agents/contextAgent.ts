@@ -105,7 +105,7 @@ export async function runContextAgent(
       const stats = c.dynamicStats
         .map((s) => `${s.k}=${s.v}`)
         .join(', ');
-      const statusTag = (c as any).status && (c as any).status !== 'active' ? ` [STATUS: ${(c as any).status.toUpperCase()}]` : '';
+      const statusTag = (c as { status?: string }).status && (c as { status?: string }).status !== 'active' ? ` [STATUS: ${(c as { status?: string }).status!.toUpperCase()}]` : '';
       return `- ${c.name} (${c.role}${statusTag}): ${c.description}${stats ? ` [${stats}]` : ''}`;
     })
     .join('\n');
@@ -118,7 +118,7 @@ export async function runContextAgent(
             const ownerChar = i.ownerId
               ? characters.find((c) => c._id.toString() === i.ownerId?.toString())
               : null;
-            const statusTag = (i as any).status && (i as any).status !== 'active' ? ` [STATUS: ${(i as any).status.toUpperCase()}]` : '';
+            const statusTag = (i as { status?: string }).status && (i as { status?: string }).status !== 'active' ? ` [STATUS: ${(i as { status?: string }).status!.toUpperCase()}]` : '';
             return `- ${i.name} (${i.rarity ?? 'common'}${statusTag}): ${i.description}${ownerChar ? ` [owned by ${ownerChar.name}]` : ''}`;
           })
           .join('\n')
@@ -132,7 +132,7 @@ export async function runContextAgent(
             const ownerChar = si.ownerId
               ? characters.find((c) => c._id.toString() === si.ownerId?.toString())
               : null;
-            const statusTag = (si as any).status && (si as any).status !== 'active' ? ` [STATUS: ${(si as any).status.toUpperCase()}]` : '';
+            const statusTag = (si as { status?: string }).status && (si as { status?: string }).status !== 'active' ? ` [STATUS: ${(si as { status?: string }).status!.toUpperCase()}]` : '';
             return `- ${si.name} [${si.category}] (${si.rarity}${statusTag}): ${si.description}${ownerChar ? ` [owned by ${ownerChar.name}]` : ''}`;
           })
           .join('\n')
@@ -238,16 +238,13 @@ Based on the player's choice and the FULL story state above (including all items
 
   const validated = contextOutputSchema.parse(parsed);
 
-  // Filter activeCharacters against actual DB records to prevent hallucinated names.
-  // The LLM may return character names that don't exist in the database yet.
-  const dbCharacterMap = new Map(characters.map((c) => [c.name, c]));
 
   // Build full character refs from DB — authoritative source of truth
   // Include ALL DB characters (not just LLM-mentioned ones) to prevent missed entities
   const activeCharacterRefs = characters.map((c) => ({
     name: c.name,
     role: c.role as 'protagonist' | 'npc',
-    status: (c as any).status ?? 'active',
+    status: (c as { status?: string }).status ?? 'active',
     description: c.description,
     dynamicStats: Object.fromEntries(c.dynamicStats.map((s) => [s.k, s.v])),
   }));
@@ -260,7 +257,7 @@ Based on the player's choice and the FULL story state above (including all items
     return {
       name: i.name,
       rarity: i.rarity ?? 'common',
-      status: (i as any).status ?? 'active',
+      status: (i as { status?: string }).status ?? 'active',
       owner: ownerChar?.name,
     };
   });
@@ -272,7 +269,7 @@ Based on the player's choice and the FULL story state above (including all items
     return {
       name: si.name,
       rarity: si.rarity ?? 'common',
-      status: (si as any).status ?? 'active',
+      status: (si as { status?: string }).status ?? 'active',
       category: si.category,
       owner: ownerChar?.name,
     };

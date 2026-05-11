@@ -29,7 +29,8 @@ export interface WorldContext {
 // ── Size per entity type ──────────────────────────────────────────────
 // DALL-E 3: 1024x1024 | 1024x1792 | 1792x1024
 // DALL-E 2 & many providers: 256x256 | 512x512 | 1024x1024
-function getImageSize(entityType: EntityType, model: string): string {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function getImageSize(_entityType: EntityType, _model: string): string {
   // const isDalle3 = model.includes("dall-e-3") || model.includes("dalle-3");
 
   // switch (entityType) {

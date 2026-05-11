@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { ICharacter, IDynamicStat } from '../types/character.types';
+import { IDynamicStat } from '../types/character.types';
 
 export interface ICharacterDocument extends Document {
   name: string;

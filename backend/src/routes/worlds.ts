@@ -151,7 +151,7 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
       return;
     }
 
-    const { specialItemTemplates: sitData, ...worldData } = req.body;
+    const { specialItemTemplates: sitData } = req.body;
     const world = await World.create({
       ...parsed.data,
       userId,
@@ -159,7 +159,7 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
 
     // If specialItemTemplates were sent alongside (from enrichWorld flow), create them
     if (Array.isArray(sitData) && sitData.length > 0) {
-      const templateDocs = sitData.map((t: any) => ({
+      const templateDocs = sitData.map((t: { category: string; description?: string; fields?: unknown[] }) => ({
         worldId: world._id,
         category: t.category,
         description: t.description || '',

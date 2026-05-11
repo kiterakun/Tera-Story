@@ -1,10 +1,11 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { ImageJobDetails } from '../agents/imageAgent';
 
 export type ImageEntityType = 'character' | 'item' | 'special-item' | 'world';
 export type ImageTaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface IImageTaskDocument extends Document {
-  entityDetails: Record<string, unknown>;
+  entityDetails: ImageJobDetails;
   entityType: ImageEntityType;
   entityId: string;
   worldId: string;

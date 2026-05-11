@@ -3,7 +3,6 @@ import { CombatEncounter } from '../../models/CombatEncounter';
 import { User } from '../../models/User';
 import { World } from '../../models/World';
 import { Playthrough } from '../../models/Playthrough';
-import { Character } from '../../models/Character';
 import { Chapter } from '../../models/Chapter';
 import { Arc } from '../../models/Arc';
 
@@ -15,9 +14,8 @@ describe('resolveCombatAction — validation & early returns', () => {
   let userId: string;
   let playthroughId: string;
   let chapterId: string;
-  let activeCombatId: string;
   let finishedCombatId: string;
-  let nonExistentId = new mongoose.Types.ObjectId().toString();
+  const nonExistentId = new mongoose.Types.ObjectId().toString();
 
   beforeAll(async () => {
     // Sync indexes so unique constraints are enforced in test MongoDB
@@ -64,7 +62,7 @@ describe('resolveCombatAction — validation & early returns', () => {
     chapterId = String(chapter._id);
 
     // Create an active combat encounter
-    const activeCombat = await CombatEncounter.create({
+    await CombatEncounter.create({
       playthroughId: playthrough._id,
       chapterId: chapter._id,
       context: 'A dark forest',
@@ -89,7 +87,6 @@ describe('resolveCombatAction — validation & early returns', () => {
       ],
       availableActions: ['Attack', 'Defend'],
     });
-    activeCombatId = String(activeCombat._id);
 
     // Create a finished combat
     const finishedCombat = await CombatEncounter.create({
@@ -106,7 +103,7 @@ describe('resolveCombatAction — validation & early returns', () => {
   // so we import it dynamically to avoid module-level side-effects.
   // We test the validation logic by invoking it with controlled inputs,
   // relying on the fact that the function will throw early before calling AI.
-  let resolveCombatAction: Function;
+  let resolveCombatAction: typeof import('../../services/combatService').resolveCombatAction;
 
   beforeAll(async () => {
     const mod = await import('../../services/combatService');
@@ -119,7 +116,7 @@ describe('resolveCombatAction — validation & early returns', () => {
         nonExistentId,
         'slash',
         userId,
-        {} as any, // model not needed for early throws
+        {} as Parameters<typeof import('../../services/combatService').resolveCombatAction>[3], // model not needed for early throws
         'en',
       ),
     ).rejects.toThrow('Combat encounter not found');
@@ -131,7 +128,7 @@ describe('resolveCombatAction — validation & early returns', () => {
         finishedCombatId,
         'slash',
         userId,
-        {} as any,
+        {} as Parameters<typeof import('../../services/combatService').resolveCombatAction>[3],
         'en',
       ),
     ).rejects.toThrow('Combat is not active');
@@ -169,7 +166,7 @@ describe('resolveCombatAction — validation & early returns', () => {
         String(allDead._id),
         'attack',
         userId,
-        {} as any,
+        {} as Parameters<typeof import('../../services/combatService').resolveCombatAction>[3],
         'en',
       ),
     ).rejects.toThrow('Combat has already ended');

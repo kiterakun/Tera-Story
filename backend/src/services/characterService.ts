@@ -22,7 +22,7 @@ export async function initializeDynamicStats(
   }
 
   return templates.map((tpl) => {
-    let defaultVal: string | number | boolean = 0;
+    let defaultVal: string | number | boolean;
     if (tpl.defaultValue !== undefined && tpl.defaultValue !== null) {
       defaultVal = tpl.defaultValue as string | number | boolean;
     } else if (tpl.type === 'enum' && tpl.options && tpl.options.length > 0) {

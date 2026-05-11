@@ -14,12 +14,6 @@ describe('World model', () => {
     userId = user._id;
   });
 
-  const validWorld = {
-    name: 'Eldoria',
-    description: 'A land of ancient magic.',
-    genre: 'fantasy' as const,
-    userId: () => userId,
-  };
 
   it('creates world with all required fields', async () => {
     const world = await World.create({

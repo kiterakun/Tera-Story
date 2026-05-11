@@ -11,22 +11,7 @@ interface RelationshipWebModalProps {
   characters: Character[];
 }
 
-interface RelationshipNode {
-  id: string;
-  name: string;
-  val: number;
-  color: string;
-  x?: number;
-  y?: number;
-}
 
-interface RelationshipLink {
-  source: string;
-  target: string;
-  type: Relationship['type'];
-  intensity: number;
-  color: string;
-}
 
 interface ForceGraphRef {
   zoomToFit: (duration?: number, padding?: number) => void;
@@ -34,10 +19,7 @@ interface ForceGraphRef {
   zoom: (scale: number, duration?: number) => void;
 }
 
-interface RelationshipGraphData {
-  nodes: RelationshipNode[];
-  links: RelationshipLink[];
-}
+
 
 export function RelationshipWebModal({ isOpen, onClose, relationships, characters }: RelationshipWebModalProps) {
   const t = useTranslation();

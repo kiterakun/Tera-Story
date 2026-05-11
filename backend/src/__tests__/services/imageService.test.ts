@@ -8,7 +8,6 @@ import { ImageTask } from '../../models/ImageTask';
 import { generateImage } from '../../agents/imageAgent';
 import { createUserProviderRegistry } from '../../providers/registry';
 
-// Mock external deps that touch the network / filesystem
 vi.mock('../../agents/imageAgent', () => ({
   generateImage: vi.fn().mockResolvedValue(undefined),
 }));
@@ -36,9 +35,9 @@ describe('imageService – queueImageGeneration', () => {
   let worldId: string;
 
   beforeAll(async () => {
-    // Sync indexes so unique constraints are enforced in test MongoDB
     await User.syncIndexes();
     await UserSettings.syncIndexes();
+    await ImageTask.syncIndexes();
   });
 
   beforeEach(async () => {
@@ -64,9 +63,7 @@ describe('imageService – queueImageGeneration', () => {
     });
   });
 
-  it('adds job and calls generateImage for the first queued item', async () => {
-    // queueImageGeneration is synchronous, but processQueue is async and started immediately.
-    // We must wait a tick for the async processQueue to consume the job.
+  it('persists job and calls generateImage for queued item', async () => {
     queueImageGeneration(
       { name: 'Aria', description: 'A brave knight' },
       'character',
@@ -75,10 +72,10 @@ describe('imageService – queueImageGeneration', () => {
       userId,
     );
 
-    // Let the microtask queue drain so processQueue runs
     await vi.waitFor(
-      () => {
-        expect(generateImage).toHaveBeenCalledTimes(1);
+      async () => {
+        const task = await ImageTask.findOne({ entityId: 'char-1' }).lean();
+        expect(task?.status).toBe('completed');
       },
       { timeout: 5000 },
     );
@@ -92,7 +89,7 @@ describe('imageService – queueImageGeneration', () => {
     );
   });
 
-  it('processes multiple jobs sequentially', async () => {
+  it('processes multiple jobs', async () => {
     queueImageGeneration(
       { name: 'Sword', description: 'A sharp blade' },
       'item',
@@ -109,14 +106,17 @@ describe('imageService – queueImageGeneration', () => {
     );
 
     await vi.waitFor(
-      () => {
-        expect(generateImage).toHaveBeenCalledTimes(2);
+      async () => {
+        const completed = await ImageTask.countDocuments({ status: 'completed' });
+        expect(completed).toBe(2);
       },
       { timeout: 5000 },
     );
+
+    expect(generateImage).toHaveBeenCalledTimes(2);
   });
 
-  it('handles World not found gracefully (uses entity details for world type)', async () => {
+  it('uses entity details as world context when world document is missing', async () => {
     const fakeWorldId = new mongoose.Types.ObjectId().toString();
 
     queueImageGeneration(
@@ -129,26 +129,73 @@ describe('imageService – queueImageGeneration', () => {
 
     await vi.waitFor(
       () => {
-        const calls = vi.mocked(generateImage).mock.calls;
-        const worldCall = calls.find(
-          (call) => call[2] === 'world-unknown',
+        expect(generateImage).toHaveBeenCalledWith(
+          expect.objectContaining({ name: 'Lost World' }),
+          'world',
+          'world-unknown',
+          expect.objectContaining({ name: 'Lost World', genre: 'custom' }),
+          expect.anything(),
         );
-        expect(worldCall).toBeDefined();
       },
       { timeout: 5000 },
     );
+  });
 
-    // Should have used entityDetails for world context fallback
-    expect(generateImage).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'Lost World' }),
-      'world',
-      'world-unknown',
-      expect.objectContaining({ name: 'Lost World', genre: 'custom' }),
-      expect.anything(),
+  it('marks task pending for retry when generateImage fails below retry limit', async () => {
+    vi.mocked(generateImage).mockRejectedValueOnce(new Error('provider down'));
+
+    queueImageGeneration(
+      { name: 'Retry Me', description: 'Fails once' },
+      'character',
+      'retry-1',
+      worldId,
+      userId,
+    );
+
+    await vi.waitFor(
+      async () => {
+        const task = await ImageTask.findOne({ entityId: 'retry-1' }).lean();
+        expect(task?.status).toBe('pending');
+        expect(task?.retryCount).toBe(1);
+        expect(task?.error).toBe('provider down');
+        expect(task?.nextRetryAt).toBeInstanceOf(Date);
+      },
+      { timeout: 5000 },
     );
   });
 
-  it('skips gracefully when no UserSettings found', async () => {
+  it('marks task failed after third failure', async () => {
+    vi.mocked(generateImage).mockRejectedValue(new Error('provider down'));
+    const task = await ImageTask.create({
+      entityDetails: { name: 'Done', description: 'No more retries' },
+      entityType: 'character',
+      entityId: 'fail-3',
+      worldId,
+      userId,
+      status: 'pending',
+      retryCount: 2,
+    });
+
+    queueImageGeneration(
+      { name: 'Trigger', description: 'Starts queue scan' },
+      'item',
+      'trigger-1',
+      worldId,
+      userId,
+    );
+
+    await vi.waitFor(
+      async () => {
+        const failedTask = await ImageTask.findById(task._id).lean();
+        expect(failedTask?.status).toBe('failed');
+        expect(failedTask?.retryCount).toBe(3);
+        expect(failedTask?.error).toBe('provider down');
+      },
+      { timeout: 5000 },
+    );
+  });
+
+  it('keeps task retryable when no UserSettings found', async () => {
     const fakeUserId = new mongoose.Types.ObjectId().toString();
 
     queueImageGeneration(
@@ -159,16 +206,17 @@ describe('imageService – queueImageGeneration', () => {
       fakeUserId,
     );
 
-    // Should not throw; generateImage should not be called for this user
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // generateImage was already called from previous tests; ensure it wasn't called with ghost userId stuff
-    // We can check that no error was thrown; test passes if it reaches here.
-    // Actually, verify that the mock was not called with the ghost entityId
-    const calls = vi.mocked(generateImage).mock.calls;
-    const ghostCall = calls.find(
-      (call) => call[2] === 'ghost-1',
+    await vi.waitFor(
+      async () => {
+        const task = await ImageTask.findOne({ entityId: 'ghost-1' }).lean();
+        expect(task?.status).toBe('pending');
+        expect(task?.retryCount).toBe(1);
+        expect(task?.error).toContain('No settings found');
+      },
+      { timeout: 5000 },
     );
-    expect(ghostCall).toBeUndefined();
+
+    expect(generateImage).not.toHaveBeenCalled();
+    expect(createUserProviderRegistry).not.toHaveBeenCalled();
   });
 });

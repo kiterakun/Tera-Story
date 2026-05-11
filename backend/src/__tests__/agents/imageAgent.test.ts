@@ -12,7 +12,7 @@ vi.mock('../../services/encryption', () => ({
 }));
 
 const mockFetch = vi.fn();
-global.fetch = mockFetch as any;
+global.fetch = mockFetch as unknown as typeof fetch;
 
 function fakeImageConfig(overrides?: Partial<IAgentConfig>): IAgentConfig {
   return {

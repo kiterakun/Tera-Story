@@ -10,7 +10,7 @@ export function extractJson<T = unknown>(text: string): T {
   const fenceMatch = textWithoutThink.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fenceMatch) {
     try {
-      return JSON.parse(fenceMatch[1].trim()) as T;
+      return JSON.parse((fenceMatch[1] || '').trim()) as T;
     } catch {
       /* fall through */
     }

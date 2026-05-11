@@ -13,6 +13,7 @@ export function ConsequenceFlashback({ consequences }: ConsequenceFlashbackProps
 
   useEffect(() => {
     if (consequences.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setQueue((prev) => [...prev, ...consequences]);
     }
   }, [consequences]);
@@ -28,6 +29,7 @@ export function ConsequenceFlashback({ consequences }: ConsequenceFlashbackProps
     if (queue.length > 0 && !activeNotification) {
       const next = queue[0];
       if (!next) return;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setQueue((prev) => prev.slice(1));
       setActiveNotification(next);
       setIsVisible(true);

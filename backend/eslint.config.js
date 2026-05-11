@@ -5,7 +5,7 @@ module.exports = [
   js.configs.recommended,
   ...tsPlugin.configs.recommended,
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'eslint.config.js', 'vitest.config.ts'],
   },
   {
     files: ['**/*.ts'],
