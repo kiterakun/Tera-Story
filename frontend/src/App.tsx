@@ -22,6 +22,8 @@ const SettingsPage = React.lazy(() => import('./pages/SettingsPage'))
 const GalleryPage = React.lazy(() => import('./pages/GalleryPage'))
 const AchievementsPage = React.lazy(() => import('./pages/AchievementsPage'))
 const ChroniclePage = React.lazy(() => import('./pages/ChroniclePage'))
+const FateThreadsPage = React.lazy(() => import('./pages/FateThreadsPage'))
+const FriendsPage = React.lazy(() => import('./pages/FriendsPage'))
 
 function App() {
   const loadUser = useAuthStore(s => s.loadUser)
@@ -79,10 +81,12 @@ function App() {
                 <Route path="/worlds/:id" element={<ProtectedRoute><WorldDetailPage /></ProtectedRoute>} />
                 <Route path="/worlds/:worldId/playthroughs/:id" element={<ProtectedRoute><PlaythroughPage /></ProtectedRoute>} />
                 <Route path="/play/:playthroughId" element={<ProtectedRoute><StoryReaderPage /></ProtectedRoute>} />
+                <Route path="/play/:playthroughId/threads" element={<ProtectedRoute><FateThreadsPage /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                 <Route path="/gallery" element={<ProtectedRoute><GalleryPage /></ProtectedRoute>} />
                 <Route path="/achievements" element={<ProtectedRoute><AchievementsPage /></ProtectedRoute>} />
                 <Route path="/chronicle/:playthroughId" element={<ProtectedRoute><ChroniclePage /></ProtectedRoute>} />
+                <Route path="/friends" element={<ProtectedRoute><FriendsPage /></ProtectedRoute>} />
                 <Route path="/worlds/:worldId/playthroughs/:playthroughId/characters/create" element={<ProtectedRoute><CharacterCreatePage /></ProtectedRoute>} />
               </Routes>
             </Layout>

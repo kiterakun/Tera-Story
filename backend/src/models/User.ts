@@ -33,6 +33,17 @@ export interface IUserDocument extends Document {
   totalPlaythroughsCompleted: number;
   totalAchievementsUnlocked: number;
   xpHistory?: IXpHistoryEntry[];
+  // Social profile (Phase 3)
+  displayName?: string;
+  bio?: string;
+  avatar?: string;
+  privacySettings: {
+    profileVisibility: 'public' | 'friends' | 'private';
+    storyVisibility: 'public' | 'friends' | 'private';
+    achievementVisibility: 'public' | 'friends' | 'private';
+    allowFriendRequests: boolean;
+    showOnLeaderboard: boolean;
+  };
   comparePassword(candidate: string): Promise<boolean>;
   toPublicJSON(): {
     id: string;
@@ -40,6 +51,9 @@ export interface IUserDocument extends Document {
     email: string;
     createdAt: Date;
     updatedAt: Date;
+    displayName?: string;
+    bio?: string;
+    avatar?: string;
     xp: number;
     level: number;
     totalScenesCompleted: number;
@@ -95,6 +109,20 @@ const UserSchema = new Schema<IUserDocument>(
         timestamp: { type: Date, default: Date.now },
       },
     ],
+    // Social profile (Phase 3)
+    displayName: { type: String, trim: true, maxlength: 50 },
+    bio: { type: String, maxlength: 500 },
+    avatar: { type: String },
+    privacySettings: {
+      type: new Schema({
+        profileVisibility: { type: String, enum: ['public', 'friends', 'private'], default: 'private' },
+        storyVisibility: { type: String, enum: ['public', 'friends', 'private'], default: 'private' },
+        achievementVisibility: { type: String, enum: ['public', 'friends', 'private'], default: 'private' },
+        allowFriendRequests: { type: Boolean, default: false },
+        showOnLeaderboard: { type: Boolean, default: false },
+      }, { _id: false }),
+      default: {},
+    },
   },
   { timestamps: true }
 );
@@ -129,6 +157,9 @@ UserSchema.methods.toPublicJSON = function () {
     email: this.email,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
+    displayName: this.displayName,
+    bio: this.bio,
+    avatar: this.avatar,
     xp: this.xp,
     level: this.level,
     totalScenesCompleted: this.totalScenesCompleted,

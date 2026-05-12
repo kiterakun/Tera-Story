@@ -31,6 +31,9 @@
 - **🏆 Achievement System**: Unlock 40+ achievements across 6 categories with progress tracking and toast notifications.
 - **🃏 Story Gallery**: Collect unique story cards from pivotal scenes — each with rarity tiers and social sharing.
 - **📜 Chronicle**: Auto-generated playthrough timeline with arc summaries, stats, and shareable recap.
+- **📅 Daily Engagement**: Login streaks, daily quests, 7-day reward calendar, and streak freeze protection — build daily habits.
+- **🕸️ Fate Threads**: Interactive branch visualization showing story paths taken and ghost threads unexplored. Peek into "what if" alternate timelines.
+- **👥 Social Features**: Friend system, leaderboards, story sharing, and granular privacy controls — opt-in community layer.
 
 ---
 

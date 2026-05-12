@@ -107,6 +107,39 @@ Tera-Story/
 | `GalleryPage` | Component | `frontend/src/pages/GalleryPage.tsx` | Story card grid + detail |
 | `AchievementsPage` | Component | `frontend/src/pages/AchievementsPage.tsx` | Achievement grid + progress |
 | `ChroniclePage` | Component | `frontend/src/pages/ChroniclePage.tsx` | Arc timeline + stats + share |
+| `DailyLogin` | Model | `backend/src/models/DailyLogin.ts` | Daily login streak tracking |
+| `DailyQuest` | Model | `backend/src/models/DailyQuest.ts` | Daily quest objectives |
+| `StreakFreeze` | Model | `backend/src/models/StreakFreeze.ts` | Streak protection tokens |
+| `Friendship` | Model | `backend/src/models/Friendship.ts` | Friend relationship tracking |
+| `dailyService` | Module | `backend/src/services/dailyService.ts` | Streak, claim, quest generation |
+| `fateThreadsService` | Module | `backend/src/services/fateThreadsService.ts` | Graph builder + ghost peek |
+| `socialService` | Module | `backend/src/services/socialService.ts` | Friend CRUD + search |
+| `leaderboardService` | Module | `backend/src/services/leaderboardService.ts` | Leaderboard computation |
+| `dailyRouter` | Router | `backend/src/routes/daily.ts` | Daily claim + quests |
+| `fateThreadsRouter` | Router | `backend/src/routes/fateThreads.ts` | Thread graph + peek |
+| `friendsRouter` | Router | `backend/src/routes/friends.ts` | Friend management |
+| `leaderboardRouter` | Router | `backend/src/routes/leaderboard.ts` | Leaderboard data |
+| `privacyRouter` | Router | `backend/src/routes/privacy.ts` | Privacy settings |
+| `shareRouter` | Router | `backend/src/routes/share.ts` | Public share endpoints |
+| `dailyApi` | API Client | `frontend/src/services/dailyApi.ts` | Daily API calls |
+| `fateThreadsApi` | API Client | `frontend/src/services/fateThreadsApi.ts` | Fate threads API calls |
+| `friendsApi` | API Client | `frontend/src/services/friendsApi.ts` | Friends API calls |
+| `leaderboardApi` | API Client | `frontend/src/services/leaderboardApi.ts` | Leaderboard API calls |
+| `useDaily` | Hook | `frontend/src/hooks/useDaily.ts` | Daily status + claim |
+| `useFateThreads` | Hook | `frontend/src/hooks/useFateThreads.ts` | Thread graph state |
+| `useFriends` | Hook | `frontend/src/hooks/useFriends.ts` | Friends state |
+| `useLeaderboard` | Hook | `frontend/src/hooks/useLeaderboard.ts` | Leaderboard state |
+| `FateThreadsPage` | Component | `frontend/src/pages/FateThreadsPage.tsx` | Interactive branch graph |
+| `FriendsPage` | Component | `frontend/src/pages/FriendsPage.tsx` | Friend list + search |
+| `DailyCheckInModal` | Component | `frontend/src/components/daily/DailyCheckInModal.tsx` | 7-day check-in modal |
+| `DailyQuestsWidget` | Component | `frontend/src/components/daily/DailyQuestsWidget.tsx` | Daily quest tracker |
+| `StreakBadge` | Component | `frontend/src/components/daily/StreakBadge.tsx` | Streak display badge |
+| `LeaderboardWidget` | Component | `frontend/src/components/social/LeaderboardWidget.tsx` | Compact leaderboard |
+| `ShareMenu` | Component | `frontend/src/components/social/ShareMenu.tsx` | Share link/social |
+| `PrivacySettings` | Component | `frontend/src/components/social/PrivacySettings.tsx` | Privacy toggles |
+| `PeekModal` | Component | `frontend/src/components/fate/PeekModal.tsx` | Ghost thread peek |
+| `ChapterDetailPanel` | Component | `frontend/src/components/fate/ChapterDetailPanel.tsx` | Chapter detail panel |
+| `dailyResetJob` | Job | `backend/src/jobs/dailyReset.ts` | Daily quest + streak reset |
 
 ## CONVENTIONS
 - **TypeScript strict** everywhere — `noUncheckedIndexedAccess` enabled

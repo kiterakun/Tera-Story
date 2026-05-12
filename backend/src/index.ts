@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env';
 import { connectDatabase, disconnectDatabase } from './config/database';
+import { startDailyResetJob } from './jobs/dailyReset';
 import { errorHandler } from './middleware/errorHandler';
 import authRouter from './routes/auth';
 import settingsRouter from './routes/settings';
@@ -29,6 +30,12 @@ import whispersRouter from './routes/whispers';
 import galleryRouter from './routes/gallery';
 import achievementsRouter from './routes/achievements';
 import chronicleRouter from './routes/chronicle';
+import fateThreadsRouter from './routes/fateThreads';
+import dailyRouter from './routes/daily';
+import friendsRouter from './routes/friends';
+import leaderboardRouter from './routes/leaderboard';
+import privacyRouter from './routes/privacy';
+import shareRouter from './routes/share';
 import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
@@ -92,6 +99,9 @@ app.use('/api/auth', authRouter);
 // Settings Routes
 app.use('/api/settings', authMiddleware, settingsRouter);
 
+// Privacy Routes
+app.use('/api/user/privacy', authMiddleware, privacyRouter);
+
 // Progression Routes
 app.use('/api/user', progressionRouter);
 
@@ -118,6 +128,21 @@ app.use('/api/achievements', authMiddleware, achievementsRouter);
 
 // Chronicle Routes (nested under playthroughs)
 app.use('/api/playthroughs/:playthroughId/chronicle', authMiddleware, chronicleRouter);
+
+// Fate Threads Routes (nested under playthroughs)
+app.use('/api/playthroughs/:playthroughId/threads', authMiddleware, fateThreadsRouter);
+
+// Daily Engagement Routes
+app.use('/api/daily', authMiddleware, dailyRouter);
+
+// Friends Routes
+app.use('/api/friends', authMiddleware, friendsRouter);
+
+// Leaderboard Routes
+app.use('/api/leaderboard', authMiddleware, leaderboardRouter);
+
+// Share Routes (public — no auth)
+app.use('/api/share', shareRouter);
 
 // Public Chronicle Share (no auth)
 app.get('/api/share/chronicle/:shareId', async (req, res) => {
@@ -184,6 +209,7 @@ if (require.main === module) {
       console.log(`Server listening on port ${PORT}`);
       console.log(`Environment: ${env.NODE_ENV}`);
     });
+    startDailyResetJob();
   }).catch(err => {
     console.error('Failed to start server:', err);
     process.exit(1);

@@ -133,6 +133,71 @@ router.get('/upcoming', async (req: AuthRequest, res: Response): Promise<void> =
   }
 });
 
+// GET /api/playthroughs/:playthroughId/echoes/:echoId
+router.get('/:echoId', async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const { playthroughId, echoId } = req.params;
+
+    if (!(await verifyOwnership(playthroughId as string, userId, res))) return;
+
+    const echo = await Echo.findOne({ _id: echoId, playthroughId }).lean();
+
+    if (!echo) {
+      res.status(404).json({ status: 'error', message: 'Echo not found' });
+      return;
+    }
+
+    res.json({ status: 'success', data: { echo } });
+  } catch (err) {
+    console.error('Get echo error:', err);
+    res.status(500).json({ status: 'error', message: 'Internal server error' });
+  }
+});
+
+// POST /api/playthroughs/:playthroughId/echoes/:echoId/resolve
+router.post(
+  '/:echoId/resolve',
+  validate(resolveEchoSchema),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.id;
+      const { playthroughId, echoId } = req.params;
+
+      if (!(await verifyOwnership(playthroughId as string, userId, res))) return;
+
+      const echo = await Echo.findOneAndUpdate(
+        { _id: echoId, playthroughId },
+        {
+          $set: {
+            status: 'resolved' as EchoStatus,
+            narrative: (req.body as { narrative: string }).narrative,
+            resolvedAt: new Date(),
+          },
+        },
+        { returnDocument: 'after' }
+      );
+
+      if (!echo) {
+        res.status(404).json({ status: 'error', message: 'Echo not found' });
+        return;
+      }
+
+      await Playthrough.findByIdAndUpdate(playthroughId, {
+        $inc: { echoesResolvedCount: 1 },
+      });
+
+      res.json({
+        status: 'success',
+        data: { echo },
+      });
+    } catch (err) {
+      console.error('Resolve echo error:', err);
+      res.status(500).json({ status: 'error', message: 'Internal server error' });
+    }
+  }
+);
+
 // PATCH /api/playthroughs/:playthroughId/echoes/:echoId/resolve
 router.patch(
   '/:echoId/resolve',

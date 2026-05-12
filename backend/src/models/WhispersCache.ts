@@ -76,7 +76,9 @@ const WhispersCacheSchema = new Schema<IWhispersCacheDocument>(
     },
     expiresAt: {
       type: Date,
-      required: true,
+      // Not required — pre-save hook auto-computes from generatedAt + 7 days.
+      // Validation runs before hooks, so required:true would reject creates
+      // that rely on the hook to set this field.
     },
     viewedAt: {
       type: Date,

@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import crypto from 'crypto';
+import mongoose from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
 import { StoryCard } from '../models/StoryCard';
 
@@ -11,6 +12,7 @@ const router = Router();
 router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
+    const userObjectId = new mongoose.Types.ObjectId(userId);
 
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
@@ -31,7 +33,7 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
       StoryCard.find(filter).sort(sortOption).skip(skip).limit(limit).lean(),
       StoryCard.countDocuments(filter),
       StoryCard.aggregate([
-        { $match: { userId } },
+        { $match: { userId: userObjectId } },
         { $group: { _id: '$rarity', count: { $sum: 1 } } },
       ]),
     ]);
@@ -64,15 +66,16 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
 router.get('/stats', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
+    const userObjectId = new mongoose.Types.ObjectId(userId);
 
     const [totalCards, byRarity, byCategory, recentUnlock] = await Promise.all([
       StoryCard.countDocuments({ userId }),
       StoryCard.aggregate([
-        { $match: { userId } },
+        { $match: { userId: userObjectId } },
         { $group: { _id: '$rarity', count: { $sum: 1 } } },
       ]),
       StoryCard.aggregate([
-        { $match: { userId } },
+        { $match: { userId: userObjectId } },
         { $group: { _id: '$category', count: { $sum: 1 } } },
       ]),
       StoryCard.find({ userId }).sort({ unlockedAt: -1 }).limit(5).lean(),

@@ -12,6 +12,7 @@ import { addXp, XP_REWARDS } from './progressionService';
 import { Echo } from '../models/Echo';
 import { emit } from './sseManager';
 import { checkAchievements } from './achievementService';
+import { updateQuestProgress } from './dailyService';
 import { StoryCard } from '../models/StoryCard';
 import type { StoryCardRarity } from '../models/StoryCard';
 
@@ -210,6 +211,13 @@ export async function generateChapter(
       console.error('Failed to award scene XP:', err);
     }
 
+    // Update daily quest progress: read_scenes
+    try {
+      updateQuestProgress(userId, 'read_scenes', 1);
+    } catch (err) {
+      console.error('Failed to update read_scenes quest progress:', err);
+    }
+
     // Award XP for making a choice (if not the initial chapter)
     if (playerChoice && playerChoice.trim().length > 0) {
       try {
@@ -220,6 +228,13 @@ export async function generateChapter(
       } catch (err) {
         console.error('Failed to award choice XP:', err);
       }
+    }
+
+    // Update daily quest progress: make_choices
+    try {
+      updateQuestProgress(userId, 'make_choices', 1);
+    } catch (err) {
+      console.error('Failed to update make_choices quest progress:', err);
     }
 
     // Plant Echo for major choices
@@ -389,6 +404,13 @@ export async function generateChapterStream(
       console.error('Failed to award scene XP (stream):', err);
     }
 
+    // Update daily quest progress: read_scenes (stream)
+    try {
+      updateQuestProgress(userId, 'read_scenes', 1);
+    } catch (err) {
+      console.error('Failed to update read_scenes quest progress (stream):', err);
+    }
+
     // Award XP for making a choice (if not initial chapter)
     if (playerChoice && playerChoice.trim().length > 0) {
       try {
@@ -399,6 +421,13 @@ export async function generateChapterStream(
       } catch (err) {
         console.error('Failed to award choice XP (stream):', err);
       }
+    }
+
+    // Update daily quest progress: make_choices (stream)
+    try {
+      updateQuestProgress(userId, 'make_choices', 1);
+    } catch (err) {
+      console.error('Failed to update make_choices quest progress (stream):', err);
     }
 
     // Plant Echo for major choices (stream variant)
