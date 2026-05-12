@@ -40,17 +40,17 @@ export async function getFriendRequests() {
 }
 
 export async function sendFriendRequest(username: string) {
-  const res = await api.post<{ status: string; data: { request: FriendRequest } }>('/friends/requests', { username });
+  const res = await api.post<{ status: string; data: { request: FriendRequest } }>('/friends/request', { username });
   return res.data;
 }
 
 export async function acceptFriendRequest(requestId: string) {
-  const res = await api.post<{ status: string; data: { request: FriendRequest } }>(`/friends/requests/${requestId}/accept`);
+  const res = await api.put<{ status: string; data: { request: FriendRequest } }>(`/friends/${requestId}/accept`);
   return res.data;
 }
 
 export async function rejectFriendRequest(requestId: string) {
-  const res = await api.post<{ status: string; data: { request: FriendRequest } }>(`/friends/requests/${requestId}/reject`);
+  const res = await api.put<{ status: string; data: { request: FriendRequest } }>(`/friends/${requestId}/reject`);
   return res.data;
 }
 

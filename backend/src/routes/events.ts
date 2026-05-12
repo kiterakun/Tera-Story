@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
-import { addClient, emit, removeClient } from '../services/sseManager';
+import { addClient, addUserClient, emit, emitToUser, removeClient, removeUserClient } from '../services/sseManager';
 
 const router = Router();
 
@@ -45,6 +45,41 @@ router.get('/:playthroughId', (req: Request, res: Response): void => {
 
   req.on('close', () => {
     removeClient(playthroughId, res);
+  });
+});
+
+router.get('/user', (req: Request, res: Response): void => {
+  let token: string | undefined;
+  if (req.cookies?.token) {
+    token = req.cookies.token;
+  } else if (typeof req.query.token === 'string') {
+    token = req.query.token;
+  }
+
+  if (!token) {
+    res.status(401).json({ error: 'No token provided' });
+    return;
+  }
+
+  let userId: string;
+  try {
+    const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: string };
+    userId = decoded.userId;
+  } catch {
+    res.status(401).json({ error: 'Invalid or expired token' });
+    return;
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  addUserClient(userId, res);
+  emitToUser(userId, 'connected', { userId, connectedAt: new Date().toISOString() });
+
+  req.on('close', () => {
+    removeUserClient(userId, res);
   });
 });
 

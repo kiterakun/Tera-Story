@@ -2,6 +2,9 @@ import { Router, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { Playthrough, type IPlaythroughDocument } from '../models/Playthrough';
 import { WhispersCache } from '../models/WhispersCache';
+import { generateWhispers } from '../agents/supportAgent';
+import { createUserProviderRegistry } from '../providers/registry';
+import { UserSettings } from '../models/UserSettings';
 
 const router = Router({ mergeParams: true });
 
@@ -74,20 +77,96 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
       }
     }
 
-    // Generate whispers via supportAgent (delegated to storyOrchestrator)
-    // For now, return placeholder indicating whispers need generation
-    // The actual AI generation will be wired in the integration phase
-    res.json({
-      status: 'success',
-      data: {
-        playthroughId,
-        whispers: [],
-        daysAway: Math.floor(hoursSinceActive / 24),
-        hasNew: false,
-        needsGeneration: true,
-      },
-      message: 'Whispers need AI generation — pending integration',
-    });
+    const daysAway = Math.floor(hoursSinceActive / 24);
+
+    // forceRegenerate=true skips cache but does NOT trigger generation.
+    // Return needsGeneration so client can request fresh after.
+    if (forceRegenerate) {
+      res.json({
+        status: 'success',
+        data: {
+          playthroughId,
+          whispers: [],
+          daysAway,
+          hasNew: false,
+          needsGeneration: true,
+        },
+      });
+      return;
+    }
+
+    try {
+      // Generate whispers via supportAgent
+      const settings = await UserSettings.findOne({ userId }).lean();
+      if (!settings?.aiSettings) {
+        // No AI settings configured — return empty
+        res.json({
+          status: 'success',
+          data: {
+            playthroughId,
+            whispers: [],
+            daysAway,
+            hasNew: false,
+          },
+          message: 'AI settings not configured',
+        });
+        return;
+      }
+
+      const registry = createUserProviderRegistry(settings.aiSettings);
+      const model = registry.getSupportModel();
+
+      // Build context from available playthrough data
+      const playthroughContext = JSON.stringify({
+        name: playthrough.name,
+        status: playthrough.status,
+        currentArcIndex: playthrough.currentArcIndex,
+        lastActiveAt: playthrough.lastActiveAt,
+      });
+
+      const whisperResult = await generateWhispers(
+        playthroughContext,
+        daysAway,
+        model,
+        settings.language ?? 'en'
+      );
+
+      // Cache result (7-day TTL)
+      await WhispersCache.findOneAndUpdate(
+        { playthroughId },
+        {
+          playthroughId,
+          whispers: whisperResult.whispers,
+          generatedAt: new Date(),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+        { upsert: true, returnDocument: 'after' }
+      );
+
+      res.json({
+        status: 'success',
+        data: {
+          playthroughId,
+          whispers: whisperResult.whispers,
+          daysAway,
+          generatedAt: new Date(),
+          hasNew: true,
+        },
+      });
+    } catch (genErr) {
+      console.error('Generate whispers failed, returning needsGeneration:', genErr);
+      res.json({
+        status: 'success',
+        data: {
+          playthroughId,
+          whispers: [],
+          daysAway,
+          hasNew: false,
+          needsGeneration: true,
+        },
+        message: 'Whispers need AI generation — pending integration',
+      });
+    }
   } catch (err) {
     console.error('Get whispers error:', err);
     res.status(500).json({ status: 'error', message: 'Internal server error' });

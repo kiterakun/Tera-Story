@@ -147,7 +147,6 @@ export default function FriendsPage() {
     acceptRequest,
     rejectRequest,
     removeFriend,
-    removeFriend,
     searchUsers,
   } = useFriends();
 

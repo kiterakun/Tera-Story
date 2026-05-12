@@ -3,6 +3,7 @@ import type { IAchievementDocument } from '../models/Achievement';
 import { UserAchievement } from '../models/UserAchievement';
 import { User } from '../models/User';
 import { ACHIEVEMENT_SEEDS } from '../seed/achievements';
+import { emitToUser } from './sseManager';
 
 interface AchievementEvent {
   type: 'scene_completed' | 'choice_made' | 'combat_won' | 'card_unlocked' | 'playthrough_completed' | 'enemy_spared' | 'secret_discovered';
@@ -72,6 +73,11 @@ export async function checkAchievements(
       if (userLevel >= (criteria.threshold ?? 1)) {
         await unlockAchievement(userId, ach, ua);
         unlocked.push(ach as unknown as IAchievementDocument);
+        emitToUser(userId, 'achievement_unlock', {
+          achievementKey: ach.key,
+          achievementName: ach.name,
+          xpReward: ach.xpReward,
+        });
         continue;
       }
     }
@@ -93,6 +99,11 @@ export async function checkAchievements(
       if (currentVal >= threshold) {
         await unlockAchievement(userId, ach, ua);
         unlocked.push(ach as unknown as IAchievementDocument);
+        emitToUser(userId, 'achievement_unlock', {
+          achievementKey: ach.key,
+          achievementName: ach.name,
+          xpReward: ach.xpReward,
+        });
       }
       continue;
     }
@@ -113,6 +124,11 @@ export async function checkAchievements(
       if (currentVal >= threshold) {
         await unlockAchievement(userId, ach, ua);
         unlocked.push(ach as unknown as IAchievementDocument);
+        emitToUser(userId, 'achievement_unlock', {
+          achievementKey: ach.key,
+          achievementName: ach.name,
+          xpReward: ach.xpReward,
+        });
       }
       continue;
     }
@@ -133,6 +149,11 @@ export async function checkAchievements(
       if (count >= threshold) {
         await unlockAchievement(userId, ach, ua);
         unlocked.push(ach as unknown as IAchievementDocument);
+        emitToUser(userId, 'achievement_unlock', {
+          achievementKey: ach.key,
+          achievementName: ach.name,
+          xpReward: ach.xpReward,
+        });
       }
       continue;
     }
@@ -146,6 +167,11 @@ export async function checkAchievements(
         if (eventCondition === criteria.condition) {
           await unlockAchievement(userId, ach, ua);
           unlocked.push(ach as unknown as IAchievementDocument);
+          emitToUser(userId, 'achievement_unlock', {
+            achievementKey: ach.key,
+            achievementName: ach.name,
+            xpReward: ach.xpReward,
+          });
         }
       }
     }

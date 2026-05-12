@@ -10,7 +10,7 @@ import { runContextAgent } from '../agents/contextAgent';
 import { runWriterAgent } from '../agents/writerAgent';
 import { addXp, XP_REWARDS } from './progressionService';
 import { Echo } from '../models/Echo';
-import { emit } from './sseManager';
+import { emit, emitToUser } from './sseManager';
 import { checkAchievements } from './achievementService';
 import { updateQuestProgress } from './dailyService';
 import { StoryCard } from '../models/StoryCard';
@@ -241,6 +241,11 @@ export async function generateChapter(
     if (playerChoice && playerChoice.length > 200) {
       try {
         await plantEcho(playthroughId, chapter._id.toString(), chapterCount, playerChoice);
+        emitToUser(userId, 'echo_planted', {
+          playthroughId,
+          chapterId: chapter._id.toString(),
+          chapterIndex: chapterCount,
+        });
       } catch (err) {
         console.error('Failed to plant echo:', err);
       }
@@ -434,6 +439,11 @@ export async function generateChapterStream(
     if (playerChoice && playerChoice.length > 200) {
       try {
         await plantEcho(playthroughId, chapter._id.toString(), chapterCount, playerChoice);
+        emitToUser(userId, 'echo_planted', {
+          playthroughId,
+          chapterId: chapter._id.toString(),
+          chapterIndex: chapterCount,
+        });
       } catch (err) {
         console.error('Failed to plant echo (stream):', err);
       }

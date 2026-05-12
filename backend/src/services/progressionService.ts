@@ -1,5 +1,6 @@
 import { User } from '../models/User';
 import type { IUserDocument, XpSource } from '../models/User';
+import { emitToUser } from './sseManager';
 
 // --- XP Rewards Table ---
 
@@ -142,6 +143,13 @@ export async function addXp(
   }
 
   await user.save();
+
+  if (leveledUp) {
+    emitToUser(userId, 'level_up', {
+      level: user.level,
+      xp: user.xp,
+    });
+  }
 
   const xpToNextLevel = xpRequiredForLevel(user.level);
   const xpIntoCurrentLevel =

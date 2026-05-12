@@ -19,6 +19,8 @@ import { showSuccess, showError } from '../lib/toast';
 import { RelationshipWebModal } from '../components/RelationshipWebModal';
 import { ConsequenceFlashback } from '../components/ConsequenceFlashback';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import { LevelUpModal } from '../components/progression/LevelUpModal';
+import { useProgression } from '../hooks/useProgression';
 
 // Matches backend Chapter model
 interface Chapter {
@@ -118,6 +120,12 @@ export default function StoryReaderPage() {
   const [consequences, setConsequences] = useState<ConsequenceSeed[]>([]);
   const [flashbackQueue, setFlashbackQueue] = useState<ConsequenceSeed[]>([]);
   const [isRelationshipModalOpen, setIsRelationshipModalOpen] = useState(false);
+  const [prevLevel, setPrevLevel] = useState<number | null>(null);
+  const [levelUpModal, setLevelUpModal] = useState<{ show: boolean; newLevel: number; levelTitle?: string; xpToNext: number }>({
+    show: false,
+    newLevel: 0,
+    xpToNext: 0,
+  });
   
   const { isGenerating, isRetryingTools, isStreaming, streamingText, streamPhase, error, generateChapterStream, retryChapter, retryTools, clearError } = useChapterGeneration();
   
@@ -132,6 +140,7 @@ export default function StoryReaderPage() {
   const invalidateItems = useStoryStore(s => s.invalidateItems);
   const invalidateSpecialItems = useStoryStore(s => s.invalidateSpecialItems);
   const token = useAuthStore(s => s.token ?? undefined);
+  const { progress, refetch: refetchProgress } = useProgression();
   
   const protagonist = characters.find(c => c.role === 'protagonist') || null;
   const npcs = characters.filter(c => c.role === 'npc');
@@ -268,9 +277,25 @@ export default function StoryReaderPage() {
       loadRelationships(),
       loadActiveCombat(),
       loadConsequences(true),
+      refetchProgress(),
     ]);
     setCurrentChapterIdx(-1);
   };
+
+  // Check for level-up after each generation
+  useEffect(() => {
+    if (progress && prevLevel !== null && progress.level > prevLevel) {
+      setLevelUpModal({
+        show: true,
+        newLevel: progress.level,
+        levelTitle: progress.levelTitle,
+        xpToNext: progress.xpToNextLevel,
+      });
+    }
+    if (progress) {
+      setPrevLevel(progress.level);
+    }
+  }, [progress, prevLevel]);
 
   const loadRelationships = async () => {
     if (!playthroughId) return;
@@ -826,6 +851,13 @@ export default function StoryReaderPage() {
 
       {/* Flashback Banner */}
       <ConsequenceFlashback consequences={flashbackQueue} />
+      <LevelUpModal
+        isOpen={levelUpModal.show}
+        newLevel={levelUpModal.newLevel}
+        levelTitle={levelUpModal.levelTitle}
+        xpRequiredForNext={levelUpModal.xpToNext}
+        onClose={() => setLevelUpModal(prev => ({ ...prev, show: false }))}
+      />
     </div>
   );
 }

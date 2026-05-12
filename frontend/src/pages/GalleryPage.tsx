@@ -47,7 +47,7 @@ function CardDetailModal({ card, onClose }: { card: StoryCard | null; onClose: (
         >
           <X size={18} />
         </button>
-        <div className="aspect-[4/3] w-full md:w-3/5 shrink-0 bg-ink-950">
+        <div className="relative aspect-[4/3] w-full md:w-3/5 shrink-0 bg-ink-950">
           {card.imageUrl ? (
             <img
               src={card.imageUrl}
@@ -59,6 +59,11 @@ function CardDetailModal({ card, onClose }: { card: StoryCard | null; onClose: (
               <Image size={48} />
             </div>
           )}
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center select-none opacity-[0.07]">
+            <span className="text-white text-4xl font-bold -rotate-[20deg] tracking-[0.3em] drop-shadow-lg">
+              TERA-STORY
+            </span>
+          </div>
         </div>
         <div className="flex flex-col justify-between p-5">
           <div>

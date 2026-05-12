@@ -62,7 +62,7 @@ export async function buildFateThreadsGraph(
       chapterIndex: ch.chapterIndex,
       arcId: ch.arcId.toString(),
       arcIndex,
-      title: `Chapter ${ch.chapterIndex}`,
+      title: (ch.content ?? '').slice(0, 60).replace(/\n/g, ' ') || `Scene ${ch.chapterIndex}`,
       summary: (ch.content ?? '').slice(0, 150),
       isCurrentPath: ch.status === 'completed',
       depth: ch.chapterIndex,
