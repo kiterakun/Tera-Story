@@ -34,6 +34,7 @@
 - **📅 Daily Engagement**: Login streaks, daily quests, 7-day reward calendar, and streak freeze protection — build daily habits.
 - **🕸️ Fate Threads**: Interactive branch visualization showing story paths taken and ghost threads unexplored. Peek into "what if" alternate timelines.
 - **👥 Social Features**: Friend system, leaderboards, story sharing, and granular privacy controls — opt-in community layer.
+- **🗺️ Interactive World Map**: AI-generated world maps with 3-level zoom (continent → region → location), Voronoi-based territory rendering, dynamic location discovery during gameplay, and d3-powered SVG visualization — node-based travel between discovered locations with terrain type coloring and real-time SSE updates.
 
 ---
 

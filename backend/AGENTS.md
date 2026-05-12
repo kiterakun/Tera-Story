@@ -3,20 +3,20 @@
 **Part of:** Tera-Story monorepo
 
 ## OVERVIEW
-Express + MongoDB/Mongoose + TypeScript REST API serving the Tera-Story frontend. 14 route modules, AI agent system via Vercel AI SDK, game mechanic tools, and in-memory image generation queue.
+Express + MongoDB/Mongoose + TypeScript REST API serving the Tera-Story frontend. 15 route modules, AI agent system via Vercel AI SDK, game mechanic tools, in-memory image generation queue, and interactive world map generation.
 
 ## STRUCTURE
 ```
 backend/src/
-├── agents/          # AI agents: writer, image, context, support
+├── agents/          # AI agents: writer, image, context, support, map
+│   └── prompts/     # System prompts (writer, context, support, map)
 ├── config/          # DB connection + app configuration
-├── middleware/       # auth, errorHandler, upload, rateLimiter
-├── models/          # Mongoose schemas (User, World, Character, etc.)
+├── middleware/       # auth, errorHandler, validate, rateLimiter
+├── models/          # Mongoose schemas (User, World, Character, Continent, etc.)
 ├── providers/       # LLM provider configs (OpenAI, Gemini, Anthropic)
-├── routes/          # 14 route modules under /api
-├── seeds/           # Database seeding scripts
+├── routes/          # 15 route modules under /api
 ├── services/        # Business logic: story, combat, character, image
-├── tools/           # Game mechanic tools called by agents
+├── tools/           # Game mechanic tools called by agents (12 tools)
 ├── types/           # Shared TypeScript types/interfaces
 ├── utils/           # Utilities (logger, helpers)
 └── __tests__/       # Centralized test directory
@@ -26,12 +26,13 @@ backend/src/
 | Task | Location | Notes |
 |------|----------|-------|
 | Add API route | `routes/` | Mount in `src/index.ts` under `/api` |
-| Add AI agent | `agents/` | Export function with system prompt |
-| Add game tool | `tools/` | Must implement `execute()` method |
-| Add Mongoose model | `models/` | Export interface + schema + model |
+| Add AI agent | `agents/` | Export function with system prompt; use `prompts/` dir for prompts |
+| Add game tool | `tools/` | Must implement `execute()` method; factory function pattern `makeXxxTool()` |
+| Add Mongoose model | `models/` | Export interface + schema + model; soft-delete pre hooks |
 | Add business logic | `services/` | Called by routes and agents |
 | Add middleware | `middleware/` | Apply in `src/index.ts` |
 | Debug auth flow | `middleware/auth.ts` | JWT cookie-based |
+| Map features | `routes/map.ts` | Interactive world map — Voronoi regions, 3-level zoom |
 
 ## CONVENTIONS
 - **Routes**: Resource-based grouping (e.g., `worlds.ts`, `characters.ts`, `playthroughs.ts`)

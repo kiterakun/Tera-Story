@@ -15,6 +15,9 @@ import { Relationship } from '../models/Relationship';
 import { ConsequenceSeed } from '../models/ConsequenceSeed';
 import { CombatEncounter } from '../models/CombatEncounter';
 import type { IContextOutput } from '../types/agent.types';
+import { Continent } from '../models/Continent';
+import { Region } from '../models/Region';
+import { Location } from '../models/Location';
 
 export interface ContextAgentParams {
   playthroughId: string;
@@ -31,7 +34,7 @@ const SYSTEM_PROMPT = renderPrompt('context.prompt.md');
 
 export async function runContextAgent(
   params: ContextAgentParams
-): Promise<ContextOutput> {
+): Promise<ContextOutput & { geography?: Record<string, unknown> }> {
   const { playthroughId, currentArcId, playerChoice, model, language } = params;
 
   // 1. Fetch playthrough → world
@@ -41,8 +44,8 @@ export async function runContextAgent(
   const world = await World.findById(playthrough.worldId).lean();
   if (!world) throw new Error('World not found');
 
-  // 2. Fetch all characters, items, special items, relationships, consequences, combat in parallel
-  const [characters, items, specialItems, specialItemTemplates, relationships, allConsequences, activeCombatDoc] = await Promise.all([
+  // 2. Fetch all characters, items, special items, relationships, consequences, combat, continents in parallel
+  const [characters, items, specialItems, specialItemTemplates, relationships, allConsequences, activeCombatDoc, continents] = await Promise.all([
     Character.find({ playthroughId }).lean(),
     Item.find({ playthroughId }).lean(),
     SpecialItem.find({ playthroughId }).lean(),
@@ -50,7 +53,35 @@ export async function runContextAgent(
     Relationship.find({ playthroughId }).lean(),
     ConsequenceSeed.find({ playthroughId, activated: false }).lean(),
     CombatEncounter.findOne({ playthroughId, status: 'active' }).lean(),
+    Continent.find({ worldId: playthrough.worldId }).lean(),
   ]);
+
+  // 2b. Build geography data from first continent
+  const firstContinent = continents[0];
+  let geography: {
+    currentContinent: any;
+    regions: any[];
+    currentRegion: any;
+    nearbyLocations: any[];
+  } | undefined;
+  if (firstContinent) {
+    const continentRegions = await Region.find({ continentId: firstContinent._id }).lean();
+    const firstRegion = continentRegions[0];
+    let nearbyLocations: any[] = [];
+    if (firstRegion) {
+      nearbyLocations = await Location.find({
+        regionId: firstRegion._id,
+        playthroughId,
+        status: { $in: ['known', 'visited'] }
+      }).lean();
+    }
+    geography = {
+      currentContinent: firstContinent,
+      regions: continentRegions,
+      currentRegion: firstRegion || null,
+      nearbyLocations,
+    };
+  }
 
   // 3. Fetch recent chapters from current arc (limit 5 most recent)
   let recentChapters: Array<{ content: string; chapterIndex: number }> = [];
@@ -170,6 +201,16 @@ export async function runContextAgent(
     ? `ACTIVE COMBAT: ${activeCombatDoc.context}\nCombatants: ${activeCombatDoc.combatants.map((c) => `${c.name} (${c.side}) HP:${c.currentHp}/${c.maxHp}`).join(', ')}\nRounds played: ${activeCombatDoc.rounds.length}`
     : '';
 
+  let geographyInfo = '';
+  if (geography) {
+    geographyInfo = [
+      '=== GEOGRAPHY ===',
+      `Current Continent: ${geography.currentContinent.name} \u2014 ${geography.currentContinent.description} (${geography.currentContinent.terrainType})`,
+      geography.currentRegion ? `Current Region: ${geography.currentRegion.name} \u2014 ${geography.currentRegion.description} (danger level: ${geography.currentRegion.dangerLevel})` : null,
+      geography.nearbyLocations.length > 0 ? `Nearby Locations: ${geography.nearbyLocations.map((l: any) => `${l.name} (${l.type})`).join(', ')}` : null,
+    ].filter(Boolean).join('\n');
+  }
+
   const userPrompt = `
 Language: ${language}
 Player's choice: "${playerChoice}"
@@ -192,8 +233,7 @@ ${specialItemsInfo}
 === MATURE CONSEQUENCES (Butterfly Effect — incorporate these into the story when appropriate) ===
 ${consequencesInfo}
 
-${combatInfo ? `=== ACTIVE COMBAT ===\n${combatInfo}\n` : ''}
-=== PREVIOUS ARC SUMMARIES ===
+${combatInfo ? `=== ACTIVE COMBAT ===\n${combatInfo}\n` : ''}${geographyInfo ? `${geographyInfo}\n` : ''}=== PREVIOUS ARC SUMMARIES ===
 ${arcSummaries}
 
 === RECENT CHAPTERS ===
@@ -226,6 +266,24 @@ Based on the player's choice and the FULL story state above (including all items
     activeCharacters: z.array(z.string()),
     currentScene: z.string(),
     relevantPlotPoints: z.array(z.string()),
+    geography: z.object({
+      currentContinent: z.object({
+        name: z.string(),
+        description: z.string(),
+        terrainType: z.string(),
+      }).optional(),
+      currentRegion: z.object({
+        name: z.string(),
+        description: z.string(),
+        terrainType: z.string(),
+        dangerLevel: z.number(),
+      }).optional().nullable(),
+      nearbyLocations: z.array(z.object({
+        name: z.string(),
+        type: z.string(),
+        description: z.string(),
+      })).optional(),
+    }).optional(),
   });
 
   const validated = contextOutputSchema.parse(parsed);
@@ -332,6 +390,7 @@ Based on the player's choice and the FULL story state above (including all items
     relationships: relationshipRefs,
     matureConsequences: consequenceRefs,
     activeCombat,
+    geography,
     currentScene: validated.currentScene ?? '',
     relevantPlotPoints: validated.relevantPlotPoints ?? [],
     usage: usage ? { inputTokens: usage.inputTokens ?? 0, outputTokens: usage.outputTokens ?? 0 } : undefined,

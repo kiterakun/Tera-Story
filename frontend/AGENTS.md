@@ -3,7 +3,7 @@
 **Part of:** Tera-Story monorepo
 
 ## OVERVIEW
-React SPA built with Vite + TailwindCSS v4 + Zustand. Consumes backend REST API. Features: AI-generated interactive storytelling, world/character management, image generation, i18n (EN/VI).
+React SPA built with Vite + TailwindCSS v4 + Zustand + d3 (SVG maps). Consumes backend REST API. Features: AI-generated interactive storytelling, world/character management, interactive world map, image generation, i18n (EN/VI).
 
 ## STRUCTURE
 ```
@@ -26,10 +26,9 @@ frontend/src/
 | Add new page | `pages/` | Add to `App.tsx` React.lazy imports |
 | Add global state | `stores/` | Zustand with persist for settings/auth |
 | Add API call | `services/` | Axios instance configured at `services/api.ts` |
-| Add UI component | `components/` | Use Tailwind + Lucide icons |
-| Add translation | `i18n/` | Add key to all 2 language files |
+| Add interactive map | `services/mapApi.ts` | Map data types + API functions |
 | Debug auth state | `stores/authStore.ts` | JWT cookie-based auth |
-| Debug routing | `App.tsx` | Lazy-loaded route config |
+| Debug routing | `App.tsx` | Lazy-loaded route config; `/worlds/:id/map` for MapPage |
 
 ## CONVENTIONS
 - **Code splitting**: All pages loaded via `React.lazy()` + `<Suspense>`

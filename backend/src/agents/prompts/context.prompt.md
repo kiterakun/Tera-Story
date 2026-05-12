@@ -6,5 +6,10 @@ Output JSON schema:
   "filteredContext": "string",
   "activeCharacters": ["string"],
   "currentScene": "string",
-  "relevantPlotPoints": ["string"]
+  "relevantPlotPoints": ["string"],
+  "geography": {                                // optional
+    "currentContinent": { "name": "string", "description": "string", "terrainType": "string" },
+    "currentRegion": { "name": "string", "description": "string", "terrainType": "string", "dangerLevel": "number" },
+    "nearbyLocations": [{ "name": "string", "type": "string", "description": "string" }]
+  }
 }

@@ -5,6 +5,7 @@ import { Character } from '../models/Character';
 import { Item } from '../models/Item';
 import { SpecialItem } from '../models/SpecialItem';
 import { UserSettings } from '../models/UserSettings';
+import { World } from '../models/World';
 import { createUserProviderRegistry } from '../providers/registry';
 import { runContextAgent } from '../agents/contextAgent';
 import { runWriterAgent } from '../agents/writerAgent';
@@ -146,6 +147,24 @@ export async function generateChapter(
     metadata: { generatedAt: new Date() },
   });
   console.log(`[Story] Placeholder chapter created: id=${chapter._id}, arcId=${arc._id}, index=${chapterCount}`);
+
+  // Check if map exists for this world, generate if not
+  const continentCount = await import('../models/Continent').then(m =>
+    m.Continent.countDocuments({ worldId: playthrough.worldId })
+  );
+  if (continentCount === 0) {
+    const world = await World.findById(playthrough.worldId).lean();
+    if (world) {
+      // Fire map generation in background — don't await, let it complete async
+      const { generateWorldMap } = await import('../agents/mapAgent');
+      generateWorldMap({
+        worldId: playthrough.worldId.toString(),
+        worldDescription: world.description,
+        genre: world.genre,
+        model: registry.getSupportModel(),
+      }).catch(err => console.error('[MapGen] Background map generation failed:', err));
+    }
+  }
 
   try {
     // 6. Run context agent — analyse story state and produce outline

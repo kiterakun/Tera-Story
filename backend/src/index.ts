@@ -34,6 +34,7 @@ import fateThreadsRouter from './routes/fateThreads';
 import dailyRouter from './routes/daily';
 import friendsRouter from './routes/friends';
 import leaderboardRouter from './routes/leaderboard';
+import mapRouter from './routes/map';
 import privacyRouter from './routes/privacy';
 import shareRouter from './routes/share';
 import { authMiddleware } from './middleware/auth';
@@ -122,6 +123,9 @@ app.use('/api/playthroughs/:playthroughId/whispers', authMiddleware, whispersRou
 
 // Gallery Routes
 app.use('/api/gallery', authMiddleware, galleryRouter);
+
+// Map Routes
+app.use('/api/map', mapRouter);
 
 // Achievements Routes
 app.use('/api/achievements', authMiddleware, achievementsRouter);
