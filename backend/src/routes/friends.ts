@@ -58,7 +58,9 @@ router.post('/request', async (req: AuthRequest, res: Response): Promise<void> =
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';
     const status = ['User not found', 'Cannot friend yourself', 'Friend limit reached', 'Friendship already exists', 'Cannot send friend request', 'User does not allow friend requests'].includes(message) ? 400 : 500;
-    console.error('Send friend request error:', err);
+    if (status === 500) {
+      console.error('Send friend request error:', err);
+    }
     res.status(status).json({ status: 'error', message });
   }
 });
@@ -73,7 +75,9 @@ router.put('/:requestId/accept', async (req: AuthRequest, res: Response): Promis
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';
     const status = message === 'Friend request not found' ? 404 : message === 'Friend limit reached' ? 400 : 500;
-    console.error('Accept friend request error:', err);
+    if (status === 500) {
+      console.error('Accept friend request error:', err);
+    }
     res.status(status).json({ status: 'error', message });
   }
 });
@@ -88,7 +92,9 @@ router.put('/:requestId/reject', async (req: AuthRequest, res: Response): Promis
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';
     const status = message === 'Friend request not found' ? 404 : 500;
-    console.error('Reject friend request error:', err);
+    if (status === 500) {
+      console.error('Reject friend request error:', err);
+    }
     res.status(status).json({ status: 'error', message });
   }
 });
@@ -103,7 +109,9 @@ router.delete('/:friendId', async (req: AuthRequest, res: Response): Promise<voi
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';
     const status = message === 'Friendship not found' ? 404 : 500;
-    console.error('Remove friend error:', err);
+    if (status === 500) {
+      console.error('Remove friend error:', err);
+    }
     res.status(status).json({ status: 'error', message });
   }
 });
@@ -118,7 +126,9 @@ router.post('/:targetUserId/block', async (req: AuthRequest, res: Response): Pro
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';
     const status = message === 'Cannot block yourself' || message === 'User not found' ? 400 : 500;
-    console.error('Block user error:', err);
+    if (status === 500) {
+      console.error('Block user error:', err);
+    }
     res.status(status).json({ status: 'error', message });
   }
 });
@@ -133,7 +143,9 @@ router.delete('/:targetUserId/unblock', async (req: AuthRequest, res: Response):
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';
     const status = message === 'Blocked user not found' ? 404 : 500;
-    console.error('Unblock user error:', err);
+    if (status === 500) {
+      console.error('Unblock user error:', err);
+    }
     res.status(status).json({ status: 'error', message });
   }
 });
@@ -152,7 +164,9 @@ router.get('/search', async (req: AuthRequest, res: Response): Promise<void> => 
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';
     const status = message === 'Search query must be at least 3 characters' ? 400 : 500;
-    console.error('Search users error:', err);
+    if (status === 500) {
+      console.error('Search users error:', err);
+    }
     res.status(status).json({ status: 'error', message });
   }
 });

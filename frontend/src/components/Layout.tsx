@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { LayoutGrid, Trophy, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useUIStore } from '../stores/uiStore';
+import { useStoryStore } from '../stores/storyStore';
 import { useTranslation } from '../i18n';
 import logo from '../assets/logo.png';
 
@@ -9,9 +11,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const t = useTranslation();
   const { user, logout } = useAuthStore();
   const { theme, toggleTheme } = useUIStore();
+  const currentPlaythrough = useStoryStore(s => s.currentPlaythrough);
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -19,6 +23,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
+
+  const playthroughId = currentPlaythrough?._id;
+
+  const closeDropdowns = () => {
+    setMenuOpen(false);
+    setMoreOpen(false);
+  };
+
+  const navLinkClass = (path: string) =>
+    `px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+      isActive(path)
+        ? 'bg-accent-600/10 text-accent-400'
+        : 'text-ink-200 hover:text-ink-100 hover:bg-ink-800'
+    }`;
 
   return (
     <div className="min-h-screen bg-ink-950 text-ink-200">
@@ -35,27 +53,73 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
-            <Link
-              to="/worlds"
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                isActive('/worlds')
-                  ? 'bg-accent-600/10 text-accent-400'
-                  : 'text-ink-200 hover:text-ink-100 hover:bg-ink-800'
-              }`}
-            >
+            <Link to="/worlds" className={navLinkClass('/worlds')}>
               {t.layout.worlds}
             </Link>
-            <Link
-              to="/settings"
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                isActive('/settings')
-                  ? 'bg-accent-600/10 text-accent-400'
-                  : 'text-ink-200 hover:text-ink-100 hover:bg-ink-800'
-              }`}
-            >
-              {t.layout.settings}
+            <Link to="/gallery" className={navLinkClass('/gallery')}>
+              <LayoutGrid className="w-4 h-4 inline-block mr-1.5 -mt-0.5" />
+              {t.layout.gallery}
             </Link>
-            
+            <Link to="/achievements" className={navLinkClass('/achievements')}>
+              <Trophy className="w-4 h-4 inline-block mr-1.5 -mt-0.5" />
+              {t.layout.achievements}
+            </Link>
+
+            {/* More dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setMoreOpen(!moreOpen)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1 ${
+                  moreOpen
+                    ? 'bg-accent-600/10 text-accent-400'
+                    : 'text-ink-200 hover:text-ink-100 hover:bg-ink-800'
+                }`}
+              >
+                {t.layout.more}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${moreOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {moreOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setMoreOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-48 bg-ink-800 border border-ink-700 rounded-lg shadow-xl z-20 py-1 animate-fade-in">
+                    {playthroughId && (
+                      <>
+                        <Link
+                          to={`/chronicle/${playthroughId}`}
+                          onClick={() => setMoreOpen(false)}
+                          className="block px-4 py-2 text-sm text-ink-200 hover:text-ink-100 hover:bg-ink-700 transition-colors"
+                        >
+                          {t.layout.chronicle}
+                        </Link>
+                        <Link
+                          to={`/play/${playthroughId}/threads`}
+                          onClick={() => setMoreOpen(false)}
+                          className="block px-4 py-2 text-sm text-ink-200 hover:text-ink-100 hover:bg-ink-700 transition-colors"
+                        >
+                          {t.layout.fateThreads}
+                        </Link>
+                        <div className="border-t border-ink-700 my-1" />
+                      </>
+                    )}
+                    <Link
+                      to="/friends"
+                      onClick={() => setMoreOpen(false)}
+                      className="block px-4 py-2 text-sm text-ink-200 hover:text-ink-100 hover:bg-ink-700 transition-colors"
+                    >
+                      {t.layout.friends}
+                    </Link>
+                    <Link
+                      to="/settings"
+                      onClick={() => setMoreOpen(false)}
+                      className="block px-4 py-2 text-sm text-ink-200 hover:text-ink-100 hover:bg-ink-700 transition-colors"
+                    >
+                      {t.layout.settings}
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
+
             <div className="w-px h-6 bg-ink-700 mx-2" />
 
             {/* Theme toggle */}
@@ -126,20 +190,65 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Link
               to="/worlds"
               className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive('/worlds') ? 'bg-accent-600/10 text-accent-400' : 'text-ink-200 hover:bg-ink-800'}`}
-              onClick={() => setMenuOpen(false)}
+              onClick={closeDropdowns}
             >
               {t.layout.worlds}
             </Link>
             <Link
+              to="/gallery"
+              className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive('/gallery') ? 'bg-accent-600/10 text-accent-400' : 'text-ink-200 hover:bg-ink-800'}`}
+              onClick={closeDropdowns}
+            >
+              <LayoutGrid className="w-4 h-4 inline-block mr-1.5 -mt-0.5" />
+              {t.layout.gallery}
+            </Link>
+            <Link
+              to="/achievements"
+              className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive('/achievements') ? 'bg-accent-600/10 text-accent-400' : 'text-ink-200 hover:bg-ink-800'}`}
+              onClick={closeDropdowns}
+            >
+              <Trophy className="w-4 h-4 inline-block mr-1.5 -mt-0.5" />
+              {t.layout.achievements}
+            </Link>
+
+            {playthroughId && (
+              <>
+                <div className="border-t border-ink-700 my-2" />
+                <Link
+                  to={`/chronicle/${playthroughId}`}
+                  className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive('/chronicle') ? 'bg-accent-600/10 text-accent-400' : 'text-ink-200 hover:bg-ink-800'}`}
+                  onClick={closeDropdowns}
+                >
+                  {t.layout.chronicle}
+                </Link>
+                <Link
+                  to={`/play/${playthroughId}/threads`}
+                  className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive('/play') ? 'bg-accent-600/10 text-accent-400' : 'text-ink-200 hover:bg-ink-800'}`}
+                  onClick={closeDropdowns}
+                >
+                  {t.layout.fateThreads}
+                </Link>
+              </>
+            )}
+
+            <div className="border-t border-ink-700 my-2" />
+            <Link
+              to="/friends"
+              className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive('/friends') ? 'bg-accent-600/10 text-accent-400' : 'text-ink-200 hover:bg-ink-800'}`}
+              onClick={closeDropdowns}
+            >
+              {t.layout.friends}
+            </Link>
+            <Link
               to="/settings"
               className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive('/settings') ? 'bg-accent-600/10 text-accent-400' : 'text-ink-200 hover:bg-ink-800'}`}
-              onClick={() => setMenuOpen(false)}
+              onClick={closeDropdowns}
             >
               {t.layout.settings}
             </Link>
             {user && (
               <button
-                onClick={() => { handleLogout(); setMenuOpen(false); }}
+                onClick={() => { handleLogout(); closeDropdowns(); }}
                 className="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-ink-200 hover:bg-ink-800 transition-colors"
               >
                 {t.layout.logout} ({user.username})

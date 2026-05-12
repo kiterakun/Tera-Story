@@ -1,6 +1,12 @@
 const en = {
   layout: {
     worlds: 'Worlds',
+    gallery: 'Gallery',
+    achievements: 'Achievements',
+    more: 'More',
+    chronicle: 'Chronicle',
+    fateThreads: 'Fate Threads',
+    friends: 'Friends',
     settings: 'Settings',
     logout: 'Logout',
     switchToLight: 'Switch to light mode',

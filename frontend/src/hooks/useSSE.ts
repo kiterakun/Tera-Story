@@ -7,6 +7,8 @@ interface UseSSEOptions {
   onChapterCompleted?: SSEEventHandler;
   onCombatResolved?: SSEEventHandler;
   onEntityUpdated?: SSEEventHandler;
+  onAchievementUnlock?: SSEEventHandler;
+  onLevelUp?: SSEEventHandler;
 }
 
 /**
@@ -83,6 +85,46 @@ export function useSSE(
           const data = JSON.parse(e.data);
           console.log('[SSE] Entity updated:', data);
           optionsRef.current.onEntityUpdated?.(data);
+        } catch { /* ignore */ }
+      });
+
+      es.addEventListener('character:created', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          console.log('[SSE] Character created:', data);
+          optionsRef.current.onEntityUpdated?.(data);
+        } catch { /* ignore */ }
+      });
+
+      es.addEventListener('item:created', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          console.log('[SSE] Item created:', data);
+          optionsRef.current.onEntityUpdated?.(data);
+        } catch { /* ignore */ }
+      });
+
+      es.addEventListener('special_item:created', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          console.log('[SSE] Special item created:', data);
+          optionsRef.current.onEntityUpdated?.(data);
+        } catch { /* ignore */ }
+      });
+
+      es.addEventListener('achievement_unlock', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          console.log('[SSE] Achievement unlocked:', data);
+          optionsRef.current.onAchievementUnlock?.(data);
+        } catch { /* ignore */ }
+      });
+
+      es.addEventListener('level_up', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          console.log('[SSE] Level up:', data);
+          optionsRef.current.onLevelUp?.(data);
         } catch { /* ignore */ }
       });
 

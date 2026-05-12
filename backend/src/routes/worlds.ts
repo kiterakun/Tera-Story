@@ -5,7 +5,7 @@ import { validate } from '../middleware/validate';
 import { World } from '../models/World';
 import { Playthrough } from '../models/Playthrough';
 import { SpecialItemTemplate } from '../models/SpecialItemTemplate';
-import { WORLD_TEMPLATES } from '../seeds/worldTemplates';
+import { WORLD_TEMPLATES } from '../seed/worldTemplates';
 import playthroughsRouter from './playthroughs';
 import { queueImageGeneration } from '../services/imageService';
 

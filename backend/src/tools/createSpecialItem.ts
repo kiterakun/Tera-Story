@@ -30,6 +30,19 @@ export function makeCreateSpecialItemTool(playthroughId: string, worldId: string
         .describe('REQUIRED: Key-value pairs matching the template field definitions. Keys must match field names from the template. Values must match field types: string for text, number for number, one of the allowed options for enum fields. Example: { "Power": 85, "Element": "Fire", "Rank": "B" }'),
     }),
     execute: async ({ name, description, category, rarity, ownerName, customFields }) => {
+      const existingItem = await SpecialItem.findOne({
+        playthroughId,
+        name,
+      }).lean();
+      if (existingItem) {
+        return validateToolOutput({
+          specialItemId: existingItem._id.toString(),
+          name,
+          category: existingItem.category,
+          templateMatched: !!existingItem.templateId,
+        }, createSpecialItemOutput, 'createSpecialItem');
+      }
+
       // 1. Resolve worldId from playthrough
       const playthrough = await Playthrough.findById(playthroughId).lean();
       if (!playthrough) {

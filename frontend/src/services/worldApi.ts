@@ -1,40 +1,7 @@
 import { api } from './api';
+import type { World, SpecialItemTemplate } from '@/types';
 
-export interface ResourceTemplate {
-  key: string;
-  type: 'number' | 'text' | 'progress' | 'enum';
-  min?: number;
-  max?: number;
-  defaultValue?: string | number;
-  displayFormat?: string;
-  options?: string[];
-}
-
-export interface SpecialItemFieldDefinition {
-  name: string;
-  type: 'text' | 'number' | 'enum';
-  options?: string[];
-  required?: boolean;
-}
-
-export interface SpecialItemTemplate {
-  _id?: string;
-  worldId?: string;
-  category: string;
-  description: string;
-  fields: SpecialItemFieldDefinition[];
-}
-
-export interface World {
-  _id: string;
-  name: string;
-  description: string;
-  genre: 'fantasy' | 'sci-fi' | 'wuxia' | 'modern' | 'custom';
-  imageUrl?: string;
-  resourceTemplates: ResourceTemplate[];
-  createdAt: string;
-  updatedAt: string;
-}
+export type { World, ResourceTemplate, SpecialItemTemplate, SpecialItemFieldDefinition } from '@/types';
 
 export async function listWorlds(): Promise<World[]> {
   const { data } = await api.get('/worlds');

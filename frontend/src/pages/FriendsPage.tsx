@@ -158,11 +158,12 @@ export default function FriendsPage() {
 
   useEffect(() => {
     const run = async () => {
-      if (debouncedQuery.trim()) {
+      if (debouncedQuery.trim().length >= 3) {
         await searchUsers(debouncedQuery);
         setShowDropdown(true);
       } else {
         setShowDropdown(false);
+        searchUsers(''); // Clear results
       }
     };
     run();

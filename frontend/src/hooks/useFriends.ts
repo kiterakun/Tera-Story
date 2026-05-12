@@ -89,7 +89,7 @@ export function useFriends() {
   }, [fetchFriends]);
 
   const searchUsers = useCallback(async (query: string) => {
-    if (!query.trim()) {
+    if (query.trim().length < 3) {
       setSearchResults([]);
       return;
     }

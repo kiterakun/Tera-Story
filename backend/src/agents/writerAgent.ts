@@ -12,6 +12,7 @@ import { makeGenerateChoicesTool } from '../tools/generateChoices';
 import { makeUpdateRelationshipTool } from '../tools/updateRelationship';
 import { makePlantConsequenceTool, makeActivateConsequenceTool } from '../tools/plantConsequence';
 import { makeInitiateCombatTool } from '../tools/initiateCombat';
+import { emit } from '../services/sseManager';
 
 export interface WriterAgentParams {
   contextOutput: ContextOutput;
@@ -65,7 +66,7 @@ export async function runWriterAgent(
     userId,
     model,
     language,
-    maxSteps = 2,
+    maxSteps = 1,
     skipPass1 = false,
     onToken,
     onToolsStart,
@@ -234,7 +235,18 @@ Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[speci
     activateConsequence: makeActivateConsequenceTool(playthroughId, chapterId),
     initiateCombat: makeInitiateCombatTool(playthroughId, chapterId),
     summarizeArc: makeSummarizeArcTool(),
-    generateChoices: makeGenerateChoicesTool(chapterId),
+  };
+
+  const choicesTool = makeGenerateChoicesTool(chapterId);
+
+  const TOOL_SSE_EVENTS: Record<string, string> = {
+    createCharacter: 'character:created',
+    createItem: 'item:created',
+    createSpecialItem: 'special_item:created',
+    updateStats: 'stats:updated',
+    updateEntityStatus: 'entity:updated',
+    updateRelationship: 'relationship:updated',
+    initiateCombat: 'combat:initiated',
   };
 
   const toolsPrompt = `
@@ -277,7 +289,6 @@ Based on the chapter above:
 8. Activate any MATURE CONSEQUENCES that were incorporated into this chapter.
 9. Initiate combat if a fight scene begins in this chapter.
 10. Call summarizeArc ONLY if a major story arc concluded.
-11. MUST call generateChoices with 3-4 meaningful choices for the reader.
 
 Call all applicable tools NOW in ONE step. Do NOT output any text — ONLY tool calls.`.trim();
 
@@ -295,8 +306,53 @@ Call all applicable tools NOW in ONE step. Do NOT output any text — ONLY tool 
   });
 
   // Wait for all tool calls to complete
-  await toolStream.steps;
+  const toolSteps = await toolStream.steps;
+  for (const step of toolSteps) {
+    if (!('toolResults' in step) || !Array.isArray(step.toolResults)) continue;
+
+    for (const toolResult of step.toolResults) {
+      if (
+        typeof toolResult !== 'object' ||
+        toolResult === null ||
+        !('toolName' in toolResult) ||
+        typeof toolResult.toolName !== 'string'
+      ) {
+        continue;
+      }
+
+      const eventName = TOOL_SSE_EVENTS[toolResult.toolName];
+      if (eventName) {
+        emit(playthroughId, eventName, {
+          playthroughId,
+          tool: toolResult.toolName,
+          result: 'result' in toolResult ? toolResult.result : undefined,
+        });
+      }
+    }
+  }
+
   const pass2Usage = await toolStream.usage;
+
+  const choicesPrompt = `
+Based on the completed chapter below, call generateChoices with 3-4 meaningful choices for the reader.
+Language: ${language}. ALL choices must be in ${language}.
+
+=== CHAPTER CONTENT ===
+${chapterContent}
+
+Do NOT output any text — ONLY call generateChoices.`.trim();
+
+  const choicesStream = streamText({
+    model,
+    system: TOOLS_SYSTEM_PROMPT,
+    prompt: choicesPrompt,
+    tools: { generateChoices: choicesTool },
+    stopWhen: stepCountIs(1),
+  });
+
+  // Run generateChoices after all other tools complete
+  await choicesStream.steps;
+  const choicesUsage = await choicesStream.usage;
 
   // Mark tools as completed & notify caller
   await Chapter.findByIdAndUpdate(chapterId, { toolsStatus: 'completed' });
@@ -317,6 +373,12 @@ Call all applicable tools NOW in ONE step. Do NOT output any text — ONLY tool 
   if (p2Usage) {
     totalPromptTokens += p2Usage.promptTokens || p2Usage.inputTokens || 0;
     totalCompletionTokens += p2Usage.completionTokens || p2Usage.outputTokens || 0;
+  }
+
+  const p3Usage = choicesUsage as { promptTokens?: number; inputTokens?: number; completionTokens?: number; outputTokens?: number } | undefined;
+  if (p3Usage) {
+    totalPromptTokens += p3Usage.promptTokens || p3Usage.inputTokens || 0;
+    totalCompletionTokens += p3Usage.completionTokens || p3Usage.outputTokens || 0;
   }
 
   const totalTokens = totalPromptTokens + totalCompletionTokens;

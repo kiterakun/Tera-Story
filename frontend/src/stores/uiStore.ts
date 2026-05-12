@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { AppTheme } from '@/types';
 
-export type AppTheme = 'light' | 'dark' | 'cyberpunk' | 'sepia' | 'abyssal';
+export type { AppTheme };
 
 interface UIState {
   theme: AppTheme;

@@ -20,6 +20,17 @@ export function makeCreateItemTool(playthroughId: string, worldId: string, userI
         .describe('Name of the character who owns this item'),
     }),
     execute: async ({ name, description, rarity, ownerName }) => {
+      const existingItem = await Item.findOne({
+        playthroughId,
+        name,
+      }).lean();
+      if (existingItem) {
+        return validateToolOutput({
+          itemId: existingItem._id.toString(),
+          name,
+        }, createItemOutput, 'createItem');
+      }
+
       let ownerId: string | undefined;
 
       if (ownerName) {

@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { decrypt } from "../services/encryption";
 import { IAgentConfig } from "../types/user.types";
+import { emit } from "../services/sseManager";
 
 const UPLOADS_BASE = path.join(__dirname, "../../uploads/images");
 
@@ -118,6 +119,28 @@ function buildImagePrompt(
   }
 }
 
+async function derivePlaythroughId(entityType: EntityType, entityId: string): Promise<string | undefined> {
+  if (entityType === "character") {
+    const { Character } = await import("../models/Character");
+    const character = await Character.findById(entityId).select("playthroughId").lean();
+    return character?.playthroughId?.toString();
+  }
+
+  if (entityType === "item") {
+    const { Item } = await import("../models/Item");
+    const item = await Item.findById(entityId).select("playthroughId").lean();
+    return item?.playthroughId?.toString();
+  }
+
+  if (entityType === "special-item") {
+    const { SpecialItem } = await import("../models/SpecialItem");
+    const specialItem = await SpecialItem.findById(entityId).select("playthroughId").lean();
+    return specialItem?.playthroughId?.toString();
+  }
+
+  return undefined;
+}
+
 /**
  * Generate an image via DALL-E compatible API (fire-and-forget).
  * Prompt is built internally from entity details + world context.
@@ -231,14 +254,12 @@ export async function generateImage(
     console.log(
       `[Image] Generated ${entityType}/${entityId}: ${relativeUrl} (${size})`,
     );
-    // TODO: SSE — emit "image:completed" event here.
-    // The generateImage function does not currently receive the playthroughId.
-    // To enable SSE for image completion, either:
-    //   1. Add playthroughId field to ImageTask model and pass through the queue chain
-    //   2. Or derive playthroughId from entityId via a lookup
-    // Once playthroughId is available, emit:
-    //   import { emit } from '../services/sseManager';
-    //   emit(playthroughId, 'image:completed', { entityType, entityId, imageUrl: relativeUrl });
+
+    // Derive playthroughId from entity lookup for SSE
+    const derivedPlaythroughId = await derivePlaythroughId(entityType, entityId);
+    if (derivedPlaythroughId) {
+      emit(derivedPlaythroughId, 'image:completed', { entityType, entityId, imageUrl: relativeUrl });
+    }
   } catch (error) {
     console.error(
       `Image generation failed for ${entityType}/${entityId}:`,

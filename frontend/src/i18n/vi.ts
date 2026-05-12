@@ -3,6 +3,12 @@ import type { Translations } from './en';
 const vi: Translations = {
   layout: {
     worlds: 'Thế giới',
+    gallery: 'Bộ sưu tập',
+    achievements: 'Thành tựu',
+    more: 'Thêm',
+    chronicle: 'Biên niên sử',
+    fateThreads: 'Sợi định mệnh',
+    friends: 'Bạn bè',
     settings: 'Cài đặt',
     logout: 'Đăng xuất',
     switchToLight: 'Chuyển sang chế độ sáng',

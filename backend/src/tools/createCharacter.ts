@@ -22,6 +22,18 @@ export function makeCreateCharacterTool(
       ),
     }),
     execute: async ({ name, description, role, dynamicStats: aiStats }) => {
+      const existingCharacter = await Character.findOne({
+        playthroughId,
+        name,
+        status: 'active',
+      }).lean();
+      if (existingCharacter) {
+        return validateToolOutput({
+          characterId: existingCharacter._id.toString(),
+          name,
+        }, createCharacterOutput, 'createCharacter');
+      }
+
       // Get default stats from world templates
       const defaultStats = await initializeDynamicStats(worldId);
 
