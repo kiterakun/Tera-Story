@@ -72,7 +72,7 @@ function CardDetailModal({ card, onClose }: { card: StoryCard | null; onClose: (
             >
               {RARITY_LABELS[card.rarity]}
             </span>
-            <h2 className="mt-2 text-xl font-bold text-gold">{card.title}</h2>
+            <h2 className="mt-2 text-xl font-bold text-accent-400">{card.title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-narration">{card.description}</p>
             <p className="mt-3 text-xs text-ink-500">
               {new Date(card.unlockedAt).toLocaleDateString('vi-VN')}
@@ -81,7 +81,7 @@ function CardDetailModal({ card, onClose }: { card: StoryCard | null; onClose: (
           <div className="mt-4 flex gap-2">
             <button
               onClick={handleShare}
-              className="flex items-center gap-2 rounded-lg bg-gold px-4 py-2 text-sm font-medium text-ink-950 hover:bg-gold/80 transition-colors"
+              className="flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white hover:bg-accent-500 shadow-sm transition-colors"
             >
               <Share2 size={16} /> Chia sẻ
             </button>
@@ -146,7 +146,7 @@ export default function GalleryPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <p className="text-red-400">{error}</p>
-        <button onClick={refetch} className="mt-4 rounded-lg bg-gold px-4 py-2 text-sm text-ink-950 hover:bg-gold/80">
+        <button onClick={refetch} className="mt-4 rounded-lg bg-accent-600 px-4 py-2 text-sm text-white hover:bg-accent-500 shadow-sm transition-all">
           Thử lại
         </button>
       </div>
@@ -160,7 +160,7 @@ export default function GalleryPage() {
         <p className="mt-4 text-lg text-narration">Bạn chưa có thẻ bài nào.</p>
         <p className="mt-1 text-sm text-ink-500">Hãy bắt đầu một cuộc phiêu lưu để thu thập thẻ!</p>
         {isLoading && (
-          <div className="mt-4 h-5 w-5 animate-spin rounded-full border-2 border-gold border-t-transparent" />
+          <div className="mt-4 h-5 w-5 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
         )}
       </div>
     );
@@ -170,7 +170,7 @@ export default function GalleryPage() {
     <div className="p-4 md:p-6">
       {/* Stats header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gold">Bộ Sưu Tập Thẻ Bài</h1>
+        <h1 className="text-2xl font-bold text-accent-400">Bộ Sưu Tập Thẻ Bài</h1>
         <p className="mt-1 text-sm text-narration">
           {stats
             ? `${stats.totalCards} thẻ (${stats.byRarity?.common || 0} Thường, ${stats.byRarity?.uncommon || 0} Cao cấp, ${stats.byRarity?.rare || 0} Hiếm, ${stats.byRarity?.epic || 0} Sử thi)`
@@ -192,7 +192,7 @@ export default function GalleryPage() {
             }
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               (r === 'all' && !filters.rarity) || filters.rarity === r
-                ? 'bg-gold text-ink-950'
+                ? 'bg-accent-600 text-white shadow-sm'
                 : 'bg-ink-800 text-ink-400 hover:bg-ink-700'
             }`}
           >

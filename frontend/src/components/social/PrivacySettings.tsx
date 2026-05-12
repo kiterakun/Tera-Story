@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FC } from 'react';
 import { api } from '../../services/api';
 import { showSuccess, showError } from '../../lib/toast';
-import { Lock, Globe, Users, Eye, BookOpen, Award, UserPlus, Trophy, Shield } from 'lucide-react';
+import { Lock, Globe, Users, Eye, BookOpen, Award, UserPlus, Trophy } from 'lucide-react';
 import { useTranslation } from '../../i18n';
 
 export type Visibility = 'private' | 'friends' | 'public';

@@ -7,7 +7,7 @@ const MAX_FRIENDS = 200;
 interface BasicUserInfo {
   userId: string;
   username: string;
-  displayName?: string;
+  displayName: string;
   avatar?: string;
   level: number;
 }
@@ -33,7 +33,7 @@ function userToBasicInfo(user: {
   return {
     userId: user._id.toString(),
     username: user.username,
-    displayName: user.displayName,
+    displayName: user.displayName || user.username,
     avatar: user.avatar,
     level: user.level ?? 1,
   };

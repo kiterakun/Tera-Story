@@ -42,12 +42,12 @@ function AchievementCard({
         {isHidden ? (
           <HelpCircle size={28} className="text-ink-600 shrink-0" />
         ) : (
-          <div className={`rounded-lg p-1.5 shrink-0 ${achievement.unlocked ? 'bg-gold/20 text-gold' : 'bg-ink-800 text-ink-600'}`}>
+          <div className={`rounded-lg p-1.5 shrink-0 ${achievement.unlocked ? 'bg-accent-600/10 text-accent-400' : 'bg-ink-800 text-ink-600'}`}>
             <Trophy size={20} />
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <h3 className={`text-sm font-semibold ${achievement.unlocked ? 'text-gold' : 'text-ink-500'}`}>
+          <h3 className={`text-sm font-semibold ${achievement.unlocked ? 'text-accent-400' : 'text-ink-500'}`}>
             {isHidden ? 'Thành tựu ẩn' : achievement.name.vi}
           </h3>
           {!isHidden && (
@@ -59,7 +59,7 @@ function AchievementCard({
             <div className="mt-2">
               <div className="h-1.5 w-full rounded-full bg-ink-800">
                 <div
-                  className="h-full rounded-full bg-gold transition-all"
+                  className="h-full rounded-full bg-accent-500 transition-all"
                   style={{
                     width: `${Math.min(100, (achievement.progress / achievement.unlockCriteria.threshold) * 100)}%`,
                   }}
@@ -80,7 +80,7 @@ function AchievementCard({
           )}
         </div>
         {achievement.xpReward > 0 && (
-          <span className="shrink-0 rounded-full bg-ink-800 px-2 py-0.5 text-[10px] font-medium text-gold">
+          <span className="shrink-0 rounded-full bg-ink-800 px-2 py-0.5 text-[10px] font-medium text-accent-400">
             +{achievement.xpReward} XP
           </span>
         )}
@@ -102,7 +102,7 @@ export default function AchievementsPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <p className="text-red-400">{error}</p>
-        <button onClick={refetch} className="mt-4 rounded-lg bg-gold px-4 py-2 text-sm text-ink-950 hover:bg-gold/80">
+        <button onClick={refetch} className="mt-4 rounded-lg bg-accent-600 px-4 py-2 text-sm text-white hover:bg-accent-500 shadow-sm transition-all">
           Thử lại
         </button>
       </div>
@@ -116,7 +116,7 @@ export default function AchievementsPage() {
         <p className="mt-4 text-lg text-narration">Chưa có thành tựu nào.</p>
         <p className="mt-1 text-sm text-ink-500">Hoàn thành một cảnh truyện để bắt đầu!</p>
         {isLoading && (
-          <div className="mt-4 h-5 w-5 animate-spin rounded-full border-2 border-gold border-t-transparent" />
+          <div className="mt-4 h-5 w-5 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
         )}
       </div>
     );
@@ -126,7 +126,7 @@ export default function AchievementsPage() {
     <div className="p-4 md:p-6">
       {/* Stats header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gold">Thành Tựu</h1>
+        <h1 className="text-2xl font-bold text-accent-400">Thành Tựu</h1>
         {stats && (
           <p className="mt-1 text-sm text-narration">
             {stats.unlocked}/{stats.total} đã mở khóa — {stats.percentComplete}% hoàn thành
@@ -148,7 +148,7 @@ export default function AchievementsPage() {
               }
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 (cat === 'all' && !filters.category) || filters.category === cat
-                  ? 'bg-gold text-ink-950'
+                  ? 'bg-accent-600 text-white shadow-sm'
                   : 'bg-ink-800 text-ink-400 hover:bg-ink-700'
               }`}
             >
@@ -195,11 +195,11 @@ export default function AchievementsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center gap-4">
-              <div className={`rounded-xl p-3 ${selectedAchievement.unlocked ? 'bg-gold/20 text-gold' : 'bg-ink-800 text-ink-600'}`}>
+              <div className={`rounded-xl p-3 ${selectedAchievement.unlocked ? 'bg-accent-600/10 text-accent-400' : 'bg-ink-800 text-ink-600'}`}>
                 <Trophy size={32} />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gold">{selectedAchievement.name.vi}</h2>
+                <h2 className="text-xl font-bold text-accent-400">{selectedAchievement.name.vi}</h2>
                 <p className="text-sm text-narration">{selectedAchievement.description.vi}</p>
               </div>
             </div>
@@ -208,7 +208,7 @@ export default function AchievementsPage() {
               <span className={`rounded-full px-2 py-0.5 text-xs ${RARITY_COLORS[selectedAchievement.rarity]}`}>
                 {selectedAchievement.rarity}
               </span>
-              <span className="text-gold">+{selectedAchievement.xpReward} XP</span>
+              <span className="text-accent-400">+{selectedAchievement.xpReward} XP</span>
             </div>
             {selectedAchievement.unlocked && selectedAchievement.unlockedAt && (
               <p className="mt-4 text-xs text-ink-500">

@@ -9,10 +9,8 @@ export interface FriendUser {
 }
 
 export interface FriendRequest {
-  _id: string;
-  from: FriendUser;
-  to: FriendUser;
-  status: 'pending' | 'accepted' | 'rejected' | 'blocked';
+  requestId: string;
+  user: FriendUser;
   createdAt: string;
 }
 
