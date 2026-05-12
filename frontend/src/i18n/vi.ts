@@ -309,6 +309,7 @@ const vi: Translations = {
   settings: {
     title: 'Cài đặt',
     general: 'Chung',
+    privacy: 'Quyền riêng tư',
     language: 'Ngôn ngữ',
     theme: 'Giao diện',
     themeDark: 'Tối',
@@ -337,6 +338,27 @@ const vi: Translations = {
     imageAgent: 'Agent Hình ảnh',
     imageAgentDesc: 'Tạo hình ảnh cảnh và nhân vật.',
   },
+
+  privacySettings: {
+    profileVisibility: 'Hiển thị trang cá nhân',
+    profileVisibilityDesc: 'Ai có thể xem trang cá nhân của bạn',
+    storyVisibility: 'Hiển thị story',
+    storyVisibilityDesc: 'Ai có thể xem story của bạn',
+    achievementVisibility: 'Hiển thị thành tựu',
+    achievementVisibilityDesc: 'Ai có thể xem thành tựu của bạn',
+    allowFriendRequests: 'Cho phép lời mời kết bạn',
+    allowFriendRequestsDesc: 'Người khác có thể gửi lời mời kết bạn cho bạn',
+    showOnLeaderboard: 'Hiện trên bảng xếp hạng',
+    showOnLeaderboardDesc: 'Tên bạn xuất hiện trên bảng xếp hạng công khai',
+    visibilityPrivate: 'Riêng tư',
+    visibilityFriends: 'Bạn bè',
+    visibilityPublic: 'Công khai',
+    saving: 'Đang lưu...',
+    saveChanges: 'Lưu thay đổi',
+    saveSuccess: 'Đã lưu thay đổi',
+    saveFailed: 'Không thể lưu cài đặt',
+  },
+
   // Rarity labels
   rarity: {
     common: 'Thường',

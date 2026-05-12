@@ -118,7 +118,7 @@ const UserSchema = new Schema<IUserDocument>(
         profileVisibility: { type: String, enum: ['public', 'friends', 'private'], default: 'private' },
         storyVisibility: { type: String, enum: ['public', 'friends', 'private'], default: 'private' },
         achievementVisibility: { type: String, enum: ['public', 'friends', 'private'], default: 'private' },
-        allowFriendRequests: { type: Boolean, default: false },
+        allowFriendRequests: { type: Boolean, default: true },
         showOnLeaderboard: { type: Boolean, default: false },
       }, { _id: false }),
       default: {},

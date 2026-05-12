@@ -307,6 +307,7 @@ const en = {
   settings: {
     title: 'Settings',
     general: 'General',
+    privacy: 'Privacy',
     language: 'Language',
     theme: 'Theme',
     themeDark: 'Dark',
@@ -335,6 +336,27 @@ const en = {
     imageAgent: 'Image Agent',
     imageAgentDesc: 'Generates scene and character art.',
   },
+
+  privacySettings: {
+    profileVisibility: 'Profile Visibility',
+    profileVisibilityDesc: 'Who can see your profile',
+    storyVisibility: 'Story Visibility',
+    storyVisibilityDesc: 'Who can see your stories',
+    achievementVisibility: 'Achievement Visibility',
+    achievementVisibilityDesc: 'Who can see your achievements',
+    allowFriendRequests: 'Allow Friend Requests',
+    allowFriendRequestsDesc: 'Others can send you friend requests',
+    showOnLeaderboard: 'Show on Leaderboard',
+    showOnLeaderboardDesc: 'Your name appears on the public leaderboard',
+    visibilityPrivate: 'Private',
+    visibilityFriends: 'Friends',
+    visibilityPublic: 'Public',
+    saving: 'Saving...',
+    saveChanges: 'Save Changes',
+    saveSuccess: 'Changes saved',
+    saveFailed: 'Failed to save settings',
+  },
+
   // Rarity labels
   rarity: {
     common: 'Common',

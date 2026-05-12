@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useFriends } from '../hooks/useFriends';
 import { showSuccess, showError } from '../lib/toast';
 import type { FriendUser, FriendRequest } from '../services/friendsApi';
@@ -120,20 +120,6 @@ function RequestCard({
   );
 }
 
-function SkeletonCard() {
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-ink-700 bg-ink-900 p-3 animate-pulse">
-      <div className="h-10 w-10 rounded-full bg-ink-700 shrink-0" />
-      <div className="flex-1 space-y-2">
-        <div className="h-3 w-24 rounded bg-ink-700" />
-        <div className="h-2 w-16 rounded bg-ink-700" />
-      </div>
-      <div className="h-6 w-6 rounded-full bg-ink-700" />
-      <div className="h-7 w-20 rounded-lg bg-ink-700" />
-    </div>
-  );
-}
-
 export default function FriendsPage() {
   const {
     friends,
@@ -153,21 +139,32 @@ export default function FriendsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('friends');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const prevDebouncedRef = useRef('');
 
   const debouncedQuery = useDebounce(searchQuery, 300);
 
   useEffect(() => {
     const run = async () => {
-      if (debouncedQuery.trim().length >= 3) {
-        await searchUsers(debouncedQuery);
-        setShowDropdown(true);
-      } else {
-        setShowDropdown(false);
-        searchUsers(''); // Clear results
+      // Query empty → clear results, keep dropdown open
+      if (searchQuery.trim().length === 0) {
+        searchUsers('');
+        prevDebouncedRef.current = '';
+        return;
       }
+      // Debounce hasn't caught up yet → keep dropdown, wait
+      if (debouncedQuery.trim().length < 3) {
+        return;
+      }
+      // Skip duplicate searches for same query
+      if (debouncedQuery === prevDebouncedRef.current) {
+        return;
+      }
+      prevDebouncedRef.current = debouncedQuery;
+      setShowDropdown(true);
+      await searchUsers(debouncedQuery);
     };
     run();
-  }, [debouncedQuery, searchUsers]);
+  }, [debouncedQuery, searchQuery, searchUsers]);
 
   const handleSendRequest = async (username: string) => {
     try {
@@ -320,10 +317,10 @@ export default function FriendsPage() {
           </button>
         </div>
       ) : isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <SkeletonCard key={i} />
-          ))}
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <UserPlus size={40} className="text-ink-600 mb-3" />
+          <p className="text-sm text-ink-400">Chưa có bạn bè. Tìm kiếm để kết bạn!</p>
+          <div className="mt-4 h-5 w-5 animate-spin rounded-full border-2 border-gold border-t-transparent" />
         </div>
       ) : activeTab === 'friends' ? (
         friends.length === 0 ? (

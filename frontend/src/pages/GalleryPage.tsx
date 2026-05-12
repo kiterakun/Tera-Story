@@ -153,25 +153,15 @@ export default function GalleryPage() {
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="p-4 md:p-6">
-        <div className="mb-6 h-8 w-48 animate-pulse rounded bg-ink-800" />
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="aspect-[3/4] animate-pulse rounded-lg bg-ink-800" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (cards.length === 0) {
+  if (isLoading || cards.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <Grid3x3 size={48} className="text-ink-600" />
         <p className="mt-4 text-lg text-narration">Bạn chưa có thẻ bài nào.</p>
         <p className="mt-1 text-sm text-ink-500">Hãy bắt đầu một cuộc phiêu lưu để thu thập thẻ!</p>
+        {isLoading && (
+          <div className="mt-4 h-5 w-5 animate-spin rounded-full border-2 border-gold border-t-transparent" />
+        )}
       </div>
     );
   }

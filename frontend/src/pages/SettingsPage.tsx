@@ -5,6 +5,8 @@ import type { AppTheme } from '../stores/uiStore';
 import { useTranslation, persistLanguage } from '../i18n';
 import { showSuccess, showError } from '../lib/toast';
 import type { AgentConfig, AISettings } from '../stores/settingsStore';
+import { PrivacySettings, type PrivacySettingsData } from '../components/social/PrivacySettings';
+import { api } from '../services/api';
 import { Brain, PenTool, Sparkles, Image, Globe } from 'lucide-react';
 const agentIcons: Record<keyof AISettings, React.FC<React.SVGProps<SVGSVGElement> & { size?: number }>> = {
   contextAgent: Brain,
@@ -173,11 +175,21 @@ export default function SettingsPage() {
   const { settings, isLoading, fetchSettings, updateSettings } = useSettingsStore();
   const { theme } = useUIStore();
   const [generalSettings, setGeneralSettings] = useState<{ language: string; theme: AppTheme }>({ language: 'en', theme: 'dark' });
+  const [privacySettings, setPrivacySettings] = useState<PrivacySettingsData | null>(null);
+  const [privacyLoading, setPrivacyLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     fetchSettings();
   }, [fetchSettings]);
+
+  // Fetch privacy settings on mount
+  useEffect(() => {
+    api.get('/user/privacy')
+      .then(res => setPrivacySettings(res.data.data.privacySettings))
+      .catch(() => {})
+      .finally(() => setPrivacyLoading(false));
+  }, []);
 
   useEffect(() => {
     if (settings) {
@@ -215,9 +227,90 @@ export default function SettingsPage() {
 
   if (isLoading && !settings) {
     return (
-      <div className="max-w-4xl mx-auto px-6 py-12">
-        <h1 className="font-display text-3xl text-ink-100 mb-8">{t.settings.title}</h1>
-        <div className="text-center py-16 text-ink-200/60">{t.settings.loading}</div>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 animate-pulse">
+        <h1 className="font-display text-3xl sm:text-4xl text-ink-100 mb-10">{t.settings.title}</h1>
+
+        {/* General skeleton */}
+        <section className="mb-12">
+          <h2 className="font-display text-xl text-ink-100 mb-5 flex items-center gap-2">
+            <span className="w-1.5 h-5 bg-accent-400 rounded-full" />
+            {t.settings.general}
+          </h2>
+          <div className="bg-ink-800 border border-ink-700 rounded-2xl p-6 space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-1.5">
+                <div className="h-3 w-16 bg-ink-700 rounded" />
+                <div className="h-10 bg-ink-700 rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="h-3 w-12 bg-ink-700 rounded" />
+                <div className="h-10 bg-ink-700 rounded-xl" />
+              </div>
+            </div>
+            <div className="pt-2 flex justify-end">
+              <div className="h-10 w-24 bg-ink-700 rounded-xl" />
+            </div>
+          </div>
+        </section>
+
+        {/* Privacy skeleton */}
+        <section className="mb-12">
+          <h2 className="font-display text-xl text-ink-100 mb-5 flex items-center gap-2">
+            <span className="w-1.5 h-5 bg-accent-400 rounded-full" />
+            {t.settings.privacy}
+          </h2>
+          <div className="bg-ink-800 border border-ink-700 rounded-2xl p-6 space-y-5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="space-y-1.5">
+                  <div className="h-4 w-32 bg-ink-700 rounded" />
+                  <div className="h-3 w-48 bg-ink-700 rounded" />
+                </div>
+                <div className="h-6 w-11 bg-ink-700 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* AI Config skeleton */}
+        <section>
+          <h2 className="font-display text-xl text-ink-100 mb-2 flex items-center gap-2">
+            <span className="w-1.5 h-5 bg-accent-400 rounded-full" />
+            {t.settings.aiConfig}
+          </h2>
+          <p className="text-ink-200/60 text-sm mb-6 ml-4">{t.settings.aiConfigDesc}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-ink-800 border border-ink-700 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-5 w-5 bg-ink-700 rounded" />
+                  <div className="h-5 w-24 bg-ink-700 rounded" />
+                </div>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <div className="h-3 w-12 bg-ink-700 rounded" />
+                    <div className="h-10 bg-ink-700 rounded-xl" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="h-3 w-12 bg-ink-700 rounded" />
+                    <div className="h-9 bg-ink-700 rounded-xl" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="h-3 w-16 bg-ink-700 rounded" />
+                    <div className="h-9 bg-ink-700 rounded-xl" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="h-3 w-20 bg-ink-700 rounded" />
+                    <div className="h-9 bg-ink-700 rounded-xl" />
+                  </div>
+                </div>
+                <div className="pt-2 flex justify-end">
+                  <div className="h-9 w-20 bg-ink-700 rounded-xl" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     );
   }
@@ -279,6 +372,20 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
+
+      {/* Privacy Settings Section */}
+      {!privacyLoading && privacySettings && (
+        <section className="mb-12">
+          <h2 className="font-display text-xl text-ink-100 mb-5 flex items-center gap-2">
+            <span className="w-1.5 h-5 bg-accent-400 rounded-full" />
+            {t.settings.privacy}
+          </h2>
+          <PrivacySettings
+            settings={privacySettings}
+            onUpdate={(updated) => setPrivacySettings(updated)}
+          />
+        </section>
+      )}
 
       {/* AI Configuration Section */}
       <section>
