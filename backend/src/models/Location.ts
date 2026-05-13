@@ -33,7 +33,7 @@ const LocationSchema = new Schema<ILocationDocument>(
     playthroughId: {
       type: Schema.Types.ObjectId,
       ref: 'Playthrough',
-      required: true,
+      required: false,
     },
     name: {
       type: String,

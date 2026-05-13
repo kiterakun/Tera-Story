@@ -38,16 +38,16 @@ beforeEach(() => {
 describe('AchievementsPage', () => {
   it('renders without crashing', () => {
     renderWithRouter(<AchievementsPage />);
-    // Loading state renders skeleton placeholders
-    const skeletons = document.querySelectorAll('.animate-pulse');
-    expect(skeletons.length).toBeGreaterThan(0);
+    // Loading state renders spinner
+    const spinners = document.querySelectorAll('.animate-spin');
+    expect(spinners.length).toBeGreaterThan(0);
   });
 
-  it('shows loading state with skeleton grid', () => {
+  it('shows loading state with spinner', () => {
     renderWithRouter(<AchievementsPage />);
-    // 12 skeleton cards + 1 title skeleton = 13 pulse elements
-    const skeletons = document.querySelectorAll('.animate-pulse');
-    expect(skeletons.length).toBe(13);
+    // 1 spinner element
+    const spinners = document.querySelectorAll('.animate-spin');
+    expect(spinners.length).toBe(1);
   });
 
   it('shows achievements when loaded', () => {

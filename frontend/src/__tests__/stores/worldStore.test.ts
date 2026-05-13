@@ -92,7 +92,7 @@ describe('worldStore', () => {
       const result = await promise;
 
       expect(worldApi.createWorld).toHaveBeenCalledWith({ name: 'New World', description: 'desc', genre: 'fantasy' });
-      expect(result).toEqual(mockWorld);
+      expect(result).toEqual({ world: mockWorld, mapData: undefined });
       expect(useWorldStore.getState().worlds).toEqual([mockWorld]);
       expect(useWorldStore.getState().isLoading).toBe(false);
     });

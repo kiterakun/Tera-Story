@@ -52,7 +52,7 @@ describe('GalleryPage', () => {
 
     const { container } = renderWithRouter(<GalleryPage />);
 
-    expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
+    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
   });
 
   it('shows cards when data is loaded', () => {

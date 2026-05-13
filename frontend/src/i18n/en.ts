@@ -98,6 +98,7 @@ const en = {
     confirmDeletePlaythrough: 'Are you sure you want to delete playthrough "{name}"? All progress will be lost.',
     failedToDeletePlaythrough: 'Failed to delete playthrough',
     deletePlaythroughBtn: 'Delete playthrough',
+    viewMap: 'View Map',
   },
 
   worldCreate: {

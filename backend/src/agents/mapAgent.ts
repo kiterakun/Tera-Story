@@ -14,11 +14,19 @@ export interface MapAgentParams {
   model: LanguageModel;
 }
 
+interface LLMLocationOutput {
+  name: string;
+  description: string;
+  type: string;
+  position: { x: number; y: number };
+}
+
 interface LLMRegionOutput {
   name: string;
   description: string;
   terrainType: string;
   position: { x: number; y: number };
+  locations?: LLMLocationOutput[];
 }
 
 interface LLMContinentOutput {
@@ -86,6 +94,19 @@ export async function generateWorldMap(
 
         createdRegions.push(region);
         regionIds.push(region._id.toString());
+
+        if (regData.locations && Array.isArray(regData.locations)) {
+          for (const locData of regData.locations) {
+            await Location.create({
+              regionId: region._id,
+              name: locData.name,
+              description: locData.description,
+              type: locData.type,
+              position: locData.position,
+              status: 'known',
+            });
+          }
+        }
       }
 
       await Continent.findByIdAndUpdate(

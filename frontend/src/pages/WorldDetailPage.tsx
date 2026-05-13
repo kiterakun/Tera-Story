@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useWorldStore } from '../stores/worldStore';
 import { useTranslation } from '../i18n';
 import { showSuccess, showError } from '../lib/toast';
-import { Search, BookOpen, Plus, ChevronLeft, Calendar, Play, X, Trash2, ImageIcon } from 'lucide-react';
+import { Search, BookOpen, Plus, ChevronLeft, Calendar, Play, X, Trash2, ImageIcon, Map } from 'lucide-react';
 import * as playthroughApi from '../services/playthroughApi';
 import type { Playthrough } from '../services/playthroughApi';
 import { RetryImageButton } from '../components/RetryImageButton';
@@ -239,6 +239,13 @@ export default function WorldDetailPage() {
             </p>
              
             <div className="space-y-2.5">
+              <button 
+                onClick={() => navigate(`/worlds/${currentWorld._id}/map`)}
+                className="w-full px-4 py-2.5 border border-ink-700 hover:border-accent-400/50 bg-ink-950/50 text-accent-400 rounded-xl transition-all duration-200 text-sm font-medium hover:text-accent-300 flex justify-center items-center gap-2"
+              >
+                <Map size={16} />
+                {t.worldDetail.viewMap || 'View World Map'}
+              </button>
               <button className="w-full px-4 py-2.5 border border-ink-700 hover:border-accent-400/50 bg-ink-950/50 text-ink-200 rounded-xl transition-all duration-200 text-sm font-medium hover:text-ink-100">
                 {t.worldDetail.editWorldInfo}
               </button>

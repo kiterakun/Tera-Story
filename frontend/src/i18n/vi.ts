@@ -100,6 +100,7 @@ const vi: Translations = {
     confirmDeletePlaythrough: 'Bạn có chắc muốn xóa lượt chơi "{name}"? Tất cả tiến trình sẽ bị mất.',
     failedToDeletePlaythrough: 'Xóa lượt chơi thất bại',
     deletePlaythroughBtn: 'Xóa lượt chơi',
+    viewMap: 'Xem bản đồ',
   },
 
   worldCreate: {

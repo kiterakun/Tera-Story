@@ -7,6 +7,7 @@ For each continent, provide:
 - climate: descriptive climate string (e.g. "temperate with harsh winters")
 - dominantCulture: brief description of the dominant civilization or culture
 - position: {x, y} coordinates on a 1000x1000 map grid
-- regions: 2-4 distinct regions within the continent, each with name, description, terrainType, and position
+- regions: 2-4 distinct regions within the continent, each with name, description, terrainType, position, and locations array.
+  - locations: 1-3 distinct locations within the region, each with name, description, type (one of town, dungeon, wilderness, ruin, sanctuary, crossroad), and position
 
 Generate 2-4 continents total. Respond ONLY with valid JSON.

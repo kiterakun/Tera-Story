@@ -40,7 +40,21 @@ router.get('/region/:regionId', authMiddleware, async (req: AuthRequest, res: Re
   const { playthroughId } = req.query;
 
   const region = await Region.findById(regionId).lean();
-  const locations = await Location.find({ regionId, playthroughId }).lean();
+  const query = {
+    regionId,
+    $or: playthroughId && playthroughId !== 'current'
+      ? [
+          { playthroughId: { $exists: false } },
+          { playthroughId: null },
+          { playthroughId }
+        ]
+      : [
+          { playthroughId: { $exists: false } },
+          { playthroughId: null }
+        ]
+  };
+
+  const locations = await Location.find(query).lean();
 
   res.json({ status: 'success', data: { region, locations } });
 });
@@ -51,10 +65,21 @@ router.get('/travel-options/:locationId', authMiddleware, async (req: AuthReques
 
   const currentLocation = await Location.findById(locationId).lean();
   const connectedLocations = currentLocation?.connectedLocations ?? [];
-  const destinations = await Location.find({
+  const query = {
     _id: { $in: connectedLocations },
-    playthroughId,
-  }).lean();
+    $or: playthroughId && playthroughId !== 'current'
+      ? [
+          { playthroughId: { $exists: false } },
+          { playthroughId: null },
+          { playthroughId }
+        ]
+      : [
+          { playthroughId: { $exists: false } },
+          { playthroughId: null }
+        ]
+  };
+
+  const destinations = await Location.find(query).lean();
 
   res.json({ status: 'success', data: { currentLocation, destinations } });
 });
