@@ -157,6 +157,14 @@ const vi: Translations = {
     aiPromptPlaceholder: 'VD. Một thế giới tiên hiệp tối với hệ thống tu luyện, linh thú và cổ vật...',
     aiGenerateWorld: 'Tạo thế giới',
     aiGenerating: 'Đang tạo...',
+    // Map spawn step
+    selectSpawn: 'Chọn Vùng Khởi Đầu',
+    spawnHint: 'Nhấp vào một vùng để chọn nơi câu chuyện bắt đầu',
+    confirmSpawn: 'Bắt Đầu Tại Đây',
+    generatingMap: 'Đang tạo bản đồ thế giới...',
+    mapGenFailed: 'Tạo bản đồ thất bại. Bạn vẫn có thể tạo playthrough.',
+    creatingPlaythrough: 'Đang tạo playthrough...',
+    noRegions: 'Không có vùng nào. Vui lòng tạo lại bản đồ thế giới.',
   },
 
   playthrough: {

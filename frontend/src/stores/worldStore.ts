@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import * as worldApi from '../services/worldApi';
-import type { World, SpecialItemTemplate } from '../services/worldApi';
+import type { World, SpecialItemTemplate, MapData } from '../services/worldApi';
 
 interface WorldState {
   worlds: World[];
@@ -9,7 +9,7 @@ interface WorldState {
   isLoading: boolean;
   fetchWorlds: () => Promise<void>;
   fetchWorld: (id: string) => Promise<void>;
-  createWorld: (data: Partial<World> & { specialItemTemplates?: SpecialItemTemplate[] }) => Promise<World>;
+  createWorld: (data: Partial<World> & { specialItemTemplates?: SpecialItemTemplate[] }) => Promise<{ world: World; mapData?: MapData }>;
   createFromTemplate: (templateId: string, name: string) => Promise<World>;
   updateWorld: (id: string, data: Partial<World>) => Promise<World>;
   deleteWorld: (id: string) => Promise<void>;
@@ -46,12 +46,12 @@ export const useWorldStore = create<WorldState>()((set) => ({
   createWorld: async (data: Partial<World> & { specialItemTemplates?: SpecialItemTemplate[] }) => {
     set({ isLoading: true });
     try {
-      const { world: newWorld } = await worldApi.createWorld(data);
+      const { world: newWorld, mapData } = await worldApi.createWorld(data);
       set((state) => ({ 
-        worlds: [...state.worlds, newWorld],
+        worlds: [...state.worlds, newWorld], 
         isLoading: false 
       }));
-      return newWorld;
+      return { world: newWorld, mapData };
     } catch (error) {
       set({ isLoading: false });
       throw error;

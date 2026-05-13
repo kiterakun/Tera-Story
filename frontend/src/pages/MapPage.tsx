@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useCallback, useMemo } from 'react';
 import * as d3 from 'd3';
 import { useParams } from 'react-router-dom';
 import { useMap } from '../hooks/useMap';
 import type { Region, Location } from '../services/mapApi';
 import {
-  ZoomIn,
   ZoomOut,
   RotateCcw,
   Map,
@@ -219,7 +218,6 @@ export default function MapPage() {
     regions,
     locations,
     currentZoom,
-    selectedContinent,
     selectedRegion,
     selectedLocation,
     isLoading,

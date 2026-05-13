@@ -36,6 +36,8 @@ export interface IPlaythroughDocument extends Document {
   // Echoes
   echoesCount: number;
   echoesResolvedCount: number;
+  // Location tracking
+  currentLocationId: mongoose.Types.ObjectId | null;
   // Whispers
   lastActiveAt: Date;
   lastWhispersViewedAt: Date | null;
@@ -76,6 +78,8 @@ const PlaythroughSchema = new Schema<IPlaythroughDocument>(
     // Echoes
     echoesCount: { type: Number, default: 0, min: 0 },
     echoesResolvedCount: { type: Number, default: 0, min: 0 },
+    // Location tracking
+    currentLocationId: { type: Schema.Types.ObjectId, ref: 'Location', default: null },
     // Whispers
     lastActiveAt: { type: Date, default: Date.now },
     lastWhispersViewedAt: { type: Date, default: null },

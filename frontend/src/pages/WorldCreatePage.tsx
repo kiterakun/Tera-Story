@@ -8,14 +8,36 @@ import type {
   SpecialItemTemplate,
   SpecialItemFieldDefinition,
   World,
+  MapData,
 } from "../services/worldApi";
 import * as supportApi from "../services/supportApi";
-import { Sparkles, Loader2, Hash, Type, Gauge, Tags, Eye } from "lucide-react";
+import { api } from "../services/api";
+import { Sparkles, Loader2, Hash, Type, Gauge, Tags, Eye, MapPin, Check } from "lucide-react";
+
+type Step = "form" | "map" | "creating";
+
+const terrainColors: Record<string, string> = {
+  forest: '#22c55e',
+  mountain: '#78716c',
+  desert: '#fbbf24',
+  ocean: '#3b82f6',
+  plains: '#84cc16',
+  swamp: '#059669',
+  tundra: '#94a3b8',
+  volcanic: '#dc2626',
+  urban: '#6b7280',
+  default: '#64748b',
+};
 
 export default function WorldCreatePage() {
   const t = useTranslation();
   const navigate = useNavigate();
   const { createWorld } = useWorldStore();
+
+  const [step, setStep] = useState<Step>("form");
+  const [createdWorld, setCreatedWorld] = useState<World | null>(null);
+  const [mapData, setMapData] = useState<MapData | null>(null);
+  const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -139,7 +161,7 @@ export default function WorldCreatePage() {
     setIsSubmitting(true);
 
     try {
-      const newWorld = await createWorld({
+      const { world: newWorld, mapData: returnedMapData } = await createWorld({
         name,
         description,
         genre,
@@ -149,10 +171,41 @@ export default function WorldCreatePage() {
         ),
       });
       showSuccess(t.toast.worldCreated);
-      navigate(`/worlds/${newWorld._id}`);
+      
+      // Check if map was generated with regions
+      if (returnedMapData && returnedMapData.regions.length > 0) {
+        setCreatedWorld(newWorld);
+        setMapData(returnedMapData);
+        setStep("map");
+        setIsSubmitting(false);
+      } else {
+        // No map data, navigate directly
+        navigate(`/worlds/${newWorld._id}`);
+      }
     } catch (error) {
       console.error("Failed to create world:", error);
       showError(t.toast.worldCreateFailed);
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmSpawn = async () => {
+    if (!createdWorld || !selectedRegionId) return;
+    setIsSubmitting(true);
+    setStep("creating");
+
+    try {
+      const { data } = await api.post(`/worlds/${createdWorld._id}/playthroughs`, {
+        name: `${createdWorld.name} - Journey`,
+        spawnRegionId: selectedRegionId,
+      });
+
+      showSuccess(t.toast.playthroughCreated);
+      navigate(`/playthroughs/${data.playthrough._id}`);
+    } catch (error) {
+      console.error("Failed to create playthrough:", error);
+      showError(t.toast.playthroughCreateFailed);
+      setStep("map");
       setIsSubmitting(false);
     }
   };
@@ -230,6 +283,209 @@ export default function WorldCreatePage() {
     progress: 'text-amber-400',
     enum: 'text-purple-400',
   };
+
+  // Get selected region details
+  const selectedRegion = mapData?.regions.find(r => r._id === selectedRegionId);
+  const selectedContinent = selectedRegion 
+    ? mapData?.continents.find(c => c._id === selectedRegion.continentId)
+    : null;
+
+  // Map step rendering
+  if (step === "map" || step === "creating") {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 animate-fade-in">
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl font-display text-ink-100">
+            {t.worldCreate.selectSpawn}
+          </h1>
+          <p className="text-ink-200/60 mt-2 text-sm">{t.worldCreate.spawnHint}</p>
+          <div className="mt-3 h-px bg-gradient-to-r from-accent-400/60 via-accent-600/30 to-transparent" />
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Map SVG */}
+          <div className="flex-1 min-w-0">
+            <div className="bg-ink-800 border border-ink-700 rounded-2xl p-6 min-h-[500px] relative">
+              {step === "creating" && (
+                <div className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
+                  <div className="text-center">
+                    <Loader2 size={40} className="animate-spin text-accent-400 mx-auto mb-3" />
+                    <p className="text-ink-100 font-medium">{t.worldCreate.creatingPlaythrough}</p>
+                  </div>
+                </div>
+              )}
+              
+              <svg viewBox="0 0 400 400" className="w-full h-full max-h-[500px]">
+                {/* Ocean background */}
+                <rect x="0" y="0" width="400" height="400" fill="#1e3a5f" rx="8" />
+                
+                {/* Continents */}
+                {mapData?.continents.map(continent => (
+                  <g key={continent._id}>
+                    <ellipse
+                      cx={continent.position.x}
+                      cy={continent.position.y}
+                      rx={60}
+                      ry={45}
+                      fill={terrainColors[continent.terrainType] || terrainColors.default}
+                      opacity={0.3}
+                      stroke={terrainColors[continent.terrainType] || terrainColors.default}
+                      strokeWidth={2}
+                    />
+                  </g>
+                ))}
+                
+                {/* Regions */}
+                {mapData?.regions.map(region => {
+                  const isSelected = region._id === selectedRegionId;
+                  const regionColor = terrainColors[region.terrainType] || terrainColors.default;
+                  
+                  return (
+                    <g
+                      key={region._id}
+                      className="cursor-pointer"
+                      onClick={() => setSelectedRegionId(region._id)}
+                    >
+                      <circle
+                        cx={region.position.x}
+                        cy={region.position.y}
+                        r={isSelected ? 20 : 16}
+                        fill={regionColor}
+                        opacity={isSelected ? 1 : 0.7}
+                        stroke={isSelected ? '#fbbf24' : 'transparent'}
+                        strokeWidth={isSelected ? 3 : 0}
+                        className="transition-all duration-200 hover:opacity-100"
+                      />
+                      {isSelected && (
+                        <circle
+                          cx={region.position.x}
+                          cy={region.position.y}
+                          r={24}
+                          fill="none"
+                          stroke="#fbbf24"
+                          strokeWidth={2}
+                          opacity={0.5}
+                          className="animate-ping"
+                        />
+                      )}
+                      <text
+                        x={region.position.x}
+                        y={region.position.y + 32}
+                        textAnchor="middle"
+                        fill="#e2e8f0"
+                        fontSize="10"
+                        className="pointer-events-none select-none"
+                      >
+                        {region.name}
+                      </text>
+                    </g>
+                  );
+                })}
+                
+                {/* Legend */}
+                <g transform="translate(10, 350)">
+                  <text x="0" y="0" fill="#94a3b8" fontSize="10">
+                    {t.worldCreate.terrainTypes || 'Terrain'}:
+                  </text>
+                  {Object.entries(terrainColors).slice(0, 6).map(([terrain, color], i) => (
+                    <g key={terrain} transform={`translate(${i * 65}, 12)`}>
+                      <circle cx="5" cy="0" r="5" fill={color} />
+                      <text x="14" y="4" fill="#94a3b8" fontSize="9" className="capitalize">
+                        {terrain}
+                      </text>
+                    </g>
+                  ))}
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          {/* Selection Panel */}
+          <aside className="lg:w-80 shrink-0">
+            <div className="lg:sticky lg:top-8 space-y-4">
+              {/* Selected Region Info */}
+              {selectedRegion ? (
+                <div className="bg-ink-800 border border-accent-400/30 rounded-2xl p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <MapPin size={18} className="text-accent-400" />
+                    <h2 className="text-lg font-display text-ink-100">
+                      {selectedRegion.name}
+                    </h2>
+                  </div>
+                  
+                  {selectedContinent && (
+                    <p className="text-xs text-ink-200/60 mb-2">
+                      {selectedContinent.name} • {selectedContinent.climate}
+                    </p>
+                  )}
+                  
+                  <p className="text-sm text-ink-200/80 mb-3">
+                    {selectedRegion.description}
+                  </p>
+                  
+                  <div className="flex items-center gap-2 text-xs">
+                    <span
+                      className="px-2 py-1 rounded-md text-white"
+                      style={{ backgroundColor: terrainColors[selectedRegion.terrainType] || terrainColors.default }}
+                    >
+                      {selectedRegion.terrainType}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-ink-800/50 border border-ink-700 rounded-2xl p-5 text-center">
+                  <MapPin size={24} className="text-ink-500 mx-auto mb-3" />
+                  <p className="text-ink-200/40 text-sm italic">
+                    {t.worldCreate.spawnHint}
+                  </p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={handleConfirmSpawn}
+                  disabled={!selectedRegionId || step === "creating"}
+                  className="w-full px-6 py-3 bg-accent-600 hover:bg-accent-500 text-white rounded-xl transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm shadow-sm hover:shadow-lg hover:shadow-accent-600/20 flex items-center justify-center gap-2"
+                >
+                  {step === "creating" ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      {t.worldCreate.creatingPlaythrough}
+                    </>
+                  ) : (
+                    <>
+                      <Check size={16} />
+                      {t.worldCreate.confirmSpawn}
+                    </>
+                  )}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => navigate(`/worlds/${createdWorld?._id}`)}
+                  disabled={step === "creating"}
+                  className="w-full px-5 py-2.5 font-medium text-ink-200 hover:text-ink-100 transition-colors text-sm rounded-xl hover:bg-ink-800 disabled:opacity-50"
+                >
+                  {t.worldCreate.skipMap || 'Skip & View World'}
+                </button>
+              </div>
+
+              {/* World Info */}
+              {createdWorld && (
+                <div className="bg-ink-800/30 border border-ink-700/50 rounded-xl p-4">
+                  <p className="text-xs text-ink-200/60 mb-1">{t.worldCreate.worldCreated || 'World Created'}</p>
+                  <p className="text-sm font-medium text-ink-100">{createdWorld.name}</p>
+                  <p className="text-xs text-ink-200/40 mt-1">{mapData?.regions.length || 0} regions</p>
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 animate-fade-in">

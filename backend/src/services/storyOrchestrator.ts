@@ -6,6 +6,8 @@ import { Item } from '../models/Item';
 import { SpecialItem } from '../models/SpecialItem';
 import { UserSettings } from '../models/UserSettings';
 import { World } from '../models/World';
+import { Location } from '../models/Location';
+import { addLocation } from '../agents/mapAgent';
 import { createUserProviderRegistry } from '../providers/registry';
 import { runContextAgent } from '../agents/contextAgent';
 import { runWriterAgent } from '../agents/writerAgent';
@@ -200,6 +202,48 @@ export async function generateChapter(
 
     // 8. Reload chapter to get choices populated by generateChoices tool
     const updatedChapter = await Chapter.findById(chapter._id).lean();
+
+    if (updatedChapter && playerChoice.trim().length > 0) {
+      const selectedChoice = updatedChapter.choices.find((choice) => choice.text === playerChoice);
+      const travelTo = selectedChoice?.travelTo;
+      if (travelTo) {
+        try {
+          const oldLocationId = playthrough.currentLocationId?.toString() ?? null;
+          let locationDoc = await Location.findById(travelTo).lean();
+
+          if (!locationDoc) {
+            const createdLocation = await addLocation({
+              regionId: travelTo,
+              playthroughId,
+              name: 'New Destination',
+              description: 'Discovered during travel',
+              type: 'wilderness',
+              ...(oldLocationId ? { connectedTo: oldLocationId } : {}),
+            });
+            locationDoc = createdLocation.toObject();
+          }
+
+          if (!locationDoc) {
+            console.error('Failed to resolve location for travel:', travelTo);
+          } else {
+            const newLocationId = locationDoc._id.toString();
+            await Playthrough.findByIdAndUpdate(playthroughId, {
+              $set: { currentLocationId: newLocationId },
+            });
+            await Playthrough.findByIdAndUpdate(playthroughId, {
+              $set: { lastActiveAt: new Date() },
+            });
+            emit(playthroughId, 'location:travel', {
+              from: oldLocationId,
+              to: newLocationId,
+              location: locationDoc,
+            });
+          }
+        } catch (err) {
+          console.error('Failed to handle travel choice:', err);
+        }
+      }
+    }
 
     // Save writer token usage to chapter metadata
     if (result.usage) {

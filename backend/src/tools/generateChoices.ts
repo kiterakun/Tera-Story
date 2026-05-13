@@ -15,6 +15,12 @@ export function makeGenerateChoicesTool(chapterId: string) {
             type: z
               .enum(['continue', 'new_arc', 'custom'])
               .describe('The type of choice'),
+            travelTo: z
+              .string()
+              .optional()
+              .describe(
+                'Optional location ID to travel to when this choice is selected'
+              ),
           })
         )
         .describe('Array of 3-4 meaningful choices for the reader'),

@@ -7,6 +7,7 @@ import { Playthrough } from '../models/Playthrough';
 import { World } from '../models/World';
 import { generateChronicleCache } from '../services/chronicleService';
 import { checkAchievements } from '../services/achievementService';
+import { addLocation } from '../agents/mapAgent';
 
 const router = Router({ mergeParams: true });
 
@@ -14,6 +15,7 @@ const router = Router({ mergeParams: true });
 
 const createPlaythroughSchema = z.object({
   name: z.string().min(1, 'Name is required').trim(),
+  spawnRegionId: z.string().optional(),
 });
 
 const updatePlaythroughSchema = z.object({
@@ -78,13 +80,32 @@ router.post('/', validate(createPlaythroughSchema), async (req: AuthRequest, res
       return;
     }
 
-    const playthrough = await Playthrough.create({
+    let playthrough = await Playthrough.create({
       name: req.body.name,
       worldId,
       userId,
     });
+    let spawnLocation: Awaited<ReturnType<typeof addLocation>> | undefined;
 
-    res.status(201).json({ playthrough });
+    if (req.body.spawnRegionId) {
+      spawnLocation = await addLocation({
+        regionId: req.body.spawnRegionId,
+        playthroughId: playthrough._id.toString(),
+        name: 'Starting Point',
+        description: 'Where the journey begins.',
+        type: 'crossroad',
+      });
+      const updatedPlaythrough = await Playthrough.findByIdAndUpdate(
+        playthrough._id,
+        { $set: { currentLocationId: spawnLocation._id } },
+        { returnDocument: 'after' }
+      );
+      if (updatedPlaythrough) {
+        playthrough = updatedPlaythrough;
+      }
+    }
+
+    res.status(201).json({ playthrough, ...(spawnLocation ? { spawnLocation } : {}) });
   } catch (err) {
     console.error('Create playthrough error:', err);
     res.status(500).json({ error: 'Internal server error' });

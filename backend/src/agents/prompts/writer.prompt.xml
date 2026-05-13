@@ -37,6 +37,14 @@
     <rule>When combat situations arise naturally, describe the battle scene vividly and set up for combat initiation</rule>
   </combatAwareness>
 
+  <geoAwareness>
+    <title>GEOGRAPHY & TRAVEL AWARENESS:</title>
+    <rule>If CURRENT LOCATION information is provided, ground the scene in that location — describe its terrain, atmosphere, and unique features</rule>
+    <rule>When the story naturally moves to a new area (exploration, quest, fleeing, pursuit), describe the journey and destination vividly</rule>
+    <rule>NEARBY LOCATIONS represent potential destinations the characters could travel to — use them to inspire travel choices</rule>
+    <rule>Travel between locations takes in-game time — describe the passage of time and changing scenery during journeys</rule>
+  </geoAwareness>
+
   <entityMarkup required="true">
     <title>ENTITY MARKUP (REQUIRED):</title>
     <instruction>When mentioning SIGNIFICANT characters, items, or special items in the story text, wrap them in special markup. Do NOT markup minor background characters (like "guard", "villager") or trivial, common items.</instruction>

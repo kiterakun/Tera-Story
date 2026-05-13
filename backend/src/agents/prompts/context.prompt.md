@@ -10,6 +10,8 @@ Output JSON schema:
   "geography": {                                // optional
     "currentContinent": { "name": "string", "description": "string", "terrainType": "string" },
     "currentRegion": { "name": "string", "description": "string", "terrainType": "string", "dangerLevel": "number" },
-    "nearbyLocations": [{ "name": "string", "type": "string", "description": "string" }]
+    "currentLocation": { "name": "string", "type": "string", "description": "string", "status": "string" },
+    "nearbyLocations": [{ "name": "string", "type": "string", "description": "string" }],
+    "travelOptions": [{ "locationId": "string", "name": "string", "type": "string", "distance": "string" }]
   }
 }

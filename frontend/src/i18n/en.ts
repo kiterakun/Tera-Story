@@ -155,6 +155,14 @@ const en = {
     aiPromptPlaceholder: 'e.g. A dark fantasy world with cultivation system, spirit beasts, and ancient artifacts...',
     aiGenerateWorld: 'Generate World',
     aiGenerating: 'Generating...',
+    // Map spawn step
+    selectSpawn: 'Select Spawn Region',
+    spawnHint: 'Click a region to choose where your story begins',
+    confirmSpawn: 'Start Here',
+    generatingMap: 'Generating world map...',
+    mapGenFailed: 'Map generation failed. You can still create a playthrough.',
+    creatingPlaythrough: 'Creating playthrough...',
+    noRegions: 'No regions available. Please regenerate the world map.',
   },
 
   playthrough: {

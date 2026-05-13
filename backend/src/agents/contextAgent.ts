@@ -59,26 +59,26 @@ export async function runContextAgent(
   // 2b. Build geography data from first continent
   const firstContinent = continents[0];
   let geography: {
-    currentContinent: any;
-    regions: any[];
-    currentRegion: any;
-    nearbyLocations: any[];
+    currentContinent: { name: string; description: string; terrainType: string };
+    regions: { name: string; description: string; dangerLevel: number }[];
+    currentRegion: { name: string; description: string; dangerLevel: number } | null;
+    nearbyLocations: { name: string; type: string; description: string }[];
   } | undefined;
   if (firstContinent) {
     const continentRegions = await Region.find({ continentId: firstContinent._id }).lean();
     const firstRegion = continentRegions[0];
-    let nearbyLocations: any[] = [];
+    let nearbyLocations: { name: string; type: string; description: string }[] = [];
     if (firstRegion) {
-      nearbyLocations = await Location.find({
+      nearbyLocations = (await Location.find({
         regionId: firstRegion._id,
         playthroughId,
         status: { $in: ['known', 'visited'] }
-      }).lean();
+      }).lean()) as unknown as { name: string; type: string; description: string }[];
     }
     geography = {
-      currentContinent: firstContinent,
-      regions: continentRegions,
-      currentRegion: firstRegion || null,
+      currentContinent: firstContinent as unknown as { name: string; description: string; terrainType: string },
+      regions: continentRegions as unknown as { name: string; description: string; dangerLevel: number }[],
+      currentRegion: (firstRegion as unknown as { name: string; description: string; dangerLevel: number }) || null,
       nearbyLocations,
     };
   }
@@ -207,7 +207,7 @@ export async function runContextAgent(
       '=== GEOGRAPHY ===',
       `Current Continent: ${geography.currentContinent.name} \u2014 ${geography.currentContinent.description} (${geography.currentContinent.terrainType})`,
       geography.currentRegion ? `Current Region: ${geography.currentRegion.name} \u2014 ${geography.currentRegion.description} (danger level: ${geography.currentRegion.dangerLevel})` : null,
-      geography.nearbyLocations.length > 0 ? `Nearby Locations: ${geography.nearbyLocations.map((l: any) => `${l.name} (${l.type})`).join(', ')}` : null,
+      geography.nearbyLocations.length > 0 ? `Nearby Locations: ${geography.nearbyLocations.map((l: { name: string; type: string }) => `${l.name} (${l.type})`).join(', ')}` : null,
     ].filter(Boolean).join('\n');
   }
 

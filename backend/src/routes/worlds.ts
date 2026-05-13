@@ -5,6 +5,8 @@ import { validate } from '../middleware/validate';
 import { World } from '../models/World';
 import { Playthrough } from '../models/Playthrough';
 import { SpecialItemTemplate } from '../models/SpecialItemTemplate';
+import { UserSettings } from '../models/UserSettings';
+import { createUserProviderRegistry } from '../providers/registry';
 import { WORLD_TEMPLATES } from '../seed/worldTemplates';
 import playthroughsRouter from './playthroughs';
 import { queueImageGeneration } from '../services/imageService';
@@ -19,9 +21,9 @@ router.use('/:worldId/playthroughs', playthroughsRouter);
 const resourceTemplateSchema = z.object({
   key: z.string().min(1),
   type: z.enum(['number', 'text', 'progress', 'enum']),
-  min: z.number(),
-  max: z.number(),
-  defaultValue: z.union([z.string(), z.number()]),
+  min: z.number().optional(),
+  max: z.number().optional(),
+  defaultValue: z.union([z.string(), z.number()]).optional(),
   displayFormat: z.string().optional(),
   options: z.array(z.string()).optional(),
 }).superRefine((data, ctx) => {
@@ -66,6 +68,7 @@ const createWorldSchema = z.object({
   genre: z.enum(['fantasy', 'sci-fi', 'wuxia', 'modern', 'custom']),
   imageUrl: z.string().url().optional(),
   resourceTemplates: z.array(resourceTemplateSchema).optional(),
+  generateMap: z.boolean().optional().default(true),
 });
 
 const updateWorldSchema = z.object({
@@ -193,10 +196,14 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
     }
 
     const { specialItemTemplates: sitData } = req.body;
+    const { generateMap, ...worldData } = parsed.data;
     const world = await World.create({
-      ...parsed.data,
+      ...worldData,
       userId,
     });
+    let mapData:
+      | Awaited<ReturnType<typeof import('../agents/mapAgent').generateWorldMap>>
+      | undefined;
 
     // If specialItemTemplates were sent alongside (from enrichWorld flow), create them
     if (Array.isArray(sitData) && sitData.length > 0) {
@@ -220,7 +227,25 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
       userId
     );
 
-    res.status(201).json({ world, specialItemTemplates });
+    if (generateMap !== false) {
+      try {
+        const settings = await UserSettings.findOne({ userId }).lean();
+        if (settings) {
+          const registry = createUserProviderRegistry(settings.aiSettings);
+          const { generateWorldMap } = await import('../agents/mapAgent');
+          mapData = await generateWorldMap({
+            worldId: world._id.toString(),
+            worldDescription: world.description,
+            genre: world.genre,
+            model: registry.getSupportModel(),
+          });
+        }
+      } catch (err) {
+        console.error('[MapGen] World creation map generation failed:', err);
+      }
+    }
+
+    res.status(201).json({ world, specialItemTemplates, ...(mapData ? { mapData } : {}) });
   } catch (err) {
     console.error('Create world error:', err);
     res.status(500).json({ error: 'Internal server error' });

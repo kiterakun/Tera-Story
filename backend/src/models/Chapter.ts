@@ -8,7 +8,7 @@ export interface IChapterDocument extends Document {
   status: 'generating' | 'completed' | 'failed';
   toolsStatus: 'pending' | 'running' | 'completed' | 'failed';
   playerChoice: string;
-  choices: Array<{ text: string; type: 'continue' | 'new_arc' | 'custom' }>;
+  choices: Array<{ text: string; type: 'continue' | 'new_arc' | 'custom'; travelTo?: string }>;
   newCharacters: Array<{ name: string; description: string; role: string }>;
   newItems: Array<{ name: string; description: string; rarity?: string; ownerId?: mongoose.Types.ObjectId }>;
   newSpecialItems: Array<{ name: string; description: string; category: string; rarity?: string }>;
@@ -25,6 +25,7 @@ const ChoiceSchema = new Schema(
   {
     text: { type: String, required: true },
     type: { type: String, enum: ['continue', 'new_arc', 'custom'], required: true },
+    travelTo: { type: String, default: null },
   },
   { _id: false }
 );
