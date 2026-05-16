@@ -276,7 +276,7 @@ Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[speci
     archiveEntity: makeArchiveEntityTool(playthroughId),
     updateLocationStats: makeUpdateLocationStatsTool(playthroughId),
     createOrganization: makeCreateOrganizationTool(playthroughId, worldId, userId, chapterId),
-    updateOrganization: makeUpdateOrganizationTool(playthroughId, userId),
+    updateOrganization: makeUpdateOrganizationTool(playthroughId),
   };
 
   const choicesTool = makeGenerateChoicesTool(chapterId);

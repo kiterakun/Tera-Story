@@ -30,6 +30,12 @@ export default {
     archivedEntities: 'Thực Thể Đã Lưu Trữ',
     noArchived: 'Chưa có thực thể nào được lưu trữ.',
     noOrganizations: 'Chưa phát hiện tổ chức nào.',
+    noCompanions: 'Chưa có đồng hành nào.',
+    background: 'Bối cảnh',
+    personality: 'Tính cách',
+    goals: 'Mục tiêu',
+    appearance: 'Ngoại hình',
+    viewDetails: 'Xem chi tiết',
     createProtagonistRequired: 'Bạn phải tạo nhân vật chính trước khi bắt đầu câu chuyện.',
   },
   characterCreate: {

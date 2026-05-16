@@ -12,7 +12,9 @@ import type {
 } from "../services/worldApi";
 import * as supportApi from "../services/supportApi";
 import { api } from "../services/api";
-import { Sparkles, Loader2, Hash, Type, Gauge, Tags, Eye, MapPin, Check } from "lucide-react";
+import { Sparkles, Loader2, MapPin, Check, Eye } from "lucide-react";
+import { typeColors, typeIcons, typeLabelColors } from "../utils/statStyles";
+
 
 type Step = "form" | "map" | "creating";
 
@@ -349,30 +351,6 @@ export default function WorldCreatePage() {
     } finally {
       setIsEnrichingWorld(false);
     }
-  };
-
-  const typeColors: Record<ResourceTemplate['type'], string> = {
-    number: 'border-l-blue-400',
-    text: 'border-l-green-400',
-    progress: 'border-l-amber-400',
-    enum: 'border-l-purple-400',
-    pool: 'border-l-red-400',
-  };
-
-  const typeIcons: Record<ResourceTemplate['type'], (size?: number) => React.ReactNode> = {
-    number: (s = 14) => <Hash size={s} className="text-blue-400" />,
-    text: (s = 14) => <Type size={s} className="text-green-400" />,
-    progress: (s = 14) => <Gauge size={s} className="text-amber-400" />,
-    enum: (s = 14) => <Tags size={s} className="text-purple-400" />,
-    pool: (s = 14) => <Gauge size={s} className="text-red-400" />,
-  };
-
-  const typeLabelColors: Record<ResourceTemplate['type'], string> = {
-    number: 'text-blue-400',
-    text: 'text-green-400',
-    progress: 'text-amber-400',
-    enum: 'text-purple-400',
-    pool: 'text-red-400',
   };
 
   // Get selected region details

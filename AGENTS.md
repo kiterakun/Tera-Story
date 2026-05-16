@@ -1,6 +1,7 @@
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-05-16
+**Updated:** 2026-05-17
 **Branch:** master
 
 ## OVERVIEW
@@ -26,19 +27,24 @@ Tera-Story/
 │       ├── routes/    # API route modules
 │       ├── seed/      # World templates seeder
 │       ├── services/  # Business logic layer
+│       │   ├── story/           # Refactored story helpers (postChapterEffects, chapterPreparation)
 │       ├── tools/     # Vercel AI SDK tools (17 tools)
 │       ├── types/     # TypeScript interfaces
 │       └── __tests__/ # Vitest tests
 ├── frontend/          # React SPA
 │   └── src/
 │       ├── components/ # Reusable UI components
-│       │   ├── game/         # GamePanel (8-tab game interface)
+│       │   ├── game/         # GamePanel + tab components (CharacterTab, CompanionsTab, ArchiveTab)
+│       │   ├── world-create/ # World creation components (ResourceTemplateEditor, SpecialItemTemplateEditor)
 │       │   ├── echoes/       # Echo indicator + list
 │       │   ├── progression/  # Level badge, XP bar, panel, modal
 │       │   ├── daily/        # Daily check-in, quests, streak
 │       │   ├── social/       # Leaderboard, share, privacy
 │       │   ├── fate/         # Peek modal, chapter detail
-│       │   └── whispers/     # Whispers modal
+│       │   ├── whispers/     # Whispers modal
+│       │   ├── DynamicStatDisplay.tsx  # Shared stat renderer (all types)
+│       │   ├── ChapterStatusOverlay.tsx # Chapter status UI states
+│       │   └── MobileDrawer.tsx        # Reusable mobile drawer
 │       ├── pages/     # Route pages (lazy-loaded)
 │       ├── stores/    # Zustand state stores
 │       ├── services/  # Axios-based API client functions
@@ -114,6 +120,8 @@ World > Continent > Region > Location. Top 3 levels are world-level (shared). Lo
 |--------|------|----------|------|
 | `app` | Express App | `backend/src/index.ts` | Main server bootstrap |
 | `storyOrchestrator` | Module | `backend/src/services/storyOrchestrator.ts` | Core storytelling loop |
+| `postChapterEffects` | Helper | `backend/src/services/story/postChapterEffects.ts` | XP, quests, echoes, achievements after chapter |
+| `chapterPreparation` | Helper | `backend/src/services/story/chapterPreparation.ts` | Validation, settings, arc setup for generation |
 | `CombatService` | Class | `backend/src/services/combatService.ts` | Combat mechanics |
 | `progressionService` | Module | `backend/src/services/progressionService.ts` | XP/level curve, stat increments |
 | `characterService` | Module | `backend/src/services/characterService.ts` | Stat init, validation, pool type |
@@ -148,6 +156,13 @@ World > Continent > Region > Location. Top 3 levels are world-level (shared). Lo
 | `organizationService` | Module | `backend/src/services/organizationService.ts` | Organization stat initialization |
 | `organizationApi` | API Client | `frontend/src/services/organizationApi.ts` | Organization API calls |
 | `DynamicStatDisplay` | Component | `frontend/src/components/DynamicStatDisplay.tsx` | Shared stat renderer (all types) |
+| `ChapterStatusOverlay` | Component | `frontend/src/components/ChapterStatusOverlay.tsx` | Chapter status UI states |
+| `MobileDrawer` | Component | `frontend/src/components/MobileDrawer.tsx` | Reusable mobile drawer |
+| `ResourceTemplateEditor` | Component | `frontend/src/components/world-create/ResourceTemplateEditor.tsx` | Resource template editor |
+| `SpecialItemTemplateEditor` | Component | `frontend/src/components/world-create/SpecialItemTemplateEditor.tsx` | Special item template editor |
+| `CharacterTab` | Component | `frontend/src/components/game/CharacterTab.tsx` | GamePanel character tab |
+| `CompanionsTab` | Component | `frontend/src/components/game/CompanionsTab.tsx` | GamePanel companions tab |
+| `ArchiveTab` | Component | `frontend/src/components/game/ArchiveTab.tsx` | GamePanel archive tab |
 | `GamePanel` | Component | `frontend/src/components/game/GamePanel.tsx` | 8-tab game interface |
 | `RPGPanel` | Component | `frontend/src/components/RPGPanel.tsx` | Stats/Inventory/Abilities/Relations tabs |
 | `EntityDetailModal` | Component | `frontend/src/components/EntityDetailModal.tsx` | Entity detail with extended fields |

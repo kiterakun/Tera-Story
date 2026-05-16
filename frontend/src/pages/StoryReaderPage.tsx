@@ -11,7 +11,7 @@ import * as playthroughApi from '../services/playthroughApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
-import { Swords, X, BookOpen, ChevronLeft, ChevronRight, RefreshCw, AlertTriangle, List, Gamepad2, UserRound } from 'lucide-react';
+import { Swords, BookOpen, ChevronLeft, ChevronRight, List, Gamepad2, UserRound } from 'lucide-react';
 import GamePanel from '../components/game/GamePanel';
 import type { CombatEncounter, Relationship, ConsequenceSeed } from '../services/playthroughApi';
 import RPGPanel from '../components/RPGPanel';
@@ -22,6 +22,8 @@ import { ConsequenceFlashback } from '../components/ConsequenceFlashback';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { LevelUpModal } from '../components/progression/LevelUpModal';
 import { useProgression } from '../hooks/useProgression';
+import { ChapterStatusOverlay } from '../components/ChapterStatusOverlay';
+import { MobileDrawer } from '../components/MobileDrawer';
 
 // Matches backend Chapter model
 interface Chapter {
@@ -559,147 +561,52 @@ export default function StoryReaderPage() {
             </div>
           )}
 
-          {/* Generating state — streaming text or loading */}
+          {/* Chapter status overlays */}
           {isGenerating && (!latestChapter || !latestChapter.content) && (
-            <div className="border-l-2 border-accent-400/30 pl-5 py-6 mt-4 bg-accent-400/[0.03] rounded-r-2xl animate-fade-in">
-              {isStreaming && streamingText ? (
-                <div className="text-ink-200/90">
-                  <div className="flex items-center gap-2 mb-3">
-                    <svg className="animate-spin w-4 h-4 text-accent-400" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    <span className="text-xs font-sans text-accent-400 font-medium">
-                      {streamPhase === 'tools' ? t.storyReader.streamPhaseTools : t.storyReader.streamingChapter}
-                    </span>
-                  </div>
-                  <StoryContent text={streamingText} onEntityClick={handleEntityClick} />
-                  <span className="inline-block w-0.5 h-4 bg-accent-400 animate-pulse ml-0.5 align-middle" />
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 text-ink-200/60">
-                  <svg className="animate-spin w-5 h-5 text-accent-400" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  <div>
-                    <p className="text-sm font-sans font-medium text-ink-100">
-                      {streamPhase === 'context' ? 'Analyzing world and story state...' : t.storyReader.generatingChapter}
-                    </p>
-                    <p className="text-xs font-sans text-ink-200/50 mt-0.5">{t.storyReader.generatingHint}</p>
-                  </div>
-                </div>
-              )}
-            </div>
+            <ChapterStatusOverlay
+              status="generating-first"
+              isStreaming={isStreaming}
+              streamingText={streamingText}
+              streamPhase={streamPhase}
+              onEntityClick={handleEntityClick}
+            />
           )}
 
-          {/* Generating NEXT chapter — streaming or waiting */}
           {isGenerating && isOnLatest && latestChapter?.content && !isToolsRunning && (
-            <div className="border-l-2 border-accent-400/30 pl-5 py-6 mt-8 bg-accent-400/[0.03] rounded-r-2xl animate-fade-in">
-              {isStreaming && streamingText ? (
-                <div className="text-ink-200/90">
-                  <div className="flex items-center gap-2 mb-3">
-                    <svg className="animate-spin w-4 h-4 text-accent-400" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    <span className="text-xs font-sans text-accent-400 font-medium">
-                      {streamPhase === 'tools' ? t.storyReader.streamPhaseTools : t.storyReader.streamingChapter}
-                    </span>
-                  </div>
-                  <StoryContent text={streamingText} onEntityClick={handleEntityClick} />
-                  <span className="inline-block w-0.5 h-4 bg-accent-400 animate-pulse ml-0.5 align-middle" />
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 text-ink-200/60">
-                  <svg className="animate-spin w-5 h-5 text-accent-400" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  <div>
-                    <p className="text-sm font-sans font-medium text-ink-100">
-                      {streamPhase === 'context' ? 'Analyzing world and story state...' : t.storyReader.generatingChapter}
-                    </p>
-                    <p className="text-xs font-sans text-ink-200/50 mt-0.5">{t.storyReader.generatingHint}</p>
-                  </div>
-                </div>
-              )}
-            </div>
+            <ChapterStatusOverlay
+              status="generating-next"
+              isStreaming={isStreaming}
+              streamingText={streamingText}
+              streamPhase={streamPhase}
+              onEntityClick={handleEntityClick}
+            />
           )}
 
-          {/* Failed chapter — error + retry */}
           {isOnLatest && isLatestFailed && !isGenerating && (
-            <div className="border-l-2 border-red-400/30 pl-5 py-6 mt-4 bg-red-400/[0.03] rounded-r-2xl animate-fade-in">
-              <div className="flex items-start gap-3">
-                <AlertTriangle size={20} className="text-red-400 shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm font-sans font-medium text-red-300">{t.storyReader.generationFailed}</p>
-                  <p className="text-xs font-sans text-ink-200/50 mt-1">{error || t.storyReader.generationFailedHint}</p>
-                  <button
-                    onClick={handleRetry}
-                    className="inline-flex items-center gap-2 mt-4 bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 px-4 py-2 rounded-xl text-sm font-sans font-medium transition-colors border border-red-500/20 hover:border-red-500/30"
-                  >
-                    <RefreshCw size={14} />
-                    {t.storyReader.retryGeneration}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <ChapterStatusOverlay
+              status="failed"
+              error={error}
+              onRetry={handleRetry}
+            />
           )}
 
-          {/* Pass 2 — Updating game state indicator */}
           {isOnLatest && activeChapter && activeChapter.content && isToolsRunning && !isRetryingTools && (
-            <div className="border-l-2 border-blue-400/30 pl-5 py-4 mt-4 bg-blue-400/[0.03] rounded-r-2xl animate-fade-in">
-              <div className="flex items-center gap-3 text-ink-200/60">
-                <svg className="animate-spin w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <p className="text-sm font-sans font-medium text-blue-300">{t.storyReader.updatingGameState}</p>
-              </div>
-            </div>
+            <ChapterStatusOverlay status="tools-running" />
           )}
 
-          {/* Tools failed — content OK but game state update failed */}
           {isOnLatest && isLatestToolsFailed && !isGenerating && !isRetryingTools && (
-            <div className="border-l-2 border-amber-400/30 pl-5 py-5 mt-4 bg-amber-400/[0.03] rounded-r-2xl animate-fade-in">
-              <div className="flex items-start gap-3">
-                <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm font-sans font-medium text-amber-300">{t.storyReader.toolsFailedTitle}</p>
-                  <p className="text-xs font-sans text-ink-200/50 mt-1">{t.storyReader.toolsFailedHint}</p>
-                  <button
-                    onClick={handleRetryTools}
-                    className="inline-flex items-center gap-2 mt-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 px-4 py-2 rounded-xl text-sm font-sans font-medium transition-colors border border-amber-500/20 hover:border-amber-500/30"
-                  >
-                    <RefreshCw size={14} />
-                    {t.storyReader.retryTools}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <ChapterStatusOverlay
+              status="tools-failed"
+              onRetryTools={handleRetryTools}
+            />
           )}
 
-          {/* Retrying tools indicator */}
           {isRetryingTools && (
-            <div className="border-l-2 border-blue-400/30 pl-5 py-4 mt-4 bg-blue-400/[0.03] rounded-r-2xl animate-fade-in">
-              <div className="flex items-center gap-3">
-                <svg className="animate-spin w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <p className="text-sm font-sans font-medium text-blue-300">{t.storyReader.retryingTools}</p>
-              </div>
-            </div>
+            <ChapterStatusOverlay status="retrying-tools" />
           )}
-          {/* Generation error (non-failed-chapter errors, e.g. network) */}
+
           {error && !isLatestFailed && !isGenerating && (
-            <div className="border-l-2 border-amber-400/30 pl-5 py-4 mt-4 bg-amber-400/[0.03] rounded-r-2xl animate-fade-in">
-              <div className="flex items-center gap-2 text-amber-300">
-                <AlertTriangle size={16} />
-                <p className="text-sm font-sans">{error}</p>
-              </div>
-            </div>
+            <ChapterStatusOverlay status="generic-error" error={error} />
           )}
 
           {/* Combat Panel — active combat encounter */}
@@ -762,15 +669,13 @@ export default function StoryReaderPage() {
       </button>
 
       {/* Mobile RPG drawer */}
-      <div className={`xl:hidden fixed right-0 top-0 h-full w-80 bg-ink-900 border-l border-ink-700 z-50 transform transition-transform duration-300 overflow-hidden flex flex-col ${rpgOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="p-5 flex flex-col h-full">
-          <div className="flex justify-between items-center mb-4 shrink-0">
-            <h3 className="font-display text-sm text-ink-100 uppercase tracking-wider">{t.storyReader.rpgPanel}</h3>
-            <button onClick={() => setRpgOpen(false)} className="w-8 h-8 rounded-lg text-ink-200 hover:text-ink-100 hover:bg-ink-800 flex items-center justify-center transition-colors">
-              <X size={16} />
-            </button>
-          </div>
-          <RPGPanel
+      <MobileDrawer
+        isOpen={rpgOpen}
+        onClose={() => setRpgOpen(false)}
+        title={t.storyReader.rpgPanel}
+        side="right"
+      >
+        <RPGPanel
           rpgTab={rpgTab}
           setRpgTab={setRpgTab}
           tabLabels={tabLabels}
@@ -785,49 +690,33 @@ export default function StoryReaderPage() {
           isRelationshipModalOpen={isRelationshipModalOpen}
           t={t}
         />
-        </div>
-      </div>
+      </MobileDrawer>
 
-      {/* Mobile backdrop */}
-      {rpgOpen && (
-        <div className="xl:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setRpgOpen(false)} />
-      )}
-
-
-      {/* Mobile chapter navigation drawer (left side) */}
-      <div className={`lg:hidden fixed left-0 top-0 h-full w-80 max-w-[85vw] bg-ink-900 border-r border-ink-700 z-50 transform transition-transform duration-300 overflow-hidden flex flex-col ${navOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-5 flex flex-col h-full">
-          <div className="flex justify-between items-center mb-4 shrink-0">
-            <h3 className="font-display text-sm text-ink-100 uppercase tracking-wider">{t.storyReader.storyNavigation}</h3>
-            <button onClick={() => setNavOpen(false)} className="w-8 h-8 rounded-lg text-ink-200 hover:text-ink-100 hover:bg-ink-800 flex items-center justify-center transition-colors">
-              <X size={16} />
-            </button>
-          </div>
-
-          <ChapterNav
-            chapters={chapters}
-            goToChapter={(idx) => { goToChapter(idx); setNavOpen(false); }}
-            isOnLatest={isOnLatest}
-            currentChapterIdx={currentChapterIdx}
-            totalChapters={totalChapters}
-            contextTokens={contextTokens}
-            handleSummarizeArc={handleSummarizeArc}
-            isSummarizingArc={isSummarizingArc}
-            isGenerating={isGenerating}
-            t={t}
-            activeChapter={activeChapter}
-            isLatestFailed={isLatestFailed}
-            isLatestToolsFailed={isLatestToolsFailed}
-            isNewGame={isNewGame}
-            handleBeginStory={handleBeginStory}
-          />
-        </div>
-      </div>
-
-      {/* Mobile chapter drawer backdrop */}
-      {navOpen && (
-        <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setNavOpen(false)} />
-      )}
+      {/* Mobile chapter navigation drawer */}
+      <MobileDrawer
+        isOpen={navOpen}
+        onClose={() => setNavOpen(false)}
+        title={t.storyReader.storyNavigation}
+        side="left"
+      >
+        <ChapterNav
+          chapters={chapters}
+          goToChapter={(idx) => { goToChapter(idx); setNavOpen(false); }}
+          isOnLatest={isOnLatest}
+          currentChapterIdx={currentChapterIdx}
+          totalChapters={totalChapters}
+          contextTokens={contextTokens}
+          handleSummarizeArc={handleSummarizeArc}
+          isSummarizingArc={isSummarizingArc}
+          isGenerating={isGenerating}
+          t={t}
+          activeChapter={activeChapter}
+          isLatestFailed={isLatestFailed}
+          isLatestToolsFailed={isLatestToolsFailed}
+          isNewGame={isNewGame}
+          handleBeginStory={handleBeginStory}
+        />
+      </MobileDrawer>
 
       {/* Mobile bottom navigation bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-ink-900/95 backdrop-blur-md border-t border-ink-700 safe-area-bottom">

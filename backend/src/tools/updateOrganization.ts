@@ -4,7 +4,7 @@ import { Organization } from '../models/Organization';
 import { Character } from '../models/Character';
 import { updateOrganizationOutput, validateToolOutput } from './schemas';
 
-export function makeUpdateOrganizationTool(playthroughId: string, userId: string) {
+export function makeUpdateOrganizationTool(playthroughId: string) {
   return tool({
     description: 'Update an organization\'s stats, status, or membership. Use when story events change an organization (gains/loses members, power shifts, disbanding, etc.).',
     inputSchema: z.object({

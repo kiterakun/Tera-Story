@@ -30,6 +30,12 @@ export default {
     archivedEntities: 'Archived Entities',
     noArchived: 'No archived entities.',
     noOrganizations: 'No organizations discovered yet.',
+    noCompanions: 'No companions acquired yet.',
+    background: 'Background',
+    personality: 'Personality',
+    goals: 'Goals',
+    appearance: 'Appearance',
+    viewDetails: 'View Details',
     createProtagonistRequired: 'You must create a protagonist before starting the story.',
   },
   characterCreate: {

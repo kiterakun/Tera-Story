@@ -8,22 +8,20 @@ import {
   Package,
   Sparkles,
   Archive,
-  RotateCcw,
-  Skull,
-  AlertTriangle,
-  HelpCircle,
   Landmark,
 } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { EntityData } from '../EntityDetailModal';
 import type { Character, Item, SpecialItem, Relationship } from '../../services/playthroughApi';
-import type { Organization } from '../../types/entities';
 import { useTranslation } from '../../i18n';
 import { useArchive } from '../../hooks/useArchive';
 import { useMap } from '../../hooks/useMap';
 import { useStoryStore } from '../../stores/storyStore';
 import { getImageUrl } from '../../utils/url';
 import { DynamicStatList } from '../DynamicStatDisplay';
+import { CharacterTab } from './CharacterTab';
+import { CompanionsTab } from './CompanionsTab';
+import { ArchiveTab } from './ArchiveTab';
 
 type GameTab = 'character' | 'companions' | 'relationships' | 'map' | 'inventory' | 'abilities' | 'organizations' | 'archive';
 
@@ -53,19 +51,7 @@ const TABS: { id: GameTab; icon: typeof UserRound; labelKey: string }[] = [
   { id: 'archive', icon: Archive, labelKey: 'archive' },
 ];
 
-const STATUS_COLORS: Record<string, string> = {
-  active: 'text-green-400 bg-green-500/10',
-  dead: 'text-red-400 bg-red-500/10',
-  injured: 'text-amber-400 bg-amber-500/10',
-  missing: 'text-gray-400 bg-gray-500/10',
-};
 
-const STATUS_ICONS: Record<string, typeof Skull> = {
-  active: UserRound,
-  dead: Skull,
-  injured: AlertTriangle,
-  missing: HelpCircle,
-};
 
 const RARITY_COLORS: Record<string, string> = {
   common: 'text-gray-300 border-gray-500/30',
@@ -90,7 +76,6 @@ export default function GamePanel({
   t,
 }: GamePanelProps) {
   const [activeTab, setActiveTab] = useState<GameTab>('character');
-  const [expandedNpcId, setExpandedNpcId] = useState<string | null>(null);
 
   const { archived, isLoading: archiveLoading, fetchArchived, restoreEntity } = useArchive(playthroughId);
   const { currentContext, playthroughLocations, fetchCurrentLocation, fetchAllLocations } = useMap();
@@ -155,138 +140,13 @@ export default function GamePanel({
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-6">
             {/* Character Tab */}
-            {activeTab === 'character' && protagonist && (
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-20 h-20 rounded-xl bg-ink-950 border border-ink-700 overflow-hidden shrink-0">
-                    {protagonist.imageUrl ? (
-                      <img src={getImageUrl(protagonist.imageUrl)} alt={protagonist.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl font-display text-ink-500 font-bold">
-                        {protagonist.name.substring(0, 2).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="font-display text-xl text-ink-100">{protagonist.name}</h3>
-                    <p className="text-sm text-accent-400">{t.characterPanel.protagonist}</p>
-                    {protagonist.description && (
-                      <p className="text-sm text-ink-200/70 mt-2">{protagonist.description}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Character details */}
-                {(protagonist.background || protagonist.personality || protagonist.goals || protagonist.appearance) && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {protagonist.background && (
-                      <div className="bg-ink-950/50 rounded-xl p-3 border border-ink-700/50">
-                        <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-1">{t.characterPanel.background}</h4>
-                        <p className="text-sm text-ink-200/80">{protagonist.background}</p>
-                      </div>
-                    )}
-                    {protagonist.personality && (
-                      <div className="bg-ink-950/50 rounded-xl p-3 border border-ink-700/50">
-                        <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-1">{t.characterPanel.personality}</h4>
-                        <p className="text-sm text-ink-200/80">{protagonist.personality}</p>
-                      </div>
-                    )}
-                    {protagonist.goals && (
-                      <div className="bg-ink-950/50 rounded-xl p-3 border border-ink-700/50">
-                        <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-1">{t.characterPanel.goals}</h4>
-                        <p className="text-sm text-ink-200/80">{protagonist.goals}</p>
-                      </div>
-                    )}
-                    {protagonist.appearance && (
-                      <div className="bg-ink-950/50 rounded-xl p-3 border border-ink-700/50">
-                        <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-1">{t.characterPanel.appearance}</h4>
-                        <p className="text-sm text-ink-200/80">{protagonist.appearance}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Stats */}
-                {protagonist.dynamicStats.length > 0 && (
-                  <div>
-                    <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-3 font-medium">Stats</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      {protagonist.dynamicStats.map((stat, idx) => (
-                        <div key={idx} className="bg-ink-950/50 rounded-xl p-3 border border-ink-700/50">
-                          <DynamicStatList stats={[stat]} compact />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+            {activeTab === 'character' && (
+              <CharacterTab protagonist={protagonist} setDetailEntity={setDetailEntity} t={t} />
             )}
 
             {/* Companions Tab */}
             {activeTab === 'companions' && (
-              <div className="space-y-3">
-                {sortedNpcs.length === 0 ? (
-                  <p className="text-sm text-ink-200/50 text-center py-8">{t.characterPanel.noCompanions}</p>
-                ) : (
-                  sortedNpcs.map(npc => {
-                    const statusColor = STATUS_COLORS[npc.status] || STATUS_COLORS.active;
-                    const StatusIcon = STATUS_ICONS[npc.status] || UserRound;
-                    const isExpanded = expandedNpcId === npc._id;
-
-                    return (
-                      <div
-                        key={npc._id}
-                        className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-3 cursor-pointer hover:border-ink-600 transition-colors"
-                        onClick={() => setExpandedNpcId(isExpanded ? null : npc._id)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-ink-900 border border-ink-700 overflow-hidden shrink-0">
-                            {npc.imageUrl ? (
-                              <img src={getImageUrl(npc.imageUrl)} alt={npc.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-sm font-display text-ink-500 font-bold">
-                                {npc.name.substring(0, 2).toUpperCase()}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-display text-sm text-ink-100 truncate">{npc.name}</span>
-                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusColor}`}>
-                                <StatusIcon size={10} className="inline mr-0.5" />
-                                {npc.status}
-                              </span>
-                            </div>
-                            {npc.description && (
-                              <p className="text-xs text-ink-200/50 truncate mt-0.5">{npc.description}</p>
-                            )}
-                          </div>
-                        </div>
-                        {isExpanded && (
-                          <div className="mt-3 pt-3 border-t border-ink-700/50 space-y-2">
-                            {npc.description && <p className="text-sm text-ink-200/70">{npc.description}</p>}
-                            {npc.dynamicStats.length > 0 && (
-                              <div className="grid grid-cols-2 gap-1.5">
-                                {npc.dynamicStats.map((stat, idx) => (
-                                  <div key={idx} className="bg-ink-900/50 rounded px-2 py-1">
-                                    <DynamicStatList stats={[stat]} compact />
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            <button
-                              onClick={e => { e.stopPropagation(); setDetailEntity({ type: 'character', data: npc }); }}
-                              className="text-xs text-accent-400 hover:text-accent-300 transition-colors"
-                            >
-                              View Details
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+              <CompanionsTab sortedNpcs={sortedNpcs} setDetailEntity={setDetailEntity} t={t} />
             )}
 
             {/* Relationships Tab */}
@@ -471,8 +331,6 @@ export default function GamePanel({
             {/* Organizations Tab */}
             {activeTab === 'organizations' && (
               <OrganizationsTab
-                worldId={protagonist?.worldId ?? ''}
-                playthroughId={playthroughId}
                 setDetailEntity={setDetailEntity}
                 t={t}
               />
@@ -480,132 +338,7 @@ export default function GamePanel({
 
             {/* Archive Tab */}
             {activeTab === 'archive' && (
-              <div className="space-y-4">
-                {archiveLoading ? (
-                  <p className="text-sm text-ink-200/50 text-center py-8">Loading...</p>
-                ) : !archived || (
-                  archived.characters.length === 0 &&
-                  archived.items.length === 0 &&
-                  archived.specialItems.length === 0 &&
-                  archived.locations.length === 0 &&
-                  archived.organizations.length === 0
-                ) ? (
-                  <p className="text-sm text-ink-200/50 text-center py-8">{t.playthrough.noArchived}</p>
-                ) : (
-                  <>
-                    {archived.characters.length > 0 && (
-                      <div>
-                        <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">Characters</h4>
-                        <div className="space-y-2">
-                          {archived.characters.map(char => (
-                            <div key={char._id} className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-3 flex items-center justify-between">
-                              <div>
-                                <span className="text-sm text-ink-100">{char.name}</span>
-                                <span className="text-xs text-ink-200/40 ml-2">{char.status}</span>
-                              </div>
-                              <button
-                                onClick={() => restoreEntity('character', char._id)}
-                                className="text-xs text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
-                              >
-                                <RotateCcw size={12} />
-                                {t.playthrough.restore}
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {archived.items.length > 0 && (
-                      <div>
-                        <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">Items</h4>
-                        <div className="space-y-2">
-                          {archived.items.map(item => (
-                            <div key={item._id} className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-3 flex items-center justify-between">
-                              <div>
-                                <span className="text-sm text-ink-100">{item.name}</span>
-                                <span className="text-xs text-ink-200/40 ml-2">{item.rarity}</span>
-                              </div>
-                              <button
-                                onClick={() => restoreEntity('item', item._id)}
-                                className="text-xs text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
-                              >
-                                <RotateCcw size={12} />
-                                {t.playthrough.restore}
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {archived.specialItems.length > 0 && (
-                      <div>
-                        <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">Special Items</h4>
-                        <div className="space-y-2">
-                          {archived.specialItems.map(si => (
-                            <div key={si._id} className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-3 flex items-center justify-between">
-                              <div>
-                                <span className="text-sm text-ink-100">{si.name}</span>
-                                <span className="text-xs text-ink-200/40 ml-2">{si.category}</span>
-                              </div>
-                              <button
-                                onClick={() => restoreEntity('special-item', si._id)}
-                                className="text-xs text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
-                              >
-                                <RotateCcw size={12} />
-                                {t.playthrough.restore}
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {archived.locations.length > 0 && (
-                      <div>
-                        <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">Locations</h4>
-                        <div className="space-y-2">
-                          {archived.locations.map(loc => (
-                            <div key={loc._id} className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-3 flex items-center justify-between">
-                              <div>
-                                <span className="text-sm text-ink-100">{loc.name}</span>
-                                <span className="text-xs text-ink-200/40 ml-2">{loc.type}</span>
-                              </div>
-                              <button
-                                onClick={() => restoreEntity('location', loc._id)}
-                                className="text-xs text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
-                              >
-                                <RotateCcw size={12} />
-                                {t.playthrough.restore}
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {archived.organizations.length > 0 && (
-                      <div>
-                        <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">Organizations</h4>
-                        <div className="space-y-2">
-                          {archived.organizations.map(org => (
-                            <div key={org._id} className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-3 flex items-center justify-between">
-                              <div>
-                                <span className="text-sm text-ink-100">{org.name}</span>
-                                <span className="text-xs text-ink-200/40 ml-2">{org.type}</span>
-                              </div>
-                              <button
-                                onClick={() => restoreEntity('organization', org._id)}
-                                className="text-xs text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
-                              >
-                                <RotateCcw size={12} />
-                                {t.playthrough.restore}
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+              <ArchiveTab archived={archived} isLoading={archiveLoading} restoreEntity={restoreEntity} t={t} />
             )}
           </div>
         </div>
@@ -617,13 +350,11 @@ export default function GamePanel({
 // ── Organizations Tab Component ──
 
 interface OrganizationsTabProps {
-  worldId: string;
-  playthroughId: string;
   setDetailEntity: Dispatch<SetStateAction<EntityData | null>>;
   t: ReturnType<typeof useTranslation>;
 }
 
-function OrganizationsTab({ worldId, playthroughId, setDetailEntity, t }: OrganizationsTabProps) {
+function OrganizationsTab({ setDetailEntity, t }: OrganizationsTabProps) {
   const { organizations } = useStoryStore();
 
   if (organizations.length === 0) {

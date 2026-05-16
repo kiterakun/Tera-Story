@@ -11,89 +11,8 @@ import { addLocation } from '../agents/mapAgent';
 import { createUserProviderRegistry } from '../providers/registry';
 import { runContextAgent } from '../agents/contextAgent';
 import { runWriterAgent } from '../agents/writerAgent';
-import { addXp, XP_REWARDS } from './progressionService';
-import { Echo } from '../models/Echo';
-import { emit, emitToUser } from './sseManager';
-import { checkAchievements } from './achievementService';
-import { updateQuestProgress } from './dailyService';
-import { StoryCard } from '../models/StoryCard';
-import type { StoryCardRarity } from '../models/StoryCard';
-
-const ECHO_DELAYS = [5, 10, 20] as const;
-const ECHO_TYPES = ['mercy', 'betrayal', 'discovery', 'consequence'] as const;
-
-async function createStoryCard(params: {
-  userId: string;
-  playthroughId: string;
-  worldId: string;
-  sceneId: string;
-  chapterIndex: number;
-  content: string;
-}): Promise<void> {
-  const { userId, playthroughId, worldId, sceneId, chapterIndex, content } =
-    params;
-
-  const pivotIndex = chapterIndex + 1;
-  const rarity: StoryCardRarity =
-    pivotIndex >= 20 ? 'epic' : pivotIndex >= 15 ? 'rare' : pivotIndex >= 10 ? 'uncommon' : 'common';
-  const category =
-    pivotIndex % 10 === 0 ? 'milestone' : 'story';
-
-  const firstLine = content.split('\n')[0]?.slice(0, 120) ?? '';
-  const title = firstLine || `Scene ${pivotIndex}`;
-
-  const secondLine = content.split('\n')[1]?.slice(0, 200) ?? '';
-
-  await StoryCard.create({
-    userId,
-    playthroughId,
-    worldId,
-    sceneId,
-    imageUrl: `https://placehold.co/512x512/png?text=Scene+${pivotIndex}`,
-    title,
-    description: secondLine || `A pivotal moment from scene ${pivotIndex}.`,
-    rarity,
-    category,
-    unlockedAt: new Date(),
-  });
-}
-
-async function plantEcho(
-  playthroughId: string,
-  chapterId: string,
-  chapterIndex: number,
-  playerChoice: string
-): Promise<void> {
-  const delay = ECHO_DELAYS[Math.floor(Math.random() * ECHO_DELAYS.length)]!;
-  const echoType = ECHO_TYPES[Math.floor(Math.random() * ECHO_TYPES.length)]!;
-
-  const echo = new Echo({
-    playthroughId,
-    triggerChapterId: chapterId,
-    triggerChapterIndex: chapterIndex,
-    targetChapterIndex: chapterIndex + delay,
-    type: echoType,
-    description: `Consequence of choice: "${playerChoice.slice(0, 200)}"`,
-    minChapterDelay: delay,
-    maxChapterDelay: delay + 5,
-  });
-
-  await echo.save();
-
-  // Increment echoes counter on playthrough
-  await Playthrough.findByIdAndUpdate(playthroughId, {
-    $inc: { echoesCount: 1 },
-  });
-
-  // Emit SSE event for real-time echo notification
-  emit(playthroughId, 'echo:planted', {
-    playthroughId,
-    echoId: echo._id.toString(),
-    type: echoType,
-    triggerChapterIndex: chapterIndex,
-    targetChapterIndex: chapterIndex + delay,
-  });
-}
+import { emit } from './sseManager';
+import { prepareChapterGeneration, applyPostChapterEffects } from './story';
 
 export async function generateChapter(
   playthroughId: string,
@@ -101,58 +20,9 @@ export async function generateChapter(
   userId: string
 ) {
   console.log(`[Story] generateChapter called: playthrough=${playthroughId}, choice="${playerChoice.slice(0, 50)}"`);
-  // 1. Load playthrough — verify ownership & active status
-  const playthrough = await Playthrough.findById(playthroughId);
-  if (!playthrough) throw new Error('Playthrough not found');
-  if (playthrough.userId.toString() !== userId) throw new Error('Unauthorized');
-  if (playthrough.status !== 'active') throw new Error('Playthrough is not active');
 
-  // 1b. Protagonist must exist before generating any chapter
-  const protagonist = await Character.findOne({ playthroughId, role: 'protagonist' }).lean();
-  if (!protagonist) throw new Error('Protagonist must be created before starting the story');
-
-  // 2. Load user AI settings → build provider registry (auto-create defaults if missing)
-  let settings = await UserSettings.findOne({ userId });
-  if (!settings) {
-    settings = await UserSettings.create({
-      userId,
-      language: 'en',
-      theme: 'dark',
-      aiSettings: {
-        contextAgent: { provider: 'openai', model: 'gpt-4o' },
-        writerAgent: { provider: 'openai', model: 'gpt-4o' },
-        supportAgent: { provider: 'openai', model: 'gpt-4o' },
-        imageAgent: { provider: 'openai', model: 'dall-e-3' },
-      },
-    });
-  }
-  const registry = createUserProviderRegistry(settings.aiSettings);
-
-  // 3. Determine current arc: find most recent active, or create first one
-  let arc = await Arc.findOne({ playthroughId, status: 'active' }).sort({ arcIndex: -1 });
-  if (!arc) {
-    arc = await Arc.create({
-      playthroughId,
-      arcIndex: 0,
-      title: 'Arc 1',
-      status: 'active',
-    });
-  }
-
-  // 4. Determine chapter index: count existing chapters across ALL arcs (global index)
-  const chapterCount = await Chapter.countDocuments({ playthroughId });
-
-  // 5. Create placeholder chapter with 'generating' status
-  const chapter = await Chapter.create({
-    content: '',
-    arcId: arc._id,
-    playthroughId,
-    chapterIndex: chapterCount,
-    status: 'generating',
-    playerChoice,
-    metadata: { generatedAt: new Date() },
-  });
-  console.log(`[Story] Placeholder chapter created: id=${chapter._id}, arcId=${arc._id}, index=${chapterCount}`);
+  const { playthrough, settings, registry, arc, chapter, chapterCount } =
+    await prepareChapterGeneration(playthroughId, playerChoice, userId);
 
   // Check if map exists for this world, generate if not
   const continentCount = await import('../models/Continent').then(m =>
@@ -268,87 +138,16 @@ export async function generateChapter(
       arcId: arc._id.toString(),
     });
 
-    // Award XP for scene completion
-    try {
-      addXp(userId, XP_REWARDS.scene_complete!, 'scene_complete', {
-        playthroughId,
-        sceneId: chapter._id.toString(),
-      });
-    } catch (err) {
-      console.error('Failed to award scene XP:', err);
-    }
-
-    // Update daily quest progress: read_scenes
-    try {
-      updateQuestProgress(userId, 'read_scenes', 1);
-    } catch (err) {
-      console.error('Failed to update read_scenes quest progress:', err);
-    }
-
-    // Award XP for making a choice (if not the initial chapter)
-    if (playerChoice && playerChoice.trim().length > 0) {
-      try {
-        addXp(userId, XP_REWARDS.choice_made!, 'choice_made', {
-          playthroughId,
-          sceneId: chapter._id.toString(),
-        });
-      } catch (err) {
-        console.error('Failed to award choice XP:', err);
-      }
-    }
-
-    // Update daily quest progress: make_choices
-    try {
-      updateQuestProgress(userId, 'make_choices', 1);
-    } catch (err) {
-      console.error('Failed to update make_choices quest progress:', err);
-    }
-
-    // Plant Echo for major choices
-    if (playerChoice && playerChoice.length > 200) {
-      try {
-        await plantEcho(playthroughId, chapter._id.toString(), chapterCount, playerChoice);
-        emitToUser(userId, 'echo_planted', {
-          playthroughId,
-          chapterId: chapter._id.toString(),
-          chapterIndex: chapterCount,
-        });
-      } catch (err) {
-        console.error('Failed to plant echo:', err);
-      }
-    }
-
-    // Check achievements for scene completed + choice made
-    try {
-      checkAchievements(userId, {
-        type: 'scene_completed',
-        data: { playthroughId, sceneId: chapter._id.toString(), chapterIndex: chapterCount },
-      });
-      if (playerChoice && playerChoice.trim().length > 0) {
-        checkAchievements(userId, {
-          type: 'choice_made',
-          data: { playthroughId, sceneId: chapter._id.toString(), chapterIndex: chapterCount },
-        });
-      }
-    } catch (err) {
-      console.error('Failed to check achievements:', err);
-    }
-
-    // Create story card for pivotal scenes (every 5th chapter)
-    if ((chapterCount + 1) % 5 === 0) {
-      try {
-        await createStoryCard({
-          userId,
-          playthroughId,
-          worldId: playthrough.worldId.toString(),
-          sceneId: chapter._id.toString(),
-          chapterIndex: chapterCount,
-          content: result.text,
-        });
-      } catch (err) {
-        console.error('Failed to create story card:', err);
-      }
-    }
+    // Apply post-chapter effects (XP, quests, echoes, achievements, story cards)
+    await applyPostChapterEffects({
+      userId,
+      playthroughId,
+      worldId: playthrough.worldId.toString(),
+      chapterId: chapter._id.toString(),
+      chapterIndex: chapterCount,
+      playerChoice,
+      content: result.text,
+    });
 
     return {
       chapter: updatedChapter,
@@ -383,51 +182,8 @@ export async function generateChapterStream(
 ) {
   console.log(`[Story] generateChapterStream called: playthrough=${playthroughId}, choice="${playerChoice.slice(0, 50)}"`);
 
-  const playthrough = await Playthrough.findById(playthroughId);
-  if (!playthrough) throw new Error('Playthrough not found');
-  if (playthrough.userId.toString() !== userId) throw new Error('Unauthorized');
-  if (playthrough.status !== 'active') throw new Error('Playthrough is not active');
-
-  // Protagonist must exist before generating any chapter
-  const protagonistCheck = await Character.findOne({ playthroughId, role: 'protagonist' }).lean();
-  if (!protagonistCheck) throw new Error('Protagonist must be created before starting the story');
-
-  let settings = await UserSettings.findOne({ userId });
-  if (!settings) {
-    settings = await UserSettings.create({
-      userId,
-      language: 'en',
-      theme: 'dark',
-      aiSettings: {
-        contextAgent: { provider: 'openai', model: 'gpt-4o' },
-        writerAgent: { provider: 'openai', model: 'gpt-4o' },
-        supportAgent: { provider: 'openai', model: 'gpt-4o' },
-        imageAgent: { provider: 'openai', model: 'dall-e-3' },
-      },
-    });
-  }
-  const registry = createUserProviderRegistry(settings.aiSettings);
-
-  let arc = await Arc.findOne({ playthroughId, status: 'active' }).sort({ arcIndex: -1 });
-  if (!arc) {
-    arc = await Arc.create({
-      playthroughId,
-      arcIndex: 0,
-      title: 'Arc 1',
-      status: 'active',
-    });
-  }
-
-  const chapterCount = await Chapter.countDocuments({ playthroughId });
-  const chapter = await Chapter.create({
-    content: '',
-    arcId: arc._id,
-    playthroughId,
-    chapterIndex: chapterCount,
-    status: 'generating',
-    playerChoice,
-    metadata: { generatedAt: new Date() },
-  });
+  const { playthrough, settings, registry, arc, chapter, chapterCount } =
+    await prepareChapterGeneration(playthroughId, playerChoice, userId);
 
   try {
     const contextOutput = await runContextAgent({
@@ -470,55 +226,16 @@ export async function generateChapterStream(
     console.log(`[Story] Token usage — context: ${contextOutput.usage?.inputTokens || 0}, writer: ${result.usage?.totalTokens || 0} (${result.usage?.promptTokens || 0}p + ${result.usage?.completionTokens || 0}c)`);
     const updatedChapter = await Chapter.findById(chapter._id).lean();
 
-    // Award XP for scene completion (stream variant)
-    try {
-      addXp(userId, XP_REWARDS.scene_complete!, 'scene_complete', {
-        playthroughId,
-        sceneId: chapter._id.toString(),
-      });
-    } catch (err) {
-      console.error('Failed to award scene XP (stream):', err);
-    }
-
-    // Update daily quest progress: read_scenes (stream)
-    try {
-      updateQuestProgress(userId, 'read_scenes', 1);
-    } catch (err) {
-      console.error('Failed to update read_scenes quest progress (stream):', err);
-    }
-
-    // Award XP for making a choice (if not initial chapter)
-    if (playerChoice && playerChoice.trim().length > 0) {
-      try {
-        addXp(userId, XP_REWARDS.choice_made!, 'choice_made', {
-          playthroughId,
-          sceneId: chapter._id.toString(),
-        });
-      } catch (err) {
-        console.error('Failed to award choice XP (stream):', err);
-      }
-    }
-
-    // Update daily quest progress: make_choices (stream)
-    try {
-      updateQuestProgress(userId, 'make_choices', 1);
-    } catch (err) {
-      console.error('Failed to update make_choices quest progress (stream):', err);
-    }
-
-    // Plant Echo for major choices (stream variant)
-    if (playerChoice && playerChoice.length > 200) {
-      try {
-        await plantEcho(playthroughId, chapter._id.toString(), chapterCount, playerChoice);
-        emitToUser(userId, 'echo_planted', {
-          playthroughId,
-          chapterId: chapter._id.toString(),
-          chapterIndex: chapterCount,
-        });
-      } catch (err) {
-        console.error('Failed to plant echo (stream):', err);
-      }
-    }
+    // Apply post-chapter effects (XP, quests, echoes, achievements, story cards)
+    await applyPostChapterEffects({
+      userId,
+      playthroughId,
+      worldId: playthrough.worldId.toString(),
+      chapterId: chapter._id.toString(),
+      chapterIndex: chapterCount,
+      playerChoice,
+      content: result.text,
+    });
 
     return {
       chapter: updatedChapter,

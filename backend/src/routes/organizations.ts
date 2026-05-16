@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { validate } from '../middleware/validate';
 import { AuthRequest } from '../middleware/auth';
 import { Organization } from '../models/Organization';
-import { Playthrough } from '../models/Playthrough';
 
 const router = Router({ mergeParams: true });
 

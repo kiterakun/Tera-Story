@@ -1,5 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
-import { IDynamicStat } from '../types/character.types';
+import mongoose, { Schema } from 'mongoose';
 import { IOrganizationDocument } from '../types/organization.types';
 
 const DynamicStatSchema = new Schema(
