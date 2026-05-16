@@ -1,0 +1,23 @@
+export default {
+  characterPanel: {
+    title: 'Bảng nhân vật',
+    characters: 'Nhân vật',
+    protagonist: 'Nhân vật chính',
+    storyCharacters: 'Nhân vật trong truyện',
+    noCharacters: 'Chưa có nhân vật. Bắt đầu câu chuyện để gặp nhân vật.',
+    inventory: 'Kho đồ',
+    noItems: 'Chưa có vật phẩm.',
+    specialItems: 'Vật phẩm đặc biệt',
+    noSpecialItems: 'Chưa có vật phẩm đặc biệt.',
+    companions: 'Đồng Đội',
+    noCompanions: 'Chưa có đồng đội.',
+    background: 'Bối Cảnh',
+    personality: 'Tính Cách',
+    goals: 'Mục Tiêu',
+    appearance: 'Ngoại Hình',
+  },
+  characterCard: {
+    protagonist: 'Nhân vật chính',
+    npc: 'NPC',
+  },
+};

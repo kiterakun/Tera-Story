@@ -1,0 +1,27 @@
+export default {
+  daily: {
+    checkInTitle: 'Daily Check-In',
+    streakRecord: 'Record: {count} days',
+    streakFreezes: '({count} freezes)',
+    claimed: 'Claimed!',
+    bonus: '(+{count} bonus)',
+    claiming: 'Claiming...',
+    claimNow: 'Claim Now',
+    allClaimed: 'All days this week have been claimed!',
+    dayLabels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    questsTitle: 'Daily Quests',
+    claimReward: 'Claim Reward',
+    questCompleted: 'Completed',
+    streakTitle: '{count} Day Streak',
+    questDesc: {
+      read_scenes: 'Read {count} scenes',
+      make_choices: 'Make {count} choices',
+      win_combat: 'Win {count} combats',
+      unlock_achievement: 'Unlock {count} achievements',
+      collect_card: 'Collect {count} cards',
+    },
+    todayQuests: 'Today\'s Quests',
+    allQuestsDone: 'Great job! Completed all quests for today',
+    backTomorrow: 'Come back tomorrow for new quests',
+  },
+};

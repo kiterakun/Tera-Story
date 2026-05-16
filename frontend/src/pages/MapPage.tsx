@@ -229,7 +229,7 @@ export default function MapPage() {
     }
 
     return Array.from(grouped.entries());
-  }, [playthroughLocations]);
+  }, [playthroughLocations, t]);
 
   const handleToggleLocation = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));

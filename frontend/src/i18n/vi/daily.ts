@@ -1,0 +1,27 @@
+export default {
+  daily: {
+    checkInTitle: 'Điểm danh hằng ngày',
+    streakRecord: 'Kỷ lục: {count} ngày',
+    streakFreezes: '({count} lần đóng băng)',
+    claimed: 'Đã nhận!',
+    bonus: '(+{count} thưởng)',
+    claiming: 'Đang nhận...',
+    claimNow: 'Nhận ngay',
+    allClaimed: 'Tất cả các ngày trong tuần đã được điểm danh!',
+    dayLabels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
+    questsTitle: 'Nhiệm vụ hằng ngày',
+    claimReward: 'Nhận thưởng',
+    questCompleted: 'Hoàn thành',
+    streakTitle: 'Chuỗi {count} ngày',
+    questDesc: {
+      read_scenes: 'Đọc {count} cảnh truyện',
+      make_choices: 'Đưa ra {count} lựa chọn',
+      win_combat: 'Thắng {count} trận chiến',
+      unlock_achievement: 'Mở khóa {count} thành tựu',
+      collect_card: 'Sưu tầm {count} thẻ bài',
+    },
+    todayQuests: 'Nhiệm vụ hôm nay',
+    allQuestsDone: 'Tuyệt vời! Hoàn thành hết nhiệm vụ hôm nay',
+    backTomorrow: 'Quay lại vào ngày mai để nhận nhiệm vụ mới',
+  },
+};
