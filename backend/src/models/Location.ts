@@ -15,6 +15,7 @@ const DynamicStatSchema = new Schema(
     v: { type: Schema.Types.Mixed },
     t: { type: String, required: true },
     maxV: { type: Number },
+    children: { type: [Schema.Types.Mixed], default: undefined }, // for 'object' type
   },
   { _id: false }
 );

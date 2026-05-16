@@ -6,13 +6,13 @@ import { updateStatsOutput, validateToolOutput } from './schemas';
 
 export function makeUpdateStatsTool(playthroughId: string, userId: string) {
   return tool({
-    description: 'Update character statistics after story events. For pool type stats (HP, MP, etc.), you can also update maxV to change the current maximum.',
+    description: 'Update character statistics after story events. For pool type stats (HP, MP, etc.), you can also update maxV to change the current maximum. For object type stats, use dot notation (e.g., "equipment.weapon").',
     inputSchema: z.object({
       characterName: z.string().describe('Name of the character to update'),
       updates: z
         .array(
           z.object({
-            key: z.string().describe('The stat key to update'),
+            key: z.string().describe('The stat key to update (supports dot notation for nested object stats, e.g. "equipment.weapon")'),
             value: z
               .union([z.string(), z.number()])
               .describe('The new value for the stat'),

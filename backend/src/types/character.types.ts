@@ -5,6 +5,7 @@ export interface IDynamicStat {
   v: string | number | boolean; // value
   t: string;   // type — matches resourceTemplate.type
   maxV?: number; // only for 'pool' type — current maximum (e.g. max HP after buffs/debuffs)
+  children?: IDynamicStat[]; // only for 'object' type — nested sub-properties
 }
 
 export interface ICharacterBase {

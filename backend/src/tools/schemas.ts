@@ -162,3 +162,15 @@ export const updateLocationStatsOutput = z.discriminatedUnion('updated', [
   z.object({ updated: z.literal(true), locationName: z.string() }),
   z.object({ updated: z.literal(false), error: z.string() }),
 ]);
+
+// ── Organization ──
+
+export const createOrganizationOutput = z.object({
+  organizationId: z.string(),
+  name: z.string(),
+});
+
+export const updateOrganizationOutput = z.discriminatedUnion('updated', [
+  z.object({ updated: z.literal(true), organizationName: z.string() }),
+  z.object({ updated: z.literal(false), error: z.string() }),
+]);

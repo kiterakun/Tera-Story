@@ -2,12 +2,19 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IResourceTemplateDocument {
   key: string;
-  type: 'number' | 'text' | 'progress' | 'enum' | 'pool';
+  type: 'number' | 'text' | 'progress' | 'enum' | 'pool' | 'object';
   min?: number;
   max?: number;
   defaultValue?: string | number;
   displayFormat?: string;
   options?: string[];
+  children?: IResourceTemplateDocument[];
+}
+
+export interface IOrganizationTemplateDocument {
+  type: string;
+  description: string;
+  defaultStats: IResourceTemplateDocument[];
 }
 
 export interface IWorldDocument extends Document {
@@ -18,6 +25,7 @@ export interface IWorldDocument extends Document {
   imageUrl?: string;
   resourceTemplates: IResourceTemplateDocument[];
   locationResourceTemplates: IResourceTemplateDocument[];
+  organizationTemplates: IOrganizationTemplateDocument[];
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
@@ -29,13 +37,23 @@ const ResourceTemplateSchema = new Schema<IResourceTemplateDocument>(
     type: {
       type: String,
       required: true,
-      enum: ['number', 'text', 'progress', 'enum', 'pool'],
+      enum: ['number', 'text', 'progress', 'enum', 'pool', 'object'],
     },
     min: { type: Number },
     max: { type: Number },
     defaultValue: { type: Schema.Types.Mixed },
     displayFormat: { type: String },
     options: [{ type: String }],
+    children: { type: [Schema.Types.Mixed], default: undefined }, // recursive for 'object' type
+  },
+  { _id: false }
+);
+
+const OrganizationTemplateSchema = new Schema<IOrganizationTemplateDocument>(
+  {
+    type: { type: String, required: true },
+    description: { type: String, default: '' },
+    defaultStats: { type: [ResourceTemplateSchema], default: [] },
   },
   { _id: false }
 );
@@ -71,6 +89,10 @@ const WorldSchema = new Schema<IWorldDocument>(
     },
     locationResourceTemplates: {
       type: [ResourceTemplateSchema],
+      default: [],
+    },
+    organizationTemplates: {
+      type: [OrganizationTemplateSchema],
       default: [],
     },
   },

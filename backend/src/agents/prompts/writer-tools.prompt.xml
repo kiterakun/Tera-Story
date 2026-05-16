@@ -29,11 +29,13 @@
     <detail>Reference CURRENT stat values and calculate realistic NEW values based on story events</detail>
     <detail>Values must match data types: numbers for 'number'/'progress'/'pool' type, strings for 'text'/'enum' type</detail>
     <detail>For 'pool' type stats (e.g. HP, MP): you can update both 'value' (current) and 'maxV' (current maximum). maxV changes when buffs/debuffs/permanent changes affect the cap.</detail>
+    <detail>For 'object' type stats: use dot notation for nested children (e.g. "equipment.weapon" to update a weapon stat inside an equipment object)</detail>
     <stat-validation>
       <rule>For 'enum' type stats: choose the value ONLY from the stat's options array listed in resourceTemplates</rule>
       <rule>For 'number' type stats: the value must be within the [min, max] range specified in resourceTemplates</rule>
       <rule>For 'progress' type stats: the value must be a number from 0 to 100</rule>
       <rule>For 'pool' type stats: the value must be within [0, maxV] range. maxV must be within [min, max] range from resourceTemplates.</rule>
+      <rule>For 'object' type stats: update individual children using dot notation keys (e.g. "equipment.armor")</rule>
     </stat-validation>
 
     <rule number="5" tool="updateEntityStatus">updateEntityStatus — For state changes:</rule>
@@ -85,6 +87,18 @@
     <detail>Danger level increases after an attack, population changes, corruption spreads, resources are depleted</detail>
     <detail>Only update stats that actually changed based on the chapter events</detail>
     <detail>For pool type stats, you can update both value and maxV</detail>
+
+    <rule number="15" tool="createOrganization">createOrganization — When the story introduces a NEW organization, faction, guild, kingdom, cult, or group:</rule>
+    <detail>Provide name, description, type (guild, kingdom, cult, faction, corporation, order, etc.)</detail>
+    <detail>Include goals and structure if relevant to the story</detail>
+    <detail>Provide dynamicStats with meaningful values if the world has organization templates</detail>
+    <detail>Use [[org:Name]] markup in the chapter to reference organizations</detail>
+
+    <rule number="16" tool="updateOrganization">updateOrganization — When story events affect an existing organization:</rule>
+    <detail>Power shifts, leadership changes, members joining/leaving, territory gained/lost</detail>
+    <detail>Use addMember/removeMember to manage character membership</detail>
+    <detail>Update status to 'disbanded' if the organization is dissolved, 'hidden' if it goes underground</detail>
+    <detail>Update dynamicStats when the organization's properties change</detail>
   </toolCallingRules>
 
   <finalInstructions>

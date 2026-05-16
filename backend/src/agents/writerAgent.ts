@@ -15,6 +15,8 @@ import { makeInitiateCombatTool } from '../tools/initiateCombat';
 import { makeDiscoverLocationTool } from '../tools/discoverLocation';
 import { makeArchiveEntityTool } from '../tools/archiveEntity';
 import { makeUpdateLocationStatsTool } from '../tools/updateLocationStats';
+import { makeCreateOrganizationTool } from '../tools/createOrganization';
+import { makeUpdateOrganizationTool } from '../tools/updateOrganization';
 import { emit } from '../services/sseManager';
 
 export interface WriterAgentParams {
@@ -167,6 +169,14 @@ export async function runWriterAgent(
     ? `ACTIVE COMBAT: ${contextOutput.activeCombat.context}\nCombatants: ${contextOutput.activeCombat.combatants.map(c => `${c.name}(${c.side}) HP:${c.currentHp}/${c.maxHp}`).join(', ')}`
     : '';
 
+  // --- Organizations ---
+  const organizationsBlock = contextOutput.organizations && contextOutput.organizations.length > 0
+    ? contextOutput.organizations.map(o => {
+        const statusTag = o.status !== 'active' ? ` [${o.status.toUpperCase()}]` : '';
+        return `- ${o.name} (${o.type}${statusTag}): ${o.description}${o.goals ? ` Goals: ${o.goals}` : ''} [${o.memberCount} members]`;
+      }).join('\n')
+    : '';
+
   const writePrompt = `
 Write the next chapter in ${language}.
 
@@ -195,11 +205,11 @@ ${existingItemsBlock}
 === EXISTING SPECIAL ITEMS (USE EXACT rarity in [[special:Name:rarity]] markup) ===
 ${existingSpecialItemsBlock}
 
-=== MATURE CONSEQUENCES (Butterfly Effect — weave these in when it fits naturally) ===
+${organizationsBlock ? `=== ORGANIZATIONS (use [[org:Name]] markup) ===\n${organizationsBlock}\n\n` : ''}=== MATURE CONSEQUENCES (Butterfly Effect — weave these in when it fits naturally) ===
 ${consequencesBlock}
 
 ${combatBlock ? `=== ACTIVE COMBAT ===\n${combatBlock}\n` : ''}
-Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]] markup for all entities.`.trim();
+Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]], [[org:Name]] markup for all entities.`.trim();
 
   let chapterContent: string;
   let pass1Usage: { promptTokens?: number; inputTokens?: number; completionTokens?: number; outputTokens?: number } | null = null;
@@ -265,6 +275,8 @@ Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[speci
       : {}),
     archiveEntity: makeArchiveEntityTool(playthroughId),
     updateLocationStats: makeUpdateLocationStatsTool(playthroughId),
+    createOrganization: makeCreateOrganizationTool(playthroughId, worldId, userId, chapterId),
+    updateOrganization: makeUpdateOrganizationTool(playthroughId, userId),
   };
 
   const choicesTool = makeGenerateChoicesTool(chapterId);
@@ -280,6 +292,8 @@ Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[speci
     discoverLocation: 'location:discovered',
     archiveEntity: 'entity:archived',
     updateLocationStats: 'location_stats:updated',
+    createOrganization: 'organization:created',
+    updateOrganization: 'organization:updated',
   };
 
   const toolsPrompt = `

@@ -38,6 +38,7 @@ import mapRouter from './routes/map';
 import privacyRouter from './routes/privacy';
 import shareRouter from './routes/share';
 import archiveRouter from './routes/archive';
+import organizationsRouter from './routes/organizations';
 import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
@@ -151,6 +152,10 @@ app.use('/api/share', shareRouter);
 
 // Archive Routes
 app.use('/api/archive', authMiddleware, archiveRouter);
+
+// Organization Routes
+app.use('/api/worlds/:worldId/playthroughs/:playthroughId/organizations', authMiddleware, organizationsRouter);
+app.use('/api/organizations', authMiddleware, organizationsRouter);
 
 // Public Chronicle Share (no auth)
 app.get('/api/share/chronicle/:shareId', async (req, res) => {

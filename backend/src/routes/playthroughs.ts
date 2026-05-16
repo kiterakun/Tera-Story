@@ -16,6 +16,7 @@ const router = Router({ mergeParams: true });
 const createPlaythroughSchema = z.object({
   name: z.string().min(1, 'Name is required').trim(),
   spawnRegionId: z.string().optional(),
+  premise: z.string().optional(),
 });
 
 const updatePlaythroughSchema = z.object({
@@ -84,6 +85,7 @@ router.post('/', validate(createPlaythroughSchema), async (req: AuthRequest, res
       name: req.body.name,
       worldId,
       userId,
+      premise: req.body.premise || '',
     });
     let spawnLocation: Awaited<ReturnType<typeof addLocation>> | undefined;
 

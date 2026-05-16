@@ -32,6 +32,7 @@ export interface IPlaythroughDocument extends Document {
   worldId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   status: 'active' | 'paused' | 'completed';
+  premise: string; // optional story premise/description for better generation
   currentArcIndex: number;
   // Echoes
   echoesCount: number;
@@ -70,6 +71,10 @@ const PlaythroughSchema = new Schema<IPlaythroughDocument>(
       type: String,
       enum: ['active', 'paused', 'completed'],
       default: 'active',
+    },
+    premise: {
+      type: String,
+      default: '',
     },
     currentArcIndex: {
       type: Number,

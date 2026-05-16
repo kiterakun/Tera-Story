@@ -11,7 +11,7 @@ import type {
   SpecialItem,
 } from '@/types';
 
-export type { Character, Item, SpecialItem, Arc, Playthrough, Relationship, RelationType, DynamicStat, CharacterStatus, ItemStatus, SpecialItemStatus, ItemRarity, CombatEncounter, CombatCombatant, CombatRound, CombatActionResponse, ConsequenceSeed } from '@/types';
+export type { Character, Item, SpecialItem, Arc, Playthrough, Relationship, RelationType, DynamicStat, CharacterStatus, ItemStatus, SpecialItemStatus, ItemRarity, CombatEncounter, CombatCombatant, CombatRound, CombatActionResponse, ConsequenceSeed, Organization } from '@/types';
 
 // Playthrough calls
 export async function listPlaythroughs(worldId: string): Promise<Playthrough[]> {
@@ -24,8 +24,8 @@ export async function getPlaythrough(id: string): Promise<Playthrough> {
   return data.playthrough;
 }
 
-export async function createPlaythrough(worldId: string, name: string): Promise<Playthrough> {
-  const { data } = await api.post<{ playthrough: Playthrough }>(`/worlds/${worldId}/playthroughs`, { name });
+export async function createPlaythrough(worldId: string, name: string, premise?: string): Promise<Playthrough> {
+  const { data } = await api.post<{ playthrough: Playthrough }>(`/worlds/${worldId}/playthroughs`, { name, premise });
   return data.playthrough;
 }
 

@@ -5,9 +5,54 @@ import type { IResourceTemplateDocument } from '../models/World';
 import { IDynamicStat } from '../types/character.types';
 
 /**
+ * Recursively initialize a single dynamic stat from a resource template.
+ */
+function initStatFromTemplate(tpl: IResourceTemplateDocument): IDynamicStat {
+  // For object type, recursively initialize children
+  if (tpl.type === 'object') {
+    const children = (tpl.children || []).map(initStatFromTemplate);
+    return {
+      k: tpl.key,
+      v: '',
+      t: tpl.type,
+      children,
+    };
+  }
+
+  let defaultVal: string | number | boolean;
+  if (tpl.defaultValue !== undefined && tpl.defaultValue !== null) {
+    defaultVal = tpl.defaultValue as string | number | boolean;
+  } else if (tpl.type === 'enum' && tpl.options && tpl.options.length > 0) {
+    defaultVal = tpl.options[0] || '';
+  } else if (tpl.type === 'text') {
+    defaultVal = '';
+  } else {
+    defaultVal = 0;
+  }
+
+  // For pool type, set maxV from defaultValue or max
+  if (tpl.type === 'pool') {
+    const poolVal = typeof defaultVal === 'number' ? defaultVal : (tpl.max ?? 0);
+    return {
+      k: tpl.key,
+      v: poolVal,
+      t: tpl.type,
+      maxV: poolVal,
+    };
+  }
+
+  return {
+    k: tpl.key,
+    v: defaultVal,
+    t: tpl.type,
+  };
+}
+
+/**
  * Initialize dynamicStats from world resourceTemplates.
  * Each template becomes { k: template.key, v: template.defaultValue ?? 0, t: template.type }.
  * For 'pool' type: v and maxV are both set from defaultValue (or max).
+ * For 'object' type: recursively initializes children.
  */
 export async function initializeDynamicStats(
   worldId: string
@@ -24,35 +69,7 @@ export async function initializeDynamicStats(
     return [];
   }
 
-  return templates.map((tpl) => {
-    let defaultVal: string | number | boolean;
-    if (tpl.defaultValue !== undefined && tpl.defaultValue !== null) {
-      defaultVal = tpl.defaultValue as string | number | boolean;
-    } else if (tpl.type === 'enum' && tpl.options && tpl.options.length > 0) {
-      defaultVal = tpl.options[0] || '';
-    } else if (tpl.type === 'text') {
-      defaultVal = '';
-    } else {
-      defaultVal = 0;
-    }
-
-    // For pool type, set maxV from defaultValue or max
-    if (tpl.type === 'pool') {
-      const poolVal = typeof defaultVal === 'number' ? defaultVal : (tpl.max ?? 0);
-      return {
-        k: tpl.key,
-        v: poolVal,
-        t: tpl.type,
-        maxV: poolVal,
-      };
-    }
-
-    return {
-      k: tpl.key,
-      v: defaultVal,
-      t: tpl.type,
-    };
-  });
+  return templates.map(initStatFromTemplate);
 }
 
 /**
@@ -73,34 +90,7 @@ export async function initializeLocationDynamicStats(
     return [];
   }
 
-  return templates.map((tpl) => {
-    let defaultVal: string | number | boolean;
-    if (tpl.defaultValue !== undefined && tpl.defaultValue !== null) {
-      defaultVal = tpl.defaultValue as string | number | boolean;
-    } else if (tpl.type === 'enum' && tpl.options && tpl.options.length > 0) {
-      defaultVal = tpl.options[0] || '';
-    } else if (tpl.type === 'text') {
-      defaultVal = '';
-    } else {
-      defaultVal = 0;
-    }
-
-    if (tpl.type === 'pool') {
-      const poolVal = typeof defaultVal === 'number' ? defaultVal : (tpl.max ?? 0);
-      return {
-        k: tpl.key,
-        v: poolVal,
-        t: tpl.type,
-        maxV: poolVal,
-      };
-    }
-
-    return {
-      k: tpl.key,
-      v: defaultVal,
-      t: tpl.type,
-    };
-  });
+  return templates.map(initStatFromTemplate);
 }
 
 function validateStatValue(
@@ -109,6 +99,11 @@ function validateStatValue(
   value: unknown,
   maxV?: number
 ): void {
+  if (template.type === 'object') {
+    // Object type doesn't have a direct value to validate — children are validated separately
+    return;
+  }
+
   if (template.type === 'enum') {
     if (typeof value !== 'string') {
       throw new Error(`Stat "${key}" requires a string enum value`);
@@ -166,10 +161,40 @@ function validateStatValue(
 }
 
 /**
+ * Resolve a nested stat by dot-notation path (e.g., "equipment.weapon").
+ * Returns the stat and its parent array, or undefined if not found.
+ */
+function resolveNestedStat(
+  stats: IDynamicStat[],
+  keyPath: string
+): { stat: IDynamicStat; parent: IDynamicStat[] } | undefined {
+  const parts = keyPath.split('.');
+  let current = stats;
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    const stat = current.find((s) => s.k === part);
+
+    if (!stat) return undefined;
+
+    if (i === parts.length - 1) {
+      return { stat, parent: current };
+    }
+
+    // Must be an object type to have children
+    if (stat.t !== 'object' || !stat.children) return undefined;
+    current = stat.children;
+  }
+
+  return undefined;
+}
+
+/**
  * Update a single dynamic stat for a character.
  * Validates values against the world's resourceTemplates before saving.
  * Unknown stat keys are allowed for custom stats.
  * For pool type, accepts optional maxV parameter to update the max value.
+ * Supports nested key paths (e.g., "equipment.weapon") for object type stats.
  */
 export async function updateStat(
   characterId: string,
@@ -205,7 +230,25 @@ export async function updateStat(
     throw new Error('World not found');
   }
 
-  const template = world.resourceTemplates?.find((t) => t.key === key);
+  // Handle nested key paths for object type stats
+  const isNested = key.includes('.');
+  if (isNested) {
+    const nested = resolveNestedStat(character.dynamicStats, key);
+    if (nested) {
+      // Directly mutate the nested stat and save
+      nested.stat.v = value as string | number | boolean;
+      if (maxV !== undefined && nested.stat.t === 'pool') {
+        nested.stat.maxV = maxV;
+      }
+      character.markModified('dynamicStats');
+      await character.save();
+      return;
+    }
+    // If nested path not found, fall through to top-level logic
+  }
+
+  const topLevelKey = isNested ? key.split('.')[0] : key;
+  const template = world.resourceTemplates?.find((t) => t.key === topLevelKey);
 
   if (template) {
     validateStatValue(template, key, value, maxV);
@@ -228,7 +271,7 @@ export async function updateStat(
   const result = await Character.findOneAndUpdate(
     { _id: characterId },
     { $set },
-    { arrayFilters: [{ 'elem.k': key }], returnDocument: 'after' }
+    { arrayFilters: [{ 'elem.k': topLevelKey }], returnDocument: 'after' }
   );
 
   if (!result) {

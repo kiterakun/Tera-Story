@@ -8,7 +8,7 @@ import { UserSettings } from "../models/UserSettings";
 import { World } from "../models/World";
 import { createUserProviderRegistry } from "../providers/registry";
 
-type EntityType = "character" | "item" | "special-item" | "world";
+type EntityType = "character" | "item" | "special-item" | "world" | "organization";
 
 const MAX_RETRIES = 3;
 

@@ -3,6 +3,7 @@ export interface DynamicStat {
   v: number | string | boolean;
   t: string;
   maxV?: number; // only for 'pool' type
+  children?: DynamicStat[]; // only for 'object' type — nested sub-properties
 }
 
 export type CharacterStatus = 'active' | 'dead' | 'injured' | 'missing';
@@ -39,11 +40,30 @@ export interface Arc {
 }
 
 export interface Playthrough {
-  _id: string; 
-  name: string; 
-  worldId: string; 
+  _id: string;
+  name: string;
+  worldId: string;
   status: 'active' | 'paused' | 'completed';
-  currentArcIndex: number; 
+  premise?: string;
+  currentArcIndex: number;
+  createdAt: string;
+}
+
+export type OrganizationStatus = 'active' | 'disbanded' | 'hidden';
+
+export interface Organization {
+  _id: string;
+  name: string;
+  description: string;
+  type: string;
+  status: OrganizationStatus;
+  goals: string;
+  structure: string;
+  dynamicStats: DynamicStat[];
+  memberIds: string[] | Character[];
+  playthroughId: string;
+  worldId: string;
+  archivedAt?: string | null;
   createdAt: string;
 }
 
@@ -94,12 +114,13 @@ export interface ConsequenceSeed {
 
 export interface ResourceTemplate {
   key: string;
-  type: 'number' | 'text' | 'progress' | 'enum' | 'pool';
+  type: 'number' | 'text' | 'progress' | 'enum' | 'pool' | 'object';
   min?: number;
   max?: number;
   defaultValue?: string | number;
   displayFormat?: string;
   options?: string[];
+  children?: ResourceTemplate[]; // for 'object' type — nested sub-property templates
 }
 
 export interface SpecialItemFieldDefinition {
@@ -117,6 +138,12 @@ export interface SpecialItemTemplate {
   fields: SpecialItemFieldDefinition[];
 }
 
+export interface OrganizationTemplate {
+  type: string;
+  description: string;
+  defaultStats: ResourceTemplate[];
+}
+
 export interface World {
   _id: string;
   name: string;
@@ -125,6 +152,7 @@ export interface World {
   imageUrl?: string;
   resourceTemplates: ResourceTemplate[];
   locationResourceTemplates: ResourceTemplate[];
+  organizationTemplates: OrganizationTemplate[];
   createdAt: string;
   updatedAt: string;
 }

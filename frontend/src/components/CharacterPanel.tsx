@@ -8,14 +8,18 @@ export interface DynamicStat {
   k: string;
   v: string | number | boolean;
   t: string;
+  maxV?: number;
+  children?: DynamicStat[];
 }
 
 export interface ResourceTemplate {
   key: string;
-  type: 'number' | 'text' | 'progress' | 'enum';
+  type: 'number' | 'text' | 'progress' | 'enum' | 'pool' | 'object';
   min?: number;
   max?: number;
   displayFormat?: string;
+  options?: string[];
+  children?: ResourceTemplate[];
 }
 
 export interface Character {

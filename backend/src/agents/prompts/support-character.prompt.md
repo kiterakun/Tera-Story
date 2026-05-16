@@ -20,7 +20,7 @@ Respond ONLY with valid JSON matching this schema:
   "goals": "string (what they want, motivations, driving forces)",
   "appearance": "string (detailed physical description: height, build, distinctive features, clothing style)",
   "suggestedStats": [
-    { "k": "string (MUST match a resource template key from the world)", "v": "string|number (appropriate starting value)", "t": "string (type matching the template: number|text|progress|enum|pool)" }
+    { "k": "string (MUST match a resource template key from the world)", "v": "string|number (appropriate starting value)", "t": "string (type matching the template: number|text|progress|enum|pool|object)" }
   ]
 }
 

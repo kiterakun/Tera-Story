@@ -29,6 +29,7 @@ export default {
     restore: 'Restore',
     archivedEntities: 'Archived Entities',
     noArchived: 'No archived entities.',
+    noOrganizations: 'No organizations discovered yet.',
     createProtagonistRequired: 'You must create a protagonist before starting the story.',
   },
   characterCreate: {

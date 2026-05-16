@@ -14,6 +14,7 @@ import { SpecialItemTemplate } from '../models/SpecialItemTemplate';
 import { Relationship } from '../models/Relationship';
 import { ConsequenceSeed } from '../models/ConsequenceSeed';
 import { CombatEncounter } from '../models/CombatEncounter';
+import { Organization } from '../models/Organization';
 import type { IContextOutput } from '../types/agent.types';
 import { Continent } from '../models/Continent';
 import { Region } from '../models/Region';
@@ -48,7 +49,7 @@ export async function runContextAgent(
 
   // 2. Fetch all characters, items, special items, relationships, consequences, combat, continents in parallel
   // Explicitly filter archived entities for clarity (pre-hooks also handle this)
-  const [characters, items, specialItems, specialItemTemplates, relationships, allConsequences, activeCombatDoc, continents] = await Promise.all([
+  const [characters, items, specialItems, specialItemTemplates, relationships, allConsequences, activeCombatDoc, continents, organizations] = await Promise.all([
     Character.find({ playthroughId, archivedAt: null }).lean(),
     Item.find({ playthroughId, archivedAt: null }).lean(),
     SpecialItem.find({ playthroughId, archivedAt: null }).lean(),
@@ -57,6 +58,7 @@ export async function runContextAgent(
     ConsequenceSeed.find({ playthroughId, activated: false }).lean(),
     CombatEncounter.findOne({ playthroughId, status: 'active' }).lean(),
     Continent.find({ worldId: playthrough.worldId }).lean(),
+    Organization.find({ playthroughId, archivedAt: null }).lean(),
   ]);
 
   // 2b. Build geography data from player's actual location
@@ -257,10 +259,25 @@ export async function runContextAgent(
     ].filter(Boolean).join('\n');
   }
 
+  // --- Organizations info ---
+  const organizationsInfo = organizations.length > 0
+    ? organizations.map((o) => {
+        const stats = o.dynamicStats.map((s) => `${s.k}=${s.v}`).join(', ');
+        const memberCount = Array.isArray(o.memberIds) ? o.memberIds.length : 0;
+        const statusTag = o.status !== 'active' ? ` [STATUS: ${o.status.toUpperCase()}]` : '';
+        return `- ${o.name} (${o.type}${statusTag}): ${o.description}${stats ? ` [${stats}]` : ''} [${memberCount} members]`;
+      }).join('\n')
+    : 'No organizations established yet.';
+
+  // --- Story premise ---
+  const premiseInfo = playthrough.premise
+    ? `The player has described their desired story direction: "${playthrough.premise}"`
+    : '';
+
   const userPrompt = `
 Language: ${language}
 Player's choice: "${playerChoice}"
-
+${premiseInfo ? `\n=== STORY PREMISE ===\n${premiseInfo}\n` : ''}
 === WORLD ===
 ${worldInfo}
 
@@ -276,6 +293,9 @@ ${itemsInfo}
 === SPECIAL ITEMS (SKILLS / TECHNIQUES / ETC.) ===
 ${specialItemsInfo}
 
+=== ORGANIZATIONS (FACTIONS / GROUPS) ===
+${organizationsInfo}
+
 === MATURE CONSEQUENCES (Butterfly Effect — incorporate these into the story when appropriate) ===
 ${consequencesInfo}
 
@@ -285,7 +305,7 @@ ${arcSummaries}
 === RECENT CHAPTERS ===
 ${isColdStart ? 'This is the very beginning of the story. No chapters have been written yet.' : chapterTexts}
 
-Based on the player's choice and the FULL story state above (including all items, special items, character stats, relationships, consequences, and world templates), produce the JSON context for the next chapter writer.
+Based on the player's choice and the FULL story state above (including all items, special items, character stats, relationships, organizations, consequences, and world templates), produce the JSON context for the next chapter writer.
 `.trim();
 
   // 6. Call generateText then parse JSON robustly
@@ -420,6 +440,18 @@ Based on the player's choice and the FULL story state above (including all items
       }
     : null;
 
+  // Build organization refs from DB
+  const organizationRefs = organizations.map((o) => ({
+    name: o.name,
+    type: o.type,
+    status: o.status,
+    description: o.description,
+    goals: (o as { goals?: string }).goals || '',
+    structure: (o as { structure?: string }).structure || '',
+    dynamicStats: Object.fromEntries((o.dynamicStats || []).map((s) => [s.k, s.v])),
+    memberCount: Array.isArray(o.memberIds) ? o.memberIds.length : 0,
+  }));
+
   return {
     outline: validated.outline ?? '',
     filteredContext: validated.filteredContext ?? '',
@@ -455,6 +487,7 @@ Based on the player's choice and the FULL story state above (including all items
     relationships: relationshipRefs,
     matureConsequences: consequenceRefs,
     activeCombat,
+    organizations: organizationRefs,
     geography,
     currentRegionId: playthrough.currentLocationId
       ? (await Location.findById(playthrough.currentLocationId).lean())?.regionId?.toString()

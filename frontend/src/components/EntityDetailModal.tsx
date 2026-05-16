@@ -1,13 +1,15 @@
-import { X, UserRound, Package, Sparkles, Skull, AlertTriangle, HelpCircle } from 'lucide-react';
+import { X, UserRound, Package, Sparkles, Skull, AlertTriangle, HelpCircle, Landmark } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import type { Character, Item, SpecialItem, ItemRarity, CharacterStatus, ItemStatus, SpecialItemStatus } from '../services/playthroughApi';
+import type { Organization } from '../types/entities';
 import { getImageUrl } from '../utils/url';
 import { RetryImageButton } from './RetryImageButton';
 
 type EntityData =
   | { type: 'character'; data: Character }
   | { type: 'item'; data: Item }
-  | { type: 'special'; data: SpecialItem };
+  | { type: 'special'; data: SpecialItem }
+  | { type: 'organization'; data: Organization };
 
 interface EntityDetailModalProps {
   entity: EntityData | null;
@@ -319,9 +321,85 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
           {entity.type === 'character' && renderCharacter(entity.data)}
           {entity.type === 'item' && renderItem(entity.data)}
           {entity.type === 'special' && renderSpecialItem(entity.data)}
+          {entity.type === 'organization' && renderOrganization(entity.data)}
         </div>
       </div>
     </div>
+  );
+}
+
+function renderOrganization(org: Organization) {
+  const statusColors: Record<string, string> = {
+    active: 'text-green-400 bg-green-500/10',
+    disbanded: 'text-red-400 bg-red-500/10',
+    hidden: 'text-amber-400 bg-amber-500/10',
+  };
+
+  return (
+    <>
+      <div className="flex items-start gap-3 mb-4">
+        <div className="w-12 h-12 rounded-xl bg-accent-600/20 flex items-center justify-center shrink-0">
+          <Landmark size={24} className="text-accent-400" />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-lg font-semibold text-ink-100">{org.name}</h3>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-ink-200/60 capitalize">{org.type}</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[org.status] || 'text-ink-200/50 bg-ink-800'}`}>
+              {org.status}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {org.description && (
+        <p className="text-sm text-ink-200/80 mb-4">{org.description}</p>
+      )}
+
+      {org.goals && (
+        <div className="mb-3">
+          <h4 className="text-xs font-medium text-ink-200/60 uppercase tracking-wider mb-1">Goals</h4>
+          <p className="text-sm text-ink-200/80">{org.goals}</p>
+        </div>
+      )}
+
+      {org.structure && (
+        <div className="mb-3">
+          <h4 className="text-xs font-medium text-ink-200/60 uppercase tracking-wider mb-1">Structure</h4>
+          <p className="text-sm text-ink-200/80">{org.structure}</p>
+        </div>
+      )}
+
+      {org.dynamicStats.length > 0 && (
+        <div className="mb-3">
+          <h4 className="text-xs font-medium text-ink-200/60 uppercase tracking-wider mb-2">Stats</h4>
+          <div className="space-y-2">
+            {org.dynamicStats.map((stat, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <span className="text-xs text-ink-200/60">{stat.k}</span>
+                <span className="text-sm text-ink-100">{String(stat.v)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {Array.isArray(org.memberIds) && org.memberIds.length > 0 && (
+        <div>
+          <h4 className="text-xs font-medium text-ink-200/60 uppercase tracking-wider mb-2">Members</h4>
+          <div className="flex flex-wrap gap-2">
+            {org.memberIds.map((member) => {
+              const name = typeof member === 'string' ? member : member.name;
+              return (
+                <span key={name} className="text-xs px-2 py-1 bg-ink-800 rounded-lg text-ink-200/80">
+                  {name}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

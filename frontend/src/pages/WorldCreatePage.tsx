@@ -38,6 +38,7 @@ export default function WorldCreatePage() {
   const [createdWorld, setCreatedWorld] = useState<World | null>(null);
   const [mapData, setMapData] = useState<MapData | null>(null);
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
+  const [premise, setPremise] = useState('');
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -73,20 +74,29 @@ export default function WorldCreatePage() {
   const handleResourceChange = (
     index: number,
     field: keyof ResourceTemplate,
-    value: string | string[],
+    value: string | string[] | ResourceTemplate[],
   ) => {
     const updated = [...resources];
     const item = updated[index];
     if (!item) return;
 
     if (field === "type") {
-      item.type = value as ResourceTemplate["type"];
+      const newType = value as ResourceTemplate["type"];
+      item.type = newType;
+      // Initialize children for object type, clear for other types
+      if (newType === "object") {
+        item.children = item.children ?? [];
+      } else {
+        delete item.children;
+      }
     } else if (field === "key") {
       item.key = value as string;
     } else if (field === "displayFormat") {
       item.displayFormat = value as string;
     } else if (field === "options") {
       item.options = value as string[];
+    } else if (field === "children") {
+      item.children = value as ResourceTemplate[];
     } else if (field === "min" || field === "max" || field === "defaultValue") {
       if (field === "defaultValue") {
         item.defaultValue = item.type !== "text" && item.type !== "enum" && value !== "" ? Number(value) : (value as string);
@@ -113,20 +123,28 @@ export default function WorldCreatePage() {
   const handleLocationResourceChange = (
     index: number,
     field: keyof ResourceTemplate,
-    value: string | string[],
+    value: string | string[] | ResourceTemplate[],
   ) => {
     const updated = [...locationResources];
     const item = updated[index];
     if (!item) return;
 
     if (field === "type") {
-      item.type = value as ResourceTemplate["type"];
+      const newType = value as ResourceTemplate["type"];
+      item.type = newType;
+      if (newType === "object") {
+        item.children = item.children ?? [];
+      } else {
+        delete item.children;
+      }
     } else if (field === "key") {
       item.key = value as string;
     } else if (field === "displayFormat") {
       item.displayFormat = value as string;
     } else if (field === "options") {
       item.options = value as string[];
+    } else if (field === "children") {
+      item.children = value as ResourceTemplate[];
     } else if (field === "min" || field === "max" || field === "defaultValue") {
       if (field === "defaultValue") {
         item.defaultValue = item.type !== "text" && item.type !== "enum" && value !== "" ? Number(value) : (value as string);
@@ -255,6 +273,7 @@ export default function WorldCreatePage() {
       const { data } = await api.post(`/worlds/${createdWorld._id}/playthroughs`, {
         name: `${createdWorld.name} - Journey`,
         spawnRegionId: selectedRegionId,
+        premise: premise.trim() || undefined,
       });
 
       showSuccess(t.toast.playthroughCreated);
@@ -474,6 +493,20 @@ export default function WorldCreatePage() {
                   </p>
                 </div>
               )}
+
+              {/* Premise */}
+              <div>
+                <label className="block text-sm font-medium text-ink-200/80 mb-2">
+                  {t.worldCreate.premiseLabel ?? 'Story Premise (optional)'}
+                </label>
+                <textarea
+                  className="w-full bg-ink-800 border border-ink-700 rounded-xl px-4 py-3 text-base text-ink-100 placeholder:text-ink-500 focus:border-accent-400 outline-none transition-all resize-none"
+                  rows={3}
+                  placeholder={t.worldCreate.premisePlaceholder ?? 'Describe your character\'s journey or the story you want to experience...'}
+                  value={premise}
+                  onChange={(e) => setPremise(e.target.value)}
+                />
+              </div>
 
               {/* Actions */}
               <div className="flex flex-col gap-3">
@@ -721,6 +754,7 @@ export default function WorldCreatePage() {
                       <option value="text">{t.worldCreate.typeText}</option>
                       <option value="enum">{t.worldCreate.typeEnum}</option>
                       <option value="pool">{t.worldCreate.typePool}</option>
+                      <option value="object">{t.worldCreate.typeObject ?? 'Object (nested)'}</option>
                     </select>
                   </div>
 
@@ -835,6 +869,132 @@ export default function WorldCreatePage() {
                         </div>
                       </div>
                     </>
+                  ) : res.type === "object" ? (
+                    <div>
+                      <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
+                        {t.worldCreate.subProperties ?? 'Sub-Properties'}
+                      </label>
+                      <div className="space-y-2 ml-3 border-l-2 border-ink-700 pl-3">
+                        {(res.children ?? []).map((child, childIdx) => (
+                          <div key={childIdx} className="bg-ink-800/50 rounded-lg p-3 space-y-2">
+                            <div className="flex gap-2">
+                              <input
+                                className="flex-1 bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 placeholder:text-ink-500 focus:border-accent-400 outline-none"
+                                placeholder={t.worldCreate.statKey ?? 'Key'}
+                                value={child.key}
+                                onChange={(e) => {
+                                  const newChildren = [...(res.children ?? [])];
+                                  newChildren[childIdx] = { ...child, key: e.target.value };
+                                  handleResourceChange(index, "children", newChildren);
+                                }}
+                              />
+                              <select
+                                className="bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-accent-400 outline-none"
+                                value={child.type}
+                                onChange={(e) => {
+                                  const newChildren = [...(res.children ?? [])];
+                                  const newType = e.target.value as ResourceTemplate["type"];
+                                  newChildren[childIdx] = { ...child, type: newType, children: newType === "object" ? [] : undefined };
+                                  handleResourceChange(index, "children", newChildren);
+                                }}
+                              >
+                                <option value="number">{t.worldCreate.typeNumber}</option>
+                                <option value="progress">{t.worldCreate.typeProgress}</option>
+                                <option value="text">{t.worldCreate.typeText}</option>
+                                <option value="enum">{t.worldCreate.typeEnum}</option>
+                                <option value="pool">{t.worldCreate.typePool}</option>
+                                <option value="object">{t.worldCreate.typeObject ?? 'Object'}</option>
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newChildren = (res.children ?? []).filter((_, i) => i !== childIdx);
+                                  handleResourceChange(index, "children", newChildren);
+                                }}
+                                className="text-ink-200/40 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-400/10 transition-all shrink-0"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                  <path d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                            {/* Nested object children (recursive) */}
+                            {child.type === "object" && (
+                              <div className="ml-3 border-l-2 border-ink-600 pl-3 space-y-2">
+                                {(child.children ?? []).map((grandchild, gcIdx) => (
+                                  <div key={gcIdx} className="flex gap-2">
+                                    <input
+                                      className="flex-1 bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-xs text-ink-100 placeholder:text-ink-500 focus:border-accent-400 outline-none"
+                                      placeholder={t.worldCreate.statKey ?? 'Key'}
+                                      value={grandchild.key}
+                                      onChange={(e) => {
+                                        const newChildren = [...(res.children ?? [])];
+                                        const newGrandchildren = [...(child.children ?? [])];
+                                        newGrandchildren[gcIdx] = { ...grandchild, key: e.target.value };
+                                        newChildren[childIdx] = { ...child, children: newGrandchildren };
+                                        handleResourceChange(index, "children", newChildren);
+                                      }}
+                                    />
+                                    <select
+                                      className="bg-ink-800 border border-ink-700 rounded-lg px-2 py-2 text-xs text-ink-100 focus:border-accent-400 outline-none"
+                                      value={grandchild.type}
+                                      onChange={(e) => {
+                                        const newChildren = [...(res.children ?? [])];
+                                        const newGrandchildren = [...(child.children ?? [])];
+                                        newGrandchildren[gcIdx] = { ...grandchild, type: e.target.value as ResourceTemplate["type"] };
+                                        newChildren[childIdx] = { ...child, children: newGrandchildren };
+                                        handleResourceChange(index, "children", newChildren);
+                                      }}
+                                    >
+                                      <option value="number">#</option>
+                                      <option value="text">T</option>
+                                      <option value="enum">E</option>
+                                      <option value="pool">P</option>
+                                    </select>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const newChildren = [...(res.children ?? [])];
+                                        const newGrandchildren = (child.children ?? []).filter((_, i) => i !== gcIdx);
+                                        newChildren[childIdx] = { ...child, children: newGrandchildren };
+                                        handleResourceChange(index, "children", newChildren);
+                                      }}
+                                      className="text-ink-200/40 hover:text-red-400 p-1 shrink-0"
+                                    >
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newChildren = [...(res.children ?? [])];
+                                    const newGrandchildren = [...(child.children ?? []), { key: "", type: "number" as const }];
+                                    newChildren[childIdx] = { ...child, children: newGrandchildren };
+                                    handleResourceChange(index, "children", newChildren);
+                                  }}
+                                  className="text-xs text-accent-400 hover:text-accent-300 transition-colors"
+                                >
+                                  + {t.worldCreate.addSubProperty ?? 'Add Sub-Property'}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newChildren = [...(res.children ?? []), { key: "", type: "number" as const }];
+                            handleResourceChange(index, "children", newChildren);
+                          }}
+                          className="text-sm text-accent-400 hover:text-accent-300 transition-colors"
+                        >
+                          + {t.worldCreate.addSubProperty ?? 'Add Sub-Property'}
+                        </button>
+                      </div>
+                    </div>
                   ) : (
                     <div>
                       <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
@@ -937,6 +1097,7 @@ export default function WorldCreatePage() {
                       <option value="text">Text</option>
                       <option value="enum">Enum</option>
                       <option value="pool">Pool (current/max)</option>
+                      <option value="object">Object (nested)</option>
                     </select>
                   </div>
 
@@ -966,6 +1127,65 @@ export default function WorldCreatePage() {
                         value={res.options?.join(", ") || ""}
                         onChange={(e) => handleLocationResourceChange(index, "options", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
                       />
+                    </div>
+                  )}
+
+                  {res.type === "object" && (
+                    <div>
+                      <label className="block text-xs font-medium text-ink-200/80 mb-1.5">Sub-Properties</label>
+                      <div className="space-y-2 ml-3 border-l-2 border-ink-700 pl-3">
+                        {(res.children ?? []).map((child, childIdx) => (
+                          <div key={childIdx} className="flex gap-2">
+                            <input
+                              className="flex-1 bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 placeholder:text-ink-500 focus:border-emerald-400 outline-none"
+                              placeholder="Key"
+                              value={child.key}
+                              onChange={(e) => {
+                                const newChildren = [...(res.children ?? [])];
+                                newChildren[childIdx] = { ...child, key: e.target.value };
+                                handleLocationResourceChange(index, "children", newChildren);
+                              }}
+                            />
+                            <select
+                              className="bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-emerald-400 outline-none"
+                              value={child.type}
+                              onChange={(e) => {
+                                const newChildren = [...(res.children ?? [])];
+                                newChildren[childIdx] = { ...child, type: e.target.value as ResourceTemplate["type"] };
+                                handleLocationResourceChange(index, "children", newChildren);
+                              }}
+                            >
+                              <option value="number">Number</option>
+                              <option value="progress">Progress</option>
+                              <option value="text">Text</option>
+                              <option value="enum">Enum</option>
+                              <option value="pool">Pool</option>
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newChildren = (res.children ?? []).filter((_, i) => i !== childIdx);
+                                handleLocationResourceChange(index, "children", newChildren);
+                              }}
+                              className="text-ink-200/40 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-400/10 transition-all shrink-0"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newChildren = [...(res.children ?? []), { key: "", type: "number" as const }];
+                            handleLocationResourceChange(index, "children", newChildren);
+                          }}
+                          className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+                        >
+                          + Add Sub-Property
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

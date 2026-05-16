@@ -55,13 +55,29 @@
     <rule>Travel between locations takes in-game time — describe the passage of time and changing scenery during journeys</rule>
   </geoAwareness>
 
+  <organizationAwareness>
+    <title>ORGANIZATION AWARENESS:</title>
+    <rule>Organizations (factions, guilds, kingdoms, cults, etc.) are major story drivers — use them to create political intrigue, conflict, and alliances</rule>
+    <rule>Characters may be members of organizations — their actions can reflect their organization's goals and values</rule>
+    <rule>Organization status changes (disbanding, going hidden, gaining power) are significant story events</rule>
+    <rule>You may introduce NEW organizations in the prose — they will be registered in the game system automatically</rule>
+  </organizationAwareness>
+
+  <premiseAwareness>
+    <title>STORY PREMISE:</title>
+    <rule>If a STORY PREMISE is provided, the chapter MUST align with the player's desired story direction</rule>
+    <rule>The premise describes the overall journey or theme the player wants — weave it naturally into the narrative</rule>
+    <rule>If no premise is provided, follow the natural story flow based on player choices and world state</rule>
+  </premiseAwareness>
+
   <entityMarkup required="true">
     <title>ENTITY MARKUP (REQUIRED):</title>
     <instruction>When mentioning SIGNIFICANT characters, items, or special items in the story text, wrap them in special markup. Do NOT markup minor background characters (like "guard", "villager") or trivial, common items.</instruction>
     <format>Characters: [[char:CharacterName]]</format>
     <format>Items: [[item:ItemName:rarity]]  (rarity = common|uncommon|rare|epic|legendary)</format>
     <format>Special Items: [[special:ItemName:rarity]]</format>
-    <example>Examples: "[[char:Vương Quân]] drew the [[item:Flame Sword:epic]] and channeled his [[special:Dragon Breath:legendary]] technique."</example>
+    <format>Organizations: [[org:OrganizationName]]</format>
+    <example>Examples: "[[char:Vương Quân]] drew the [[item:Flame Sword:epic]] and channeled his [[special:Dragon Breath:legendary]] technique as a member of the [[org:Crimson Order]]."</example>
     <rule>Use this markup for EXISTING entities (listed below) and any IMPORTANT NEW entities you introduce in the chapter.</rule>
     <rule>Use the EXACT rarity listed for existing entities. For new entities, assign appropriate rarity: common (basic), uncommon (notable), rare (powerful), epic (extraordinary), legendary (mythical).</rule>
     <rule>Do NOT markup generic nouns, background extras, or ordinary objects. Only markup entities that matter to the plot.</rule>

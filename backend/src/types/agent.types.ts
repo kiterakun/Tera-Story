@@ -43,6 +43,17 @@ export interface ICombatRef {
   roundCount: number;
 }
 
+export interface IOrganizationRef {
+  name: string;
+  type: string;
+  status: string;
+  description: string;
+  goals: string;
+  structure: string;
+  dynamicStats: Record<string, string | number | boolean>;
+  memberCount: number;
+}
+
 export interface IContextOutput {
   outline: string;
   filteredContext: string;
@@ -57,6 +68,7 @@ export interface IContextOutput {
   relationships: IRelationshipRef[];
   matureConsequences: IConsequenceSeedRef[];
   activeCombat: ICombatRef | null;
+  organizations?: IOrganizationRef[];
   geography?: {
     currentContinent?: { name: string; description: string; terrainType: string };
     currentRegion?: { name: string; description: string; terrainType: string; dangerLevel: number } | null;

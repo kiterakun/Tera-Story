@@ -29,6 +29,7 @@ export default {
     restore: 'Khôi Phục',
     archivedEntities: 'Thực Thể Đã Lưu Trữ',
     noArchived: 'Chưa có thực thể nào được lưu trữ.',
+    noOrganizations: 'Chưa phát hiện tổ chức nào.',
     createProtagonistRequired: 'Bạn phải tạo nhân vật chính trước khi bắt đầu câu chuyện.',
   },
   characterCreate: {

@@ -11,6 +11,8 @@ export default {
     noSpecialItems: 'Chưa có vật phẩm đặc biệt.',
     companions: 'Đồng Đội',
     noCompanions: 'Chưa có đồng đội.',
+    organizations: 'Tổ Chức',
+    noOrganizations: 'Chưa phát hiện tổ chức nào.',
     background: 'Bối Cảnh',
     personality: 'Tính Cách',
     goals: 'Mục Tiêu',

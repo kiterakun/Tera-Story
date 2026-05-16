@@ -11,6 +11,8 @@ export default {
     noSpecialItems: 'No special items yet.',
     companions: 'Companions',
     noCompanions: 'No companions yet.',
+    organizations: 'Organizations',
+    noOrganizations: 'No organizations discovered yet.',
     background: 'Background',
     personality: 'Personality',
     goals: 'Goals',

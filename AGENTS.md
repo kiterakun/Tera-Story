@@ -4,7 +4,7 @@
 **Branch:** master
 
 ## OVERVIEW
-Tera-Story is an AI-powered interactive storytelling platform. Backend (Express + MongoDB/Mongoose + TypeScript) serves a REST API consumed by the React frontend (Vite + TailwindCSS + Zustand). AI agents (writer, image, context, support, map) generate narrative content via the Vercel AI SDK. The system features a 4-level geographic hierarchy (World > Continent > Region > Location), dynamic stat system with pool type (HP/MP current/max), entity archiving, and a game-like UI panel.
+Tera-Story is an AI-powered interactive storytelling platform. Backend (Express + MongoDB/Mongoose + TypeScript) serves a REST API consumed by the React frontend (Vite + TailwindCSS + Zustand). AI agents (writer, image, context, support, map) generate narrative content via the Vercel AI SDK. The system features a 4-level geographic hierarchy (World > Continent > Region > Location), dynamic stat system with pool type (HP/MP current/max) and object type (nested properties), entity archiving, organization/faction system, and a game-like UI panel.
 
 ## STRUCTURE
 ```
@@ -21,18 +21,18 @@ Tera-Story/
 │       ├── config/    # Database & app configuration
 │       ├── jobs/      # Scheduled jobs (dailyReset)
 │       ├── middleware/ # Auth, error handling, uploads
-│       ├── models/    # Mongoose schemas (14 models)
+│       ├── models/    # Mongoose schemas (15 models)
 │       ├── providers/ # LLM provider setup (OpenAI, Gemini, Anthropic)
 │       ├── routes/    # API route modules
 │       ├── seed/      # World templates seeder
 │       ├── services/  # Business logic layer
-│       ├── tools/     # Vercel AI SDK tools (15 tools)
+│       ├── tools/     # Vercel AI SDK tools (17 tools)
 │       ├── types/     # TypeScript interfaces
 │       └── __tests__/ # Vitest tests
 ├── frontend/          # React SPA
 │   └── src/
 │       ├── components/ # Reusable UI components
-│       │   ├── game/         # GamePanel (7-tab game interface)
+│       │   ├── game/         # GamePanel (8-tab game interface)
 │       │   ├── echoes/       # Echo indicator + list
 │       │   ├── progression/  # Level badge, XP bar, panel, modal
 │       │   ├── daily/        # Daily check-in, quests, streak
@@ -66,12 +66,13 @@ Tera-Story/
 ## CORE SYSTEMS
 
 ### Dynamic Stat System
-Characters, Items, SpecialItems, and Locations have `dynamicStats: IDynamicStat[]` where each stat is `{ k, v, t, maxV? }`. Stats are initialized from World `resourceTemplates` (for characters) or `locationResourceTemplates` (for locations).
+Characters, Items, SpecialItems, Locations, and Organizations have `dynamicStats: IDynamicStat[]` where each stat is `{ k, v, t, maxV?, children? }`. Stats are initialized from World `resourceTemplates` (for characters), `locationResourceTemplates` (for locations), or `organizationTemplates` (for organizations).
 
-**Stat types:** `number` | `text` | `progress` | `enum` | `pool`
+**Stat types:** `number` | `text` | `progress` | `enum` | `pool` | `object`
 - **pool**: Has `v` (current) + `maxV` (current maximum). Example: HP 80/100. Agent can update both. If `maxV` decreases, `v` auto-clamps.
 - **progress**: Like number but rendered as a progress bar (0-100 scale).
 - **enum**: Must pick from `resourceTemplate.options[]`.
+- **object**: Has `children: IDynamicStat[]` for nested sub-properties. Supports multi-level nesting. Agent uses dot notation for updates (e.g., `"equipment.weapon"`).
 
 ### Entity Archive System
 Characters, Items, SpecialItems, and Locations have `archivedAt: Date | null`. Pre-query hooks auto-filter `archivedAt: null` so archived entities are excluded from agent context. Archive viewer queries use `{ archivedAt: { $ne: null } }` to bypass.
@@ -80,13 +81,24 @@ Characters, Items, SpecialItems, and Locations have `archivedAt: Date | null`. P
 - **Manual archive**: User can archive/restore via `GamePanel > Archive` tab.
 - **Restore**: `POST /api/archive/:playthroughId/restore` sets `archivedAt = null`.
 
+### Organization System
+Organizations (factions, guilds, kingdoms, cults, etc.) are entities that enrich world-building. They have `dynamicStats`, `memberIds` (character references), `goals`, `structure`, and `status` (active/disbanded/hidden). Organizations can be created during world setup via `organizationTemplates` or by the AI writer agent during gameplay.
+
+- **World templates**: `organizationTemplates` on World model define org types with default stats.
+- **Agent tools**: `createOrganization` and `updateOrganization` tools allow the writer agent to create/update organizations.
+- **Membership**: `memberIds` links characters to organizations. Agent can add/remove members.
+- **Archive**: Organizations support `archivedAt` like other entities.
+
 ### Character Extended Fields
 Characters have: `name`, `description`, `role`, `status`, `dynamicStats`, `background` (backstory), `personality` (traits), `goals` (motivations), `appearance` (physical description), `archivedAt`, `deletedAt`.
 
 ### Two-Pass Writer Agent
-1. **Pass 1 (WRITE)**: Pure prose generation, no tools. 800-1500 words. Uses entity markup `[[char:Name]]`, `[[item:Name:rarity]]`, `[[special:Name:rarity]]`.
-2. **Pass 2 (TOOLS)**: Analyzes chapter, calls all game-state tools in a single step. 15 tools available.
+1. **Pass 1 (WRITE)**: Pure prose generation, no tools. 800-1500 words. Uses entity markup `[[char:Name]]`, `[[item:Name:rarity]]`, `[[special:Name:rarity]]`, `[[org:Name]]`.
+2. **Pass 2 (TOOLS)**: Analyzes chapter, calls all game-state tools in a single step. 17 tools available.
 3. **Choices**: Separate step generates 3-4 reader choices with optional `travelTo` for location travel.
+
+### Playthrough Premise
+Playthroughs can have an optional `premise` field describing the player's desired story direction. The context agent includes this premise in the story context, and the writer agent follows it when generating chapters.
 
 ### Protagonist-First Flow
 Playthrough creation requires a protagonist character before any chapter can be generated. Both `storyOrchestrator.generateChapter()` and `generateChapterStream()` enforce this guard.
@@ -123,13 +135,20 @@ World > Continent > Region > Location. Top 3 levels are world-level (shared). Lo
 | `initiateCombat` | Tool | `backend/src/tools/initiateCombat.ts` | Start combat encounter |
 | `generateChoices` | Tool | `backend/src/tools/generateChoices.ts` | Set reader choices |
 | `summarizeArc` | Tool | `backend/src/tools/summarizeArc.ts` | Summarize and complete arc |
+| `createOrganization` | Tool | `backend/src/tools/createOrganization.ts` | Create organization/faction |
+| `updateOrganization` | Tool | `backend/src/tools/updateOrganization.ts` | Update organization stats/members |
 | `archiveRouter` | Router | `backend/src/routes/archive.ts` | Archive list + restore |
+| `organizationsRouter` | Router | `backend/src/routes/organizations.ts` | Organization CRUD |
 | `Character` | Model | `backend/src/models/Character.ts` | Characters with extended fields + archive |
 | `Item` | Model | `backend/src/models/Item.ts` | Items with archive |
 | `SpecialItem` | Model | `backend/src/models/SpecialItem.ts` | Abilities with archive |
 | `Location` | Model | `backend/src/models/Location.ts` | Locations with dynamicStats + archive |
-| `World` | Model | `backend/src/models/World.ts` | World with resourceTemplates + locationResourceTemplates |
-| `GamePanel` | Component | `frontend/src/components/game/GamePanel.tsx` | 7-tab game interface |
+| `World` | Model | `backend/src/models/World.ts` | World with resourceTemplates + locationResourceTemplates + organizationTemplates |
+| `Organization` | Model | `backend/src/models/Organization.ts` | Organizations/factions with dynamicStats + members |
+| `organizationService` | Module | `backend/src/services/organizationService.ts` | Organization stat initialization |
+| `organizationApi` | API Client | `frontend/src/services/organizationApi.ts` | Organization API calls |
+| `DynamicStatDisplay` | Component | `frontend/src/components/DynamicStatDisplay.tsx` | Shared stat renderer (all types) |
+| `GamePanel` | Component | `frontend/src/components/game/GamePanel.tsx` | 8-tab game interface |
 | `RPGPanel` | Component | `frontend/src/components/RPGPanel.tsx` | Stats/Inventory/Abilities/Relations tabs |
 | `EntityDetailModal` | Component | `frontend/src/components/EntityDetailModal.tsx` | Entity detail with extended fields |
 | `CharacterCard` | Component | `frontend/src/components/CharacterCard.tsx` | Character card with pool stats |

@@ -12,16 +12,19 @@ import {
   Skull,
   AlertTriangle,
   HelpCircle,
+  Landmark,
 } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { EntityData } from '../EntityDetailModal';
 import type { Character, Item, SpecialItem, Relationship } from '../../services/playthroughApi';
+import type { Organization } from '../../types/entities';
 import { useTranslation } from '../../i18n';
 import { useArchive } from '../../hooks/useArchive';
 import { useMap } from '../../hooks/useMap';
+import { useStoryStore } from '../../stores/storyStore';
 import { getImageUrl } from '../../utils/url';
 
-type GameTab = 'character' | 'companions' | 'relationships' | 'map' | 'inventory' | 'abilities' | 'archive';
+type GameTab = 'character' | 'companions' | 'relationships' | 'map' | 'inventory' | 'abilities' | 'organizations' | 'archive';
 
 interface GamePanelProps {
   isOpen: boolean;
@@ -45,6 +48,7 @@ const TABS: { id: GameTab; icon: typeof UserRound; labelKey: string }[] = [
   { id: 'map', icon: MapPin, labelKey: 'map' },
   { id: 'inventory', icon: Package, labelKey: 'inventory' },
   { id: 'abilities', icon: Sparkles, labelKey: 'specialItems' },
+  { id: 'organizations', icon: Landmark, labelKey: 'organizations' },
   { id: 'archive', icon: Archive, labelKey: 'archive' },
 ];
 
@@ -497,6 +501,16 @@ export default function GamePanel({
               </div>
             )}
 
+            {/* Organizations Tab */}
+            {activeTab === 'organizations' && (
+              <OrganizationsTab
+                worldId={protagonist?.worldId ?? ''}
+                playthroughId={playthroughId}
+                setDetailEntity={setDetailEntity}
+                t={t}
+              />
+            )}
+
             {/* Archive Tab */}
             {activeTab === 'archive' && (
               <div className="space-y-4">
@@ -606,6 +620,62 @@ export default function GamePanel({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Organizations Tab Component ──
+
+interface OrganizationsTabProps {
+  worldId: string;
+  playthroughId: string;
+  setDetailEntity: Dispatch<SetStateAction<EntityData | null>>;
+  t: ReturnType<typeof useTranslation>;
+}
+
+function OrganizationsTab({ worldId, playthroughId, setDetailEntity, t }: OrganizationsTabProps) {
+  const { organizations } = useStoryStore();
+
+  if (organizations.length === 0) {
+    return (
+      <p className="text-sm text-ink-200/50 text-center py-8">
+        {t.playthrough.noOrganizations ?? 'No organizations discovered yet.'}
+      </p>
+    );
+  }
+
+  const statusColors: Record<string, string> = {
+    active: 'text-green-400 bg-green-500/10',
+    disbanded: 'text-red-400 bg-red-500/10',
+    hidden: 'text-amber-400 bg-amber-500/10',
+  };
+
+  return (
+    <div className="space-y-3">
+      {organizations.map((org) => (
+        <div
+          key={org._id}
+          onClick={() => setDetailEntity({ type: 'organization', data: org })}
+          className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-4 cursor-pointer hover:border-accent-400/30 transition-all"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h4 className="text-sm font-medium text-ink-100 truncate">{org.name}</h4>
+              <p className="text-xs text-ink-200/50 mt-0.5 capitalize">{org.type}</p>
+            </div>
+            <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${statusColors[org.status] || 'text-ink-200/50 bg-ink-800'}`}>
+              {org.status}
+            </span>
+          </div>
+          {org.description && (
+            <p className="text-xs text-ink-200/60 mt-2 line-clamp-2">{org.description}</p>
+          )}
+          <div className="flex items-center gap-3 mt-2 text-xs text-ink-200/40">
+            <span>{Array.isArray(org.memberIds) ? org.memberIds.length : 0} members</span>
+            {org.dynamicStats.length > 0 && <span>{org.dynamicStats.length} stats</span>}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
