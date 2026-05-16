@@ -4,6 +4,7 @@ import type { Character, Item, SpecialItem, ItemRarity, CharacterStatus, ItemSta
 import type { Organization } from '../types/entities';
 import { getImageUrl } from '../utils/url';
 import { RetryImageButton } from './RetryImageButton';
+import { DynamicStatList } from './DynamicStatDisplay';
 
 type EntityData =
   | { type: 'character'; data: Character }
@@ -158,28 +159,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
         {char.dynamicStats.length > 0 && (
           <div>
             <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-3 font-medium">{t.storyReader.statsTab}</h4>
-            <div className="space-y-2">
-              {char.dynamicStats.map(stat => (
-                <div key={stat.k}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-ink-200/70">{stat.k}</span>
-                    <span className="text-ink-100 font-mono">
-                      {stat.t === 'pool' && stat.maxV !== undefined
-                        ? `${stat.v} / ${stat.maxV}`
-                        : String(stat.v)}
-                    </span>
-                  </div>
-                  {(stat.t === 'progress' || stat.t === 'pool') && (
-                    <div className="h-2 bg-ink-700 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${stat.t === 'pool' ? 'bg-gradient-to-r from-red-600 to-red-400' : 'bg-gradient-to-r from-accent-600 to-accent-400'}`}
-                        style={{ width: `${stat.t === 'pool' && stat.maxV ? Math.min(100, (Number(stat.v) / stat.maxV) * 100) : Math.min(100, Number(stat.v))}%` }}
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            <DynamicStatList stats={char.dynamicStats} />
           </div>
         )}
       </div>
@@ -373,14 +353,7 @@ function renderOrganization(org: Organization) {
       {org.dynamicStats.length > 0 && (
         <div className="mb-3">
           <h4 className="text-xs font-medium text-ink-200/60 uppercase tracking-wider mb-2">Stats</h4>
-          <div className="space-y-2">
-            {org.dynamicStats.map((stat, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <span className="text-xs text-ink-200/60">{stat.k}</span>
-                <span className="text-sm text-ink-100">{String(stat.v)}</span>
-              </div>
-            ))}
-          </div>
+          <DynamicStatList stats={org.dynamicStats} />
         </div>
       )}
 

@@ -22,7 +22,7 @@ export function useArchive(playthroughId: string) {
   }, [playthroughId]);
 
   const restoreEntity = useCallback(
-    async (entityType: 'character' | 'item' | 'special-item' | 'location', entityId: string) => {
+    async (entityType: 'character' | 'item' | 'special-item' | 'location' | 'organization', entityId: string) => {
       try {
         await archiveApi.restoreEntity(playthroughId, entityType, entityId);
         // Refresh archived list after restore

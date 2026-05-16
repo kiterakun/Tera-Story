@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { Character, Item, SpecialItem } from '@/types/entities';
+import type { Character, Item, SpecialItem, Organization } from '@/types/entities';
 import type { Location } from './mapApi';
 
 export interface ArchivedEntities {
@@ -7,6 +7,7 @@ export interface ArchivedEntities {
   items: Item[];
   specialItems: SpecialItem[];
   locations: Location[];
+  organizations: Organization[];
 }
 
 export async function getArchivedEntities(playthroughId: string): Promise<ArchivedEntities> {
@@ -16,7 +17,7 @@ export async function getArchivedEntities(playthroughId: string): Promise<Archiv
 
 export async function restoreEntity(
   playthroughId: string,
-  entityType: 'character' | 'item' | 'special-item' | 'location',
+  entityType: 'character' | 'item' | 'special-item' | 'location' | 'organization',
   entityId: string
 ): Promise<{ restored: boolean; entityType: string; entityId: string }> {
   const { data } = await api.post(`/archive/${playthroughId}/restore`, {

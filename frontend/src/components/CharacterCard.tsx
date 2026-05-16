@@ -2,6 +2,7 @@ import type { Character } from '../services/playthroughApi';
 import { useTranslation } from '../i18n';
 import { getImageUrl } from '../utils/url';
 import { RetryImageButton } from './RetryImageButton';
+import { DynamicStatDisplay } from './DynamicStatDisplay';
 
 export default function CharacterCard({ character }: { character: Character }) {
   const t = useTranslation();
@@ -58,15 +59,10 @@ export default function CharacterCard({ character }: { character: Character }) {
 
       {/* Dynamic Stats Grid */}
       {character.dynamicStats.length > 0 && (
-        <div className="grid grid-cols-2 gap-1.5 text-sm">
-          {character.dynamicStats.map((stat) => (
-            <div key={stat.k} className="flex justify-between items-center bg-ink-950/50 rounded-lg px-2.5 py-1.5">
-              <span className="text-ink-200/50 text-xs capitalize">{stat.k}</span>
-              <span className="text-ink-100 font-mono text-xs">
-                {stat.t === 'pool' && stat.maxV !== undefined
-                  ? `${stat.v}/${stat.maxV}`
-                  : String(stat.v)}
-              </span>
+        <div className="grid grid-cols-2 gap-1.5">
+          {character.dynamicStats.map((stat, idx) => (
+            <div key={idx} className="bg-ink-950/50 rounded-lg px-2.5 py-1.5">
+              <DynamicStatDisplay stat={stat} compact />
             </div>
           ))}
         </div>

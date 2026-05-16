@@ -1,10 +1,11 @@
-import { Heart, Network, Package, Skull, Sparkles, UserRound, Users, AlertTriangle } from 'lucide-react';
+import { Heart, Network, Package, Skull, Sparkles, UserRound, Users } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { EntityData } from './EntityDetailModal';
 import type { Character, Item, ItemRarity, Relationship, SpecialItem } from '../services/playthroughApi';
 import { useTranslation } from '../i18n';
 import { getImageUrl } from '../utils/url';
-import type { ResourceTemplate } from './CharacterPanel';
+import type { ResourceTemplate } from '@/types/entities';
+import { DynamicStatList } from './DynamicStatDisplay';
 
 const rarityColor: Record<ItemRarity, string> = {
   common: 'text-ink-200/70',
@@ -52,7 +53,6 @@ export default function RPGPanel({
   void isRelationshipModalOpen;
 
   const npcs = characters.filter(c => c.role === 'npc');
-  const getTemplate = (key: string) => resourceTemplates?.find(t => t.key === key);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -99,31 +99,7 @@ export default function RPGPanel({
                 </div>
               </button>
               <div className="space-y-1.5">
-                {protagonist.dynamicStats.map(stat => {
-                  const template = getTemplate(stat.k);
-                  const isEnumInvalid = stat.t === 'enum' && template?.options && !template.options.includes(String(stat.v));
-                  return (
-                    <div key={stat.k}>
-                      <div className="flex justify-between text-xs mb-0.5">
-                        <span className="text-ink-200/70">{stat.k}</span>
-                        <span className={`font-mono flex items-center gap-1 ${isEnumInvalid ? 'text-red-400 border border-red-500/40 rounded px-1 -mx-1' : 'text-ink-100'}`}>
-                          {stat.t === 'pool' && stat.maxV !== undefined
-                            ? `${stat.v} / ${stat.maxV}`
-                            : String(stat.v)}
-                          {isEnumInvalid && <AlertTriangle size={12} className="text-red-400 shrink-0" title={`Valid: ${template?.options?.join(', ')}`} />}
-                        </span>
-                      </div>
-                      {(stat.t === 'progress' || stat.t === 'pool') && (
-                        <div className="h-1.5 bg-ink-700 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${stat.t === 'pool' ? 'bg-gradient-to-r from-red-600 to-red-400' : 'bg-accent-600'}`}
-                            style={{ width: `${stat.t === 'pool' && stat.maxV ? Math.min(100, (Number(stat.v) / stat.maxV) * 100) : Math.min(100, Number(stat.v))}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                <DynamicStatList stats={protagonist.dynamicStats} templates={resourceTemplates} compact />
               </div>
             </div>
           )}

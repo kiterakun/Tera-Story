@@ -1,26 +1,10 @@
 import { useState } from 'react';
-import { Swords, UserRound, Users, X, AlertTriangle } from 'lucide-react';
+import { Swords, UserRound, Users, X } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { getImageUrl } from '../utils/url';
 import { RetryImageButton } from './RetryImageButton';
-
-export interface DynamicStat {
-  k: string;
-  v: string | number | boolean;
-  t: string;
-  maxV?: number;
-  children?: DynamicStat[];
-}
-
-export interface ResourceTemplate {
-  key: string;
-  type: 'number' | 'text' | 'progress' | 'enum' | 'pool' | 'object';
-  min?: number;
-  max?: number;
-  displayFormat?: string;
-  options?: string[];
-  children?: ResourceTemplate[];
-}
+import { DynamicStatList } from './DynamicStatDisplay';
+import type { DynamicStat, ResourceTemplate } from '@/types/entities';
 
 export interface Character {
   _id: string;
@@ -40,15 +24,6 @@ export interface CharacterPanelProps {
 export function CharacterPanel({ protagonist, npcs, resourceTemplates }: CharacterPanelProps) {
   const t = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-
-  const formatStat = (stat: DynamicStat, template?: ResourceTemplate) => {
-    const displayFormat = template?.displayFormat;
-    if (displayFormat) return displayFormat.replace('{v}', String(stat.v));
-    if (stat.t === 'progress' && template?.max) return `${stat.v} / ${template.max}`;
-    return String(stat.v);
-  };
-
-  const getTemplate = (key: string) => resourceTemplates.find(t => t.key === key);
 
   return (
     <>
@@ -90,31 +65,7 @@ export function CharacterPanel({ protagonist, npcs, resourceTemplates }: Charact
               </div>
 
               {/* Dynamic stats */}
-              <div className="space-y-2">
-                {protagonist.dynamicStats.map(stat => {
-                  const template = getTemplate(stat.k);
-                  const isEnumInvalid = stat.t === 'enum' && template?.options && !template.options.includes(String(stat.v));
-                  return (
-                    <div key={stat.k}>
-                      <div className="flex justify-between text-sm mb-0.5">
-                        <span className="text-ink-200/70 text-xs">{stat.k}</span>
-                        <span className={`text-xs font-mono flex items-center gap-1 ${isEnumInvalid ? 'text-red-400 border border-red-500/40 rounded px-1 -mx-1' : 'text-ink-100'}`}>
-                          {formatStat(stat, template)}
-                          {isEnumInvalid && <AlertTriangle size={12} className="text-red-400 shrink-0" title={`Valid: ${template?.options?.join(', ')}`} />}
-                        </span>
-                      </div>
-                      {stat.t === 'progress' && template?.max && (
-                        <div className="h-1.5 bg-ink-700 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-accent-600 rounded-full transition-all duration-500"
-                            style={{ width: `${Math.min(100, (Number(stat.v) / template.max) * 100)}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              <DynamicStatList stats={protagonist.dynamicStats} templates={resourceTemplates} />
             </div>
           )}
 

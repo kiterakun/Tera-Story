@@ -4,6 +4,7 @@ import { Character } from '../models/Character';
 import { Item } from '../models/Item';
 import { SpecialItem } from '../models/SpecialItem';
 import { Location } from '../models/Location';
+import { Organization } from '../models/Organization';
 import { Playthrough } from '../models/Playthrough';
 
 const router = Router({ mergeParams: true });
@@ -28,11 +29,12 @@ router.get(
       }
 
       // Query archived entities by bypassing the pre-hook filters
-      const [characters, items, specialItems, locations] = await Promise.all([
+      const [characters, items, specialItems, locations, organizations] = await Promise.all([
         Character.find({ playthroughId, archivedAt: { $ne: null } }).lean(),
         Item.find({ playthroughId, archivedAt: { $ne: null } }).lean(),
         SpecialItem.find({ playthroughId, archivedAt: { $ne: null } }).lean(),
         Location.find({ playthroughId, archivedAt: { $ne: null } }).lean(),
+        Organization.find({ playthroughId, archivedAt: { $ne: null } }).lean(),
       ]);
 
       res.json({
@@ -40,6 +42,7 @@ router.get(
         items,
         specialItems,
         locations,
+        organizations,
       });
     } catch (err) {
       console.error('List archived entities error:', err);
@@ -99,8 +102,14 @@ router.post(
           { $set: { archivedAt: null } },
         );
         updated = !!result;
+      } else if (entityType === 'organization') {
+        const result = await Organization.findOneAndUpdate(
+          { _id: entityId, playthroughId, archivedAt: { $ne: null } },
+          { $set: { archivedAt: null } },
+        );
+        updated = !!result;
       } else {
-        res.status(400).json({ error: 'Invalid entityType. Must be character, item, special-item, or location' });
+        res.status(400).json({ error: 'Invalid entityType. Must be character, item, special-item, location, or organization' });
         return;
       }
 

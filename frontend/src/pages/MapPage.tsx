@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import type { Location } from '../services/mapApi';
+import { DynamicStatList } from '../components/DynamicStatDisplay';
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -113,14 +114,9 @@ function LocationCard({
               </p>
               {location.dynamicStats && location.dynamicStats.length > 0 && (
                 <div className="grid grid-cols-2 gap-1.5">
-                  {location.dynamicStats.map((stat) => (
-                    <div key={stat.k} className="flex justify-between items-center bg-ink-950/50 rounded-lg px-2 py-1">
-                      <span className="text-xs text-ink-200/50">{stat.k}</span>
-                      <span className="text-xs font-mono text-ink-100">
-                        {stat.t === 'pool' && stat.maxV !== undefined
-                          ? `${stat.v}/${stat.maxV}`
-                          : String(stat.v)}
-                      </span>
+                  {location.dynamicStats.map((stat, idx) => (
+                    <div key={idx} className="bg-ink-950/50 rounded-lg px-2 py-1">
+                      <DynamicStatList stats={[stat]} compact />
                     </div>
                   ))}
                 </div>

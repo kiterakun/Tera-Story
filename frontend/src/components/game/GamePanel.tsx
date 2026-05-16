@@ -23,6 +23,7 @@ import { useArchive } from '../../hooks/useArchive';
 import { useMap } from '../../hooks/useMap';
 import { useStoryStore } from '../../stores/storyStore';
 import { getImageUrl } from '../../utils/url';
+import { DynamicStatList } from '../DynamicStatDisplay';
 
 type GameTab = 'character' | 'companions' | 'relationships' | 'map' | 'inventory' | 'abilities' | 'organizations' | 'archive';
 
@@ -210,28 +211,9 @@ export default function GamePanel({
                   <div>
                     <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-3 font-medium">Stats</h4>
                     <div className="grid grid-cols-2 gap-2">
-                      {protagonist.dynamicStats.map(stat => (
-                        <div key={stat.k} className="bg-ink-950/50 rounded-xl p-3 border border-ink-700/50">
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="text-ink-200/70">{stat.k}</span>
-                            <span className="font-mono text-ink-100">
-                              {stat.t === 'pool' && stat.maxV !== undefined
-                                ? `${stat.v} / ${stat.maxV}`
-                                : String(stat.v)}
-                            </span>
-                          </div>
-                          {(stat.t === 'progress' || stat.t === 'pool') && (
-                            <div className="h-2 bg-ink-700 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all duration-500 ${stat.t === 'pool' ? 'bg-gradient-to-r from-red-600 to-red-400' : 'bg-accent-600'}`}
-                                style={{
-                                  width: `${stat.t === 'pool' && stat.maxV
-                                    ? Math.min(100, (Number(stat.v) / stat.maxV) * 100)
-                                    : Math.min(100, Number(stat.v))}%`,
-                                }}
-                              />
-                            </div>
-                          )}
+                      {protagonist.dynamicStats.map((stat, idx) => (
+                        <div key={idx} className="bg-ink-950/50 rounded-xl p-3 border border-ink-700/50">
+                          <DynamicStatList stats={[stat]} compact />
                         </div>
                       ))}
                     </div>
@@ -285,14 +267,9 @@ export default function GamePanel({
                             {npc.description && <p className="text-sm text-ink-200/70">{npc.description}</p>}
                             {npc.dynamicStats.length > 0 && (
                               <div className="grid grid-cols-2 gap-1.5">
-                                {npc.dynamicStats.map(stat => (
-                                  <div key={stat.k} className="flex justify-between text-xs bg-ink-900/50 rounded px-2 py-1">
-                                    <span className="text-ink-200/50">{stat.k}</span>
-                                    <span className="font-mono text-ink-100">
-                                      {stat.t === 'pool' && stat.maxV !== undefined
-                                        ? `${stat.v}/${stat.maxV}`
-                                        : String(stat.v)}
-                                    </span>
+                                {npc.dynamicStats.map((stat, idx) => (
+                                  <div key={idx} className="bg-ink-900/50 rounded px-2 py-1">
+                                    <DynamicStatList stats={[stat]} compact />
                                   </div>
                                 ))}
                               </div>
@@ -373,14 +350,9 @@ export default function GamePanel({
                     <p className="text-sm text-ink-200/70 mt-1">{currentContext.location.description}</p>
                     {currentContext.location.dynamicStats && currentContext.location.dynamicStats.length > 0 && (
                       <div className="grid grid-cols-2 gap-1.5 mt-3">
-                        {currentContext.location.dynamicStats.map(stat => (
-                          <div key={stat.k} className="flex justify-between text-xs bg-ink-900/50 rounded px-2 py-1">
-                            <span className="text-ink-200/50">{stat.k}</span>
-                            <span className="font-mono text-ink-100">
-                              {stat.t === 'pool' && stat.maxV !== undefined
-                                ? `${stat.v}/${stat.maxV}`
-                                : String(stat.v)}
-                            </span>
+                        {currentContext.location.dynamicStats.map((stat, idx) => (
+                          <div key={idx} className="bg-ink-900/50 rounded px-2 py-1">
+                            <DynamicStatList stats={[stat]} compact />
                           </div>
                         ))}
                       </div>
@@ -403,14 +375,9 @@ export default function GamePanel({
                           </div>
                           {loc.dynamicStats && loc.dynamicStats.length > 0 && (
                             <div className="grid grid-cols-2 gap-1 mt-2">
-                              {loc.dynamicStats.map(stat => (
-                                <div key={stat.k} className="flex justify-between text-[11px] bg-ink-900/50 rounded px-1.5 py-0.5">
-                                  <span className="text-ink-200/40">{stat.k}</span>
-                                  <span className="font-mono text-ink-200/70">
-                                    {stat.t === 'pool' && stat.maxV !== undefined
-                                      ? `${stat.v}/${stat.maxV}`
-                                      : String(stat.v)}
-                                  </span>
+                              {loc.dynamicStats.map((stat, idx) => (
+                                <div key={idx} className="bg-ink-900/50 rounded px-1.5 py-0.5">
+                                  <DynamicStatList stats={[stat]} compact />
                                 </div>
                               ))}
                             </div>
@@ -520,7 +487,8 @@ export default function GamePanel({
                   archived.characters.length === 0 &&
                   archived.items.length === 0 &&
                   archived.specialItems.length === 0 &&
-                  archived.locations.length === 0
+                  archived.locations.length === 0 &&
+                  archived.organizations.length === 0
                 ) ? (
                   <p className="text-sm text-ink-200/50 text-center py-8">{t.playthrough.noArchived}</p>
                 ) : (
@@ -603,6 +571,28 @@ export default function GamePanel({
                               </div>
                               <button
                                 onClick={() => restoreEntity('location', loc._id)}
+                                className="text-xs text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
+                              >
+                                <RotateCcw size={12} />
+                                {t.playthrough.restore}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {archived.organizations.length > 0 && (
+                      <div>
+                        <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">Organizations</h4>
+                        <div className="space-y-2">
+                          {archived.organizations.map(org => (
+                            <div key={org._id} className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-3 flex items-center justify-between">
+                              <div>
+                                <span className="text-sm text-ink-100">{org.name}</span>
+                                <span className="text-xs text-ink-200/40 ml-2">{org.type}</span>
+                              </div>
+                              <button
+                                onClick={() => restoreEntity('organization', org._id)}
                                 className="text-xs text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
                               >
                                 <RotateCcw size={12} />
