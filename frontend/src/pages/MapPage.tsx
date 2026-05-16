@@ -21,6 +21,7 @@ import { useTranslation } from '../i18n';
 import type { Location } from '../services/mapApi';
 import { DynamicStatList } from '../components/DynamicStatDisplay';
 import { useStoryStore } from '../stores/storyStore';
+import type { ResourceTemplate } from '../types/entities';
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -71,7 +72,7 @@ function LocationCard({
   isCurrent?: boolean;
   isExpanded?: boolean;
   onToggle?: () => void;
-  templates?: any[];
+  templates?: ResourceTemplate[];
 }) {
   const t = useTranslation();
   const Icon = LOCATION_TYPE_ICONS[location.type] || MapPin;
@@ -157,7 +158,7 @@ function RegionGroup({
   currentLocationId?: string;
   expandedId: string | null;
   onToggleLocation: (id: string) => void;
-  templates?: any[];
+  templates?: ResourceTemplate[];
 }) {
   const t = useTranslation();
   return (

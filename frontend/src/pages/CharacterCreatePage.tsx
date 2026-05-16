@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useStoryStore } from "../stores/storyStore";
 import { useTranslation } from "../i18n";
@@ -10,9 +10,10 @@ import {
   Users,
   Info,
   Loader2,
-  Sparkles,
 } from "lucide-react";
 import * as supportApi from "../services/supportApi";
+import { AiCharacterGenerator } from "../components/game/AiCharacterGenerator";
+
 export default function CharacterCreatePage() {
   const t = useTranslation();
   const { worldId, playthroughId } = useParams<{
@@ -21,6 +22,8 @@ export default function CharacterCreatePage() {
   }>();
   const navigate = useNavigate();
   const createCharacter = useStoryStore((state) => state.createCharacter);
+  const playthrough = useStoryStore((state) => state.currentPlaythrough);
+  const fetchPlaythrough = useStoryStore((state) => state.fetchPlaythrough);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -32,6 +35,17 @@ export default function CharacterCreatePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEnriching, setIsEnriching] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+
+  useEffect(() => {
+    if (playthroughId && (!playthrough || playthrough._id !== playthroughId)) {
+      fetchPlaythrough(playthroughId).catch(console.error);
+    }
+  }, [playthroughId, playthrough, fetchPlaythrough]);
+
+  const realWorldId = (worldId && worldId !== 'undefined')
+    ? worldId
+    : (playthrough?.worldId && (typeof playthrough.worldId === 'object' ? (playthrough.worldId as { _id: string })._id : playthrough.worldId)) || '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +68,7 @@ export default function CharacterCreatePage() {
         ...(appearance ? { appearance } : {}),
       });
       showSuccess(t.toast.characterCreated);
-      navigate(`/worlds/${worldId}/playthroughs/${playthroughId}`);
+      navigate(`/worlds/${realWorldId}/playthroughs/${playthroughId}`);
     } catch (err: unknown) {
       const message = err && typeof err === 'object' && 'response' in err
         ? (err as { response?: { data?: { message?: string } } }).response?.data?.message || t.characterCreate.failedToCreate
@@ -63,19 +77,17 @@ export default function CharacterCreatePage() {
       setIsSubmitting(false);
     }
   };
-  const handleAiQuickCreate = async () => {
-    if (!description.trim() && !name.trim()) {
-      setError(t.characterCreate.aiNeedHint);
-      return;
-    }
+
+  const handleAiGenerateCharacter = async () => {
+    if (!aiPrompt.trim()) return;
 
     setIsEnriching(true);
     setError(null);
 
     try {
       const result = await supportApi.enrichCharacter(
-        description.trim() || name.trim(),
-        worldId,
+        aiPrompt.trim(),
+        realWorldId,
       );
       if (result.characterName) setName(result.characterName);
       if (result.characterDescription) setDescription(result.characterDescription);
@@ -83,6 +95,7 @@ export default function CharacterCreatePage() {
       if (result.personality) setPersonality(result.personality);
       if (result.goals) setGoals(result.goals);
       if (result.appearance) setAppearance(result.appearance);
+      showSuccess(t.toast.characterEnriched || "Character generated successfully!");
     } catch (err: unknown) {
       const message = err && typeof err === 'object' && 'response' in err
         ? (err as { response?: { data?: { error?: string } } }).response?.data?.error || t.characterCreate.aiEnrichFailed
@@ -93,11 +106,12 @@ export default function CharacterCreatePage() {
       setIsEnriching(false);
     }
   };
+
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12 animate-fade-in">
       <div className="mb-8">
         <Link
-          to={`/worlds/${worldId}/playthroughs/${playthroughId}`}
+          to={`/worlds/${realWorldId}/playthroughs/${playthroughId}`}
           className="inline-flex items-center gap-1.5 text-ink-200/50 hover:text-accent-400 transition-colors text-sm font-medium mb-3"
         >
           <ChevronLeft size={16} />
@@ -112,32 +126,23 @@ export default function CharacterCreatePage() {
         <div className="mt-3 h-px bg-gradient-to-r from-accent-400/60 via-accent-600/30 to-transparent" />
       </div>
 
-      <div className="bg-ink-800 border border-ink-700 rounded-2xl p-6 sm:p-8">
-        <div className="flex justify-end mb-6">
-          <button
-            onClick={handleAiQuickCreate}
-            disabled={isEnriching}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-accent-600/10 text-accent-400 border border-accent-600/20 rounded-xl text-sm font-medium hover:bg-accent-600/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isEnriching ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Sparkles size={16} />
-            )}
-            {isEnriching
-              ? t.characterCreate.aiEnriching
-              : t.characterCreate.aiQuickCreate}
-          </button>
-        </div>
+      <div className="space-y-6">
+        <AiCharacterGenerator
+          prompt={aiPrompt}
+          onChange={setAiPrompt}
+          onGenerate={handleAiGenerateCharacter}
+          isGenerating={isEnriching}
+        />
 
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-xl mb-6 text-sm flex items-center gap-2 animate-fade-in">
-            <XCircle size={16} className="shrink-0" />
-            {error}
-          </div>
-        )}
+        <div className="bg-ink-800 border border-ink-700 rounded-2xl p-6 sm:p-8">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-xl mb-6 text-sm flex items-center gap-2 animate-fade-in">
+              <XCircle size={16} className="shrink-0" />
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
               {t.characterCreate.name} <span className="text-red-400">*</span>
@@ -301,5 +306,6 @@ export default function CharacterCreatePage() {
         </form>
       </div>
     </div>
-  );
+  </div>
+);
 }

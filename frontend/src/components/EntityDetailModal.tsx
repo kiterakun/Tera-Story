@@ -259,7 +259,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
               {Object.entries(si.customFields).map(([key, val]) => {
                 // Find field definition in template
                 const template = specialItemTemplates.find(t => t.category === si.category);
-                const fieldDef = template?.fields.find(f => f.name === key || (f as any).key === key);
+                const fieldDef = template?.fields.find(f => f.name === key || (f as { key?: string }).key === key);
                 
                 return (
                   <div key={key} className="bg-ink-950/40 rounded-lg p-2 border border-ink-700/30">
@@ -371,7 +371,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
             <h4 className="text-xs font-medium text-ink-200/60 uppercase tracking-wider mb-2">Members</h4>
             <div className="flex flex-wrap gap-2">
               {org.memberIds.map((member) => {
-                const name = typeof member === 'string' ? member : (member as any).name;
+                const name = typeof member === 'string' ? member : (member as Character).name;
                 return (
                   <span key={name} className="text-xs px-2 py-1 bg-ink-800 rounded-lg text-ink-200/80">
                     {name}

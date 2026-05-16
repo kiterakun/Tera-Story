@@ -121,6 +121,8 @@ export default function StoryReaderPage() {
   const fetchCharacters = useStoryStore(s => s.fetchCharacters);
   const fetchItems = useStoryStore(s => s.fetchItems);
   const fetchSpecialItems = useStoryStore(s => s.fetchSpecialItems);
+  const fetchPlaythrough = useStoryStore(s => s.fetchPlaythrough);
+  const playthrough = useStoryStore(s => s.currentPlaythrough);
   const invalidateCharacters = useStoryStore(s => s.invalidateCharacters);
   const invalidateItems = useStoryStore(s => s.invalidateItems);
   const invalidateSpecialItems = useStoryStore(s => s.invalidateSpecialItems);
@@ -175,6 +177,7 @@ export default function StoryReaderPage() {
   useEffect(() => {
     if (playthroughId) {
       loadStoryState();
+      fetchPlaythrough(playthroughId).catch(console.error);
       fetchCharacters(playthroughId).catch(console.error);
       fetchItems(playthroughId).catch(console.error);
       fetchSpecialItems(playthroughId).catch(console.error);
@@ -396,9 +399,10 @@ export default function StoryReaderPage() {
   }
 
   if (!isLoadingState && !protagonist) {
+    const resolvedWorldId = worldId || (playthrough?.worldId && (typeof playthrough.worldId === 'object' ? (playthrough.worldId as { _id: string })._id : playthrough.worldId)) || '';
     return (
       <ProtagonistGuard 
-        worldId={worldId!} 
+        worldId={resolvedWorldId} 
         playthroughId={playthroughId!} 
         onNavigate={navigate} 
       />

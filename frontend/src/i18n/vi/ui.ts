@@ -44,6 +44,7 @@ export default {
     playthroughCreated: 'Tạo lượt chơi thành công',
     playthroughDeleted: 'Đã xóa lượt chơi',
     characterCreated: 'Tạo nhân vật thành công',
+    characterEnriched: 'Tạo chi tiết nhân vật bằng AI thành công',
     settingsSaved: 'Đã lưu cài đặt',
     aiConfigSaved: 'Đã lưu cấu hình AI',
     chapterGenerated: 'Đã tạo chương mới',

@@ -150,7 +150,7 @@ export function SpecialItemTemplateEditor({ templates, onChange }: SpecialItemTe
                       <input
                         className="flex-1 bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 placeholder:text-ink-500 focus:border-accent-400 outline-none"
                         placeholder={t.worldCreate.fieldName}
-                        value={field.name || (field as any).key || ''}
+                        value={field.name || (field as { key?: string }).key || ''}
                         onChange={(e) => handleFieldChange(index, fieldIdx, 'name', e.target.value)}
                       />
                       <select

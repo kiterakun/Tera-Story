@@ -10,10 +10,14 @@ vi.mock('../../services/playthroughApi', () => ({
   createCharacter: vi.fn(),
 }));
 
+vi.mock('../../services/worldApi', () => ({
+  getWorld: vi.fn().mockResolvedValue({ world: { _id: 'w1', name: 'Test World' }, specialItemTemplates: [] }),
+}));
+
 import * as playthroughApi from '../../services/playthroughApi';
 
 const mockPlaythrough = { _id: 'p1', name: 'Test Story', worldId: 'w1', status: 'active' as const, currentArcIndex: 0, createdAt: '2024-01-01' };
-const mockCharacter = { _id: 'c1', name: 'Hero', description: 'Brave', role: 'protagonist' as const, status: 'active' as const, dynamicStats: [], playthroughId: 'p1', worldId: 'w1', userId: 'u1', createdAt: '2024-01-01', updatedAt: '2024-01-01' };
+const mockCharacter = { _id: 'c1', name: 'Hero', description: 'Brave', role: 'protagonist' as const, status: 'active' as const, dynamicStats: [], background: '', personality: '', goals: '', appearance: '', playthroughId: 'p1', worldId: 'w1', userId: 'u1', createdAt: '2024-01-01', updatedAt: '2024-01-01' };
 const mockArc = { _id: 'a1', title: 'First Arc', arcIndex: 0, status: 'active' as const };
 const mockItem = { _id: 'i1', name: 'Sword', description: 'Sharp', rarity: 'common' as const, status: 'active' as const, properties: {}, playthroughId: 'p1', createdAt: '2024-01-01' };
 const mockSpecialItem = { _id: 'si1', name: 'Amulet', description: 'Magic', category: 'artifact', rarity: 'rare' as const, status: 'active' as const, customFields: {}, playthroughId: 'p1', createdAt: '2024-01-01' };

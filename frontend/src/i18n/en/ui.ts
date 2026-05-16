@@ -44,6 +44,7 @@ export default {
     playthroughCreated: 'Playthrough created',
     playthroughDeleted: 'Playthrough deleted',
     characterCreated: 'Character created successfully',
+    characterEnriched: 'Character details generated successfully',
     settingsSaved: 'Settings saved',
     aiConfigSaved: 'AI configuration saved',
     chapterGenerated: 'Chapter generated',

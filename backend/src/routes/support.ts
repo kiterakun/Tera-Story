@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import mongoose from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
 import { UserSettings } from '../models/UserSettings';
 import { World } from '../models/World';
@@ -61,7 +62,7 @@ router.post('/enrich-character', async (req: AuthRequest, res: Response): Promis
 
     // Build world context if worldId provided
     let worldContext = '';
-    if (worldId) {
+    if (worldId && mongoose.Types.ObjectId.isValid(worldId)) {
       const world = await World.findById(worldId);
       if (world) {
         worldContext = `World: ${world.name}\nGenre: ${world.genre}\nDescription: ${world.description}`;
