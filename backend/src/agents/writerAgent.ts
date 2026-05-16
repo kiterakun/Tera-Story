@@ -49,7 +49,9 @@ function getWriterSystemPrompt(language: string): string {
 // Pass 2 — TOOLS: Read the finished chapter, execute all game-state changes.
 // ────────────────────────────────────────────────────────────────────────────
 
-const TOOLS_SYSTEM_PROMPT = renderPrompt('writer-tools.prompt.xml');
+function getToolsSystemPrompt(language: string): string {
+  return renderPrompt('writer-tools.prompt.xml', { language });
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -335,7 +337,7 @@ Call all applicable tools NOW in ONE step. Do NOT output any text — ONLY tool 
 
   const toolStream = streamText({
     model,
-    system: TOOLS_SYSTEM_PROMPT,
+    system: getToolsSystemPrompt(language),
     prompt: toolsPrompt,
     tools,
     stopWhen: stepCountIs(maxSteps),
@@ -380,7 +382,7 @@ Do NOT output any text — ONLY call generateChoices.`.trim();
 
   const choicesStream = streamText({
     model,
-    system: TOOLS_SYSTEM_PROMPT,
+    system: getToolsSystemPrompt(language),
     prompt: choicesPrompt,
     tools: { generateChoices: choicesTool },
     stopWhen: stepCountIs(1),

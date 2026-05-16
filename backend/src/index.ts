@@ -37,6 +37,7 @@ import leaderboardRouter from './routes/leaderboard';
 import mapRouter from './routes/map';
 import privacyRouter from './routes/privacy';
 import shareRouter from './routes/share';
+import archiveRouter from './routes/archive';
 import { authMiddleware } from './middleware/auth';
 
 export const app: Express = express();
@@ -147,6 +148,9 @@ app.use('/api/leaderboard', authMiddleware, leaderboardRouter);
 
 // Share Routes (public — no auth)
 app.use('/api/share', shareRouter);
+
+// Archive Routes
+app.use('/api/archive', authMiddleware, archiveRouter);
 
 // Public Chronicle Share (no auth)
 app.get('/api/share/chronicle/:shareId', async (req, res) => {

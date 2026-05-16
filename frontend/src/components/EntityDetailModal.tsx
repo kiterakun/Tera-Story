@@ -122,6 +122,36 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
         {/* Description */}
         <p className="text-ink-200/80 text-sm leading-relaxed">{char.description}</p>
 
+        {/* New character fields */}
+        {(char.background || char.personality || char.goals || char.appearance) && (
+          <div className="space-y-3">
+            {char.background && (
+              <div>
+                <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-1 font-medium">{t.characterPanel.background}</h4>
+                <p className="text-ink-200/80 text-sm leading-relaxed">{char.background}</p>
+              </div>
+            )}
+            {char.personality && (
+              <div>
+                <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-1 font-medium">{t.characterPanel.personality}</h4>
+                <p className="text-ink-200/80 text-sm leading-relaxed">{char.personality}</p>
+              </div>
+            )}
+            {char.goals && (
+              <div>
+                <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-1 font-medium">{t.characterPanel.goals}</h4>
+                <p className="text-ink-200/80 text-sm leading-relaxed">{char.goals}</p>
+              </div>
+            )}
+            {char.appearance && (
+              <div>
+                <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-1 font-medium">{t.characterPanel.appearance}</h4>
+                <p className="text-ink-200/80 text-sm leading-relaxed">{char.appearance}</p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Stats */}
         {char.dynamicStats.length > 0 && (
           <div>
@@ -131,13 +161,17 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
                 <div key={stat.k}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-ink-200/70">{stat.k}</span>
-                    <span className="text-ink-100 font-mono">{String(stat.v)}</span>
+                    <span className="text-ink-100 font-mono">
+                      {stat.t === 'pool' && stat.maxV !== undefined
+                        ? `${stat.v} / ${stat.maxV}`
+                        : String(stat.v)}
+                    </span>
                   </div>
-                  {stat.t === 'progress' && (
+                  {(stat.t === 'progress' || stat.t === 'pool') && (
                     <div className="h-2 bg-ink-700 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-accent-600 to-accent-400 rounded-full transition-all duration-700"
-                        style={{ width: `${Math.min(100, Number(stat.v))}%` }}
+                        className={`h-full rounded-full transition-all duration-700 ${stat.t === 'pool' ? 'bg-gradient-to-r from-red-600 to-red-400' : 'bg-gradient-to-r from-accent-600 to-accent-400'}`}
+                        style={{ width: `${stat.t === 'pool' && stat.maxV ? Math.min(100, (Number(stat.v) / stat.maxV) * 100) : Math.min(100, Number(stat.v))}%` }}
                       />
                     </div>
                   )}

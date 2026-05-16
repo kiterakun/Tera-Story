@@ -1,7 +1,8 @@
-export interface DynamicStat { 
-  k: string; 
-  v: number | string | boolean; 
-  t: string; 
+export interface DynamicStat {
+  k: string;
+  v: number | string | boolean;
+  t: string;
+  maxV?: number; // only for 'pool' type
 }
 
 export type CharacterStatus = 'active' | 'dead' | 'injured' | 'missing';
@@ -9,17 +10,22 @@ export type ItemStatus = 'active' | 'destroyed' | 'lost' | 'consumed';
 export type SpecialItemStatus = 'active' | 'sealed' | 'lost' | 'consumed';
 
 export interface Character {
-  _id: string; 
-  name: string; 
-  description: string; 
+  _id: string;
+  name: string;
+  description: string;
   imageUrl?: string;
-  role: 'protagonist' | 'npc'; 
+  role: 'protagonist' | 'npc';
   status: CharacterStatus;
-  dynamicStats: DynamicStat[]; 
-  playthroughId: string; 
+  dynamicStats: DynamicStat[];
+  background: string;
+  personality: string;
+  goals: string;
+  appearance: string;
+  playthroughId: string;
   worldId: string;
   userId: string;
   createdInChapterId?: string;
+  archivedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,6 +60,7 @@ export interface Item {
   playthroughId: string;
   createdInChapterId?: string;
   properties: Record<string, unknown>;
+  archivedAt?: string | null;
   createdAt: string;
 }
 
@@ -69,6 +76,7 @@ export interface SpecialItem {
   playthroughId: string;
   createdInChapterId?: string;
   customFields: Record<string, unknown>;
+  archivedAt?: string | null;
   createdAt: string;
 }
 
@@ -86,7 +94,7 @@ export interface ConsequenceSeed {
 
 export interface ResourceTemplate {
   key: string;
-  type: 'number' | 'text' | 'progress' | 'enum';
+  type: 'number' | 'text' | 'progress' | 'enum' | 'pool';
   min?: number;
   max?: number;
   defaultValue?: string | number;
@@ -116,6 +124,7 @@ export interface World {
   genre: 'fantasy' | 'sci-fi' | 'wuxia' | 'modern' | 'custom';
   imageUrl?: string;
   resourceTemplates: ResourceTemplate[];
+  locationResourceTemplates: ResourceTemplate[];
   createdAt: string;
   updatedAt: string;
 }

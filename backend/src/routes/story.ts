@@ -230,6 +230,7 @@ router.get(
         latestChapter,
         choices: latestChapter?.choices ?? [],
         protagonist,
+        hasProtagonist: !!protagonist,
         isNewGame,
         isGenerating: activeGenerations.has(playthroughId as string),
       });

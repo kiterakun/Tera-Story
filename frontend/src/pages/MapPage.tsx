@@ -80,7 +80,7 @@ function LocationCard({
   const Icon = LOCATION_TYPE_ICONS[location.type] || MapPin;
   const colorClass = LOCATION_TYPE_COLORS[location.type] || 'text-stone-400';
   const bgClass = LOCATION_TYPE_BG[location.type] || 'bg-stone-800/50 border-stone-600/50';
-  const status = STATUS_BADGES[location.status] || STATUS_BADGES.undiscovered;
+  const status = STATUS_BADGES[location.status] || { label: 'Unknown', className: 'bg-stone-700 text-stone-400' };
 
   return (
     <div
@@ -113,9 +113,25 @@ function LocationCard({
             </span>
           </div>
           {isExpanded && (
-            <p className="text-sm text-ink-200/80 mt-2 leading-relaxed">
-              {location.description}
-            </p>
+            <div className="mt-2 space-y-2">
+              <p className="text-sm text-ink-200/80 leading-relaxed">
+                {location.description}
+              </p>
+              {location.dynamicStats && location.dynamicStats.length > 0 && (
+                <div className="grid grid-cols-2 gap-1.5">
+                  {location.dynamicStats.map((stat) => (
+                    <div key={stat.k} className="flex justify-between items-center bg-ink-950/50 rounded-lg px-2 py-1">
+                      <span className="text-xs text-ink-200/50">{stat.k}</span>
+                      <span className="text-xs font-mono text-ink-100">
+                        {stat.t === 'pool' && stat.maxV !== undefined
+                          ? `${stat.v}/${stat.maxV}`
+                          : String(stat.v)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
           {!isExpanded && location.description && (
             <p className="text-sm text-ink-200/60 mt-1 line-clamp-2">

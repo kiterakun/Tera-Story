@@ -25,6 +25,10 @@ export default function CharacterCreatePage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [role, setRole] = useState<"protagonist" | "npc">("protagonist");
+  const [background, setBackground] = useState("");
+  const [personality, setPersonality] = useState("");
+  const [goals, setGoals] = useState("");
+  const [appearance, setAppearance] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEnriching, setIsEnriching] = useState(false);
@@ -40,7 +44,15 @@ export default function CharacterCreatePage() {
     setError(null);
 
     try {
-      await createCharacter(playthroughId!, { name, description, role });
+      await createCharacter(playthroughId!, {
+        name,
+        description,
+        role,
+        ...(background ? { background } : {}),
+        ...(personality ? { personality } : {}),
+        ...(goals ? { goals } : {}),
+        ...(appearance ? { appearance } : {}),
+      });
       showSuccess(t.toast.characterCreated);
       navigate(`/worlds/${worldId}/playthroughs/${playthroughId}`);
     } catch (err: unknown) {
@@ -66,8 +78,11 @@ export default function CharacterCreatePage() {
         worldId,
       );
       if (result.characterName) setName(result.characterName);
-      if (result.characterDescription)
-        setDescription(result.characterDescription);
+      if (result.characterDescription) setDescription(result.characterDescription);
+      if (result.background) setBackground(result.background);
+      if (result.personality) setPersonality(result.personality);
+      if (result.goals) setGoals(result.goals);
+      if (result.appearance) setAppearance(result.appearance);
     } catch (err: unknown) {
       const message = err && typeof err === 'object' && 'response' in err
         ? (err as { response?: { data?: { error?: string } } }).response?.data?.error || t.characterCreate.aiEnrichFailed
@@ -200,6 +215,54 @@ export default function CharacterCreatePage() {
               onChange={(e) => setDescription(e.target.value)}
               className="w-full bg-ink-950 border border-ink-700 rounded-xl p-3 text-ink-100 placeholder:text-ink-500 focus:border-accent-400 focus:ring-2 focus:ring-accent-400/20 outline-none transition-all font-serif min-h-[120px] resize-y text-sm"
               placeholder={t.characterCreate.descriptionPlaceholder}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
+              {t.characterCreate.background}
+            </label>
+            <textarea
+              value={background}
+              onChange={(e) => setBackground(e.target.value)}
+              className="w-full bg-ink-950 border border-ink-700 rounded-xl p-3 text-ink-100 placeholder:text-ink-500 focus:border-accent-400 focus:ring-2 focus:ring-accent-400/20 outline-none transition-all font-serif min-h-[80px] resize-y text-sm"
+              placeholder={t.characterCreate.backgroundPlaceholder}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
+              {t.characterCreate.personality}
+            </label>
+            <textarea
+              value={personality}
+              onChange={(e) => setPersonality(e.target.value)}
+              className="w-full bg-ink-950 border border-ink-700 rounded-xl p-3 text-ink-100 placeholder:text-ink-500 focus:border-accent-400 focus:ring-2 focus:ring-accent-400/20 outline-none transition-all font-serif min-h-[80px] resize-y text-sm"
+              placeholder={t.characterCreate.personalityPlaceholder}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
+              {t.characterCreate.goals}
+            </label>
+            <textarea
+              value={goals}
+              onChange={(e) => setGoals(e.target.value)}
+              className="w-full bg-ink-950 border border-ink-700 rounded-xl p-3 text-ink-100 placeholder:text-ink-500 focus:border-accent-400 focus:ring-2 focus:ring-accent-400/20 outline-none transition-all font-serif min-h-[80px] resize-y text-sm"
+              placeholder={t.characterCreate.goalsPlaceholder}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
+              {t.characterCreate.appearance}
+            </label>
+            <textarea
+              value={appearance}
+              onChange={(e) => setAppearance(e.target.value)}
+              className="w-full bg-ink-950 border border-ink-700 rounded-xl p-3 text-ink-100 placeholder:text-ink-500 focus:border-accent-400 focus:ring-2 focus:ring-accent-400/20 outline-none transition-all font-serif min-h-[80px] resize-y text-sm"
+              placeholder={t.characterCreate.appearancePlaceholder}
             />
           </div>
 

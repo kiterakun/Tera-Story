@@ -6,7 +6,16 @@ export interface EnrichWorldResult {
   genre: string;
   resourceTemplates: Array<{
     key: string;
-    type: 'number' | 'text' | 'progress' | 'enum';
+    type: 'number' | 'text' | 'progress' | 'enum' | 'pool';
+    min?: number;
+    max?: number;
+    defaultValue?: string | number;
+    displayFormat?: string;
+    options?: string[];
+  }>;
+  locationResourceTemplates?: Array<{
+    key: string;
+    type: 'number' | 'text' | 'progress' | 'enum' | 'pool';
     min?: number;
     max?: number;
     defaultValue?: string | number;
@@ -24,6 +33,10 @@ export interface EnrichCharacterResult {
   characterName: string;
   characterDescription: string;
   suggestedStats: Array<{ k: string; v: string | number; t: string }>;
+  background?: string;
+  personality?: string;
+  goals?: string;
+  appearance?: string;
 }
 
 export interface EnrichChoiceResult {

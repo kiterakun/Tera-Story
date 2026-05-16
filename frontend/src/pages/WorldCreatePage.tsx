@@ -47,6 +47,10 @@ export default function WorldCreatePage() {
     { key: "HP", type: "progress", min: 0, max: 100, defaultValue: 100 },
   ]);
 
+  const [locationResources, setLocationResources] = useState<ResourceTemplate[]>([
+    { key: "danger_level", type: "number", min: 0, max: 10, defaultValue: 1 },
+  ]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [specialItemTemplates, setSpecialItemTemplates] = useState<
@@ -91,6 +95,45 @@ export default function WorldCreatePage() {
     }
 
     setResources(updated);
+  };
+
+  // Location Resource handlers
+  const handleAddLocationResource = () => {
+    setLocationResources([
+      ...locationResources,
+      { key: `Prop${locationResources.length + 1}`, type: "number", defaultValue: 0 },
+    ]);
+  };
+
+  const handleRemoveLocationResource = (index: number) => {
+    setLocationResources(locationResources.filter((_, i) => i !== index));
+  };
+
+  const handleLocationResourceChange = (
+    index: number,
+    field: keyof ResourceTemplate,
+    value: unknown,
+  ) => {
+    const updated = [...locationResources];
+    const item = updated[index];
+
+    if (field === "type") {
+      item.type = value as ResourceTemplate["type"];
+    } else if (field === "key") {
+      item.key = value as string;
+    } else if (field === "displayFormat") {
+      item.displayFormat = value as string;
+    } else if (field === "options") {
+      item.options = value as string[];
+    } else if (field === "min" || field === "max" || field === "defaultValue") {
+      if (field === "defaultValue") {
+        item.defaultValue = item.type !== "text" && item.type !== "enum" && value !== "" ? Number(value) : value;
+      } else {
+        item[field] = value !== "" ? Number(value) : undefined;
+      }
+    }
+
+    setLocationResources(updated);
   };
 
   // Special Item Template handlers
@@ -166,6 +209,7 @@ export default function WorldCreatePage() {
         description,
         genre,
         resourceTemplates: resources,
+        locationResourceTemplates: locationResources.filter((r) => r.key.trim()),
         specialItemTemplates: specialItemTemplates.filter((t) =>
           t.category.trim(),
         ),
@@ -242,6 +286,18 @@ export default function WorldCreatePage() {
           })),
         );
       }
+      if (result.locationResourceTemplates?.length) {
+        setLocationResources(
+          result.locationResourceTemplates.map((rt) => ({
+            key: rt.key,
+            type: rt.type as ResourceTemplate["type"],
+            min: rt.min,
+            max: rt.max,
+            defaultValue: rt.defaultValue,
+            ...(rt.options?.length ? { options: rt.options } : {}),
+          })),
+        );
+      }
       if (result.specialItemTemplates?.length) {
         setSpecialItemTemplates(
           result.specialItemTemplates.map((sit) => ({
@@ -268,6 +324,7 @@ export default function WorldCreatePage() {
     text: 'border-l-green-400',
     progress: 'border-l-amber-400',
     enum: 'border-l-purple-400',
+    pool: 'border-l-red-400',
   };
 
   const typeIcons: Record<ResourceTemplate['type'], (size?: number) => JSX.Element> = {
@@ -275,6 +332,7 @@ export default function WorldCreatePage() {
     text: (s = 14) => <Type size={s} className="text-green-400" />,
     progress: (s = 14) => <Gauge size={s} className="text-amber-400" />,
     enum: (s = 14) => <Tags size={s} className="text-purple-400" />,
+    pool: (s = 14) => <Gauge size={s} className="text-red-400" />,
   };
 
   const typeLabelColors: Record<ResourceTemplate['type'], string> = {
@@ -282,6 +340,7 @@ export default function WorldCreatePage() {
     text: 'text-green-400',
     progress: 'text-amber-400',
     enum: 'text-purple-400',
+    pool: 'text-red-400',
   };
 
   // Get selected region details
@@ -648,6 +707,7 @@ export default function WorldCreatePage() {
                       </option>
                       <option value="text">{t.worldCreate.typeText}</option>
                       <option value="enum">{t.worldCreate.typeEnum}</option>
+                      <option value="pool">Pool (current/max)</option>
                     </select>
                   </div>
 
@@ -788,6 +848,120 @@ export default function WorldCreatePage() {
             {resources.length === 0 && (
               <div className="text-center py-8 border border-dashed border-ink-700 rounded-xl text-ink-200/40 text-sm">
                 {t.worldCreate.noResources}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Location Resources Card */}
+        <div className="bg-ink-800 border border-ink-700 rounded-2xl p-6">
+          <div className="flex justify-between items-center mb-5">
+            <div>
+              <h2 className="text-lg font-display text-ink-100 flex items-center gap-2">
+                <span className="w-1.5 h-5 bg-emerald-400 rounded-full" />
+                Location Properties
+              </h2>
+              <p className="text-xs text-ink-200/60 mt-1 ml-4">
+                Define dynamic properties for locations in this world (e.g., danger level, population, corruption)
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleAddLocationResource}
+              className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-500 font-medium px-3 py-2 bg-ink-950/50 border border-ink-700 rounded-xl transition-all duration-200 text-sm hover:border-emerald-400/30"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M12 4v16m8-8H4" />
+              </svg>
+              {t.worldCreate.add}
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {locationResources.map((res, index) => (
+              <div
+                key={index}
+                className={`bg-ink-950/50 p-4 border border-ink-700/50 rounded-xl border-l-2 ${typeColors[res.type]}`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    {typeIcons[res.type](16)}
+                    <span className="text-sm font-medium text-ink-100">{res.key || 'Unnamed'}</span>
+                    <span className={`text-[10px] font-medium uppercase ${typeLabelColors[res.type]}`}>{res.type}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveLocationResource(index)}
+                    className="text-ink-200/40 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-400/10 transition-all shrink-0"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium text-ink-200/80 mb-1.5">Key</label>
+                    <input
+                      required
+                      className="w-full bg-ink-800 border border-ink-700 rounded-lg px-4 py-3 text-base text-ink-100 placeholder:text-ink-500 focus:border-emerald-400 outline-none transition-all"
+                      placeholder="e.g., danger_level"
+                      value={res.key}
+                      onChange={(e) => handleLocationResourceChange(index, "key", e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-ink-200/80 mb-1.5">Type</label>
+                    <select
+                      className="w-full bg-ink-800 border border-ink-700 rounded-lg px-4 py-3 text-base text-ink-100 focus:border-emerald-400 outline-none transition-all"
+                      value={res.type}
+                      onChange={(e) => handleLocationResourceChange(index, "type", e.target.value)}
+                    >
+                      <option value="number">Number</option>
+                      <option value="progress">Progress</option>
+                      <option value="text">Text</option>
+                      <option value="enum">Enum</option>
+                      <option value="pool">Pool (current/max)</option>
+                    </select>
+                  </div>
+
+                  {(res.type === "number" || res.type === "progress" || res.type === "pool") && (
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-ink-200/80 mb-1.5">Min</label>
+                        <input type="number" className="w-full bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-emerald-400 outline-none" value={res.min ?? ""} onChange={(e) => handleLocationResourceChange(index, "min", e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-ink-200/80 mb-1.5">Max</label>
+                        <input type="number" className="w-full bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-emerald-400 outline-none" value={res.max ?? ""} onChange={(e) => handleLocationResourceChange(index, "max", e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-ink-200/80 mb-1.5">Default</label>
+                        <input type="number" className="w-full bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 text-sm text-ink-100 focus:border-emerald-400 outline-none" value={res.defaultValue ?? ""} onChange={(e) => handleLocationResourceChange(index, "defaultValue", e.target.value)} />
+                      </div>
+                    </div>
+                  )}
+
+                  {res.type === "enum" && (
+                    <div>
+                      <label className="block text-xs font-medium text-ink-200/80 mb-1.5">Options (comma-separated)</label>
+                      <input
+                        className="w-full bg-ink-800 border border-ink-700 rounded-lg px-4 py-3 text-base text-ink-100 focus:border-emerald-400 outline-none transition-all"
+                        placeholder="option1, option2, option3"
+                        value={res.options?.join(", ") || ""}
+                        onChange={(e) => handleLocationResourceChange(index, "options", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {locationResources.length === 0 && (
+              <div className="text-center py-8 border border-dashed border-ink-700 rounded-xl text-ink-200/40 text-sm">
+                No location properties defined
               </div>
             )}
           </div>

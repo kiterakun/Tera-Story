@@ -107,13 +107,18 @@ export default function RPGPanel({
                       <div className="flex justify-between text-xs mb-0.5">
                         <span className="text-ink-200/70">{stat.k}</span>
                         <span className={`font-mono flex items-center gap-1 ${isEnumInvalid ? 'text-red-400 border border-red-500/40 rounded px-1 -mx-1' : 'text-ink-100'}`}>
-                          {String(stat.v)}
+                          {stat.t === 'pool' && stat.maxV !== undefined
+                            ? `${stat.v} / ${stat.maxV}`
+                            : String(stat.v)}
                           {isEnumInvalid && <AlertTriangle size={12} className="text-red-400 shrink-0" title={`Valid: ${template?.options?.join(', ')}`} />}
                         </span>
                       </div>
-                      {stat.t === 'progress' && (
+                      {(stat.t === 'progress' || stat.t === 'pool') && (
                         <div className="h-1.5 bg-ink-700 rounded-full overflow-hidden">
-                          <div className="h-full bg-accent-600 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Number(stat.v))}%` }} />
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${stat.t === 'pool' ? 'bg-gradient-to-r from-red-600 to-red-400' : 'bg-accent-600'}`}
+                            style={{ width: `${stat.t === 'pool' && stat.maxV ? Math.min(100, (Number(stat.v) / stat.maxV) * 100) : Math.min(100, Number(stat.v))}%` }}
+                          />
                         </div>
                       )}
                     </div>

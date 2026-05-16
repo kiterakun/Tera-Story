@@ -1,4 +1,5 @@
 import { api } from './api';
+import type { DynamicStat } from '@/types/entities';
 
 export interface MapPosition { x: number; y: number; }
 
@@ -39,6 +40,8 @@ export interface Location {
   discoveredAt: number;
   status: string;
   connectedLocations: string[];
+  dynamicStats?: DynamicStat[];
+  archivedAt?: string | null;
 }
 
 export interface MapData {

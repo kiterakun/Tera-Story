@@ -11,7 +11,8 @@ import * as playthroughApi from '../services/playthroughApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
-import { Swords, X, BookOpen, ChevronLeft, ChevronRight, RefreshCw, AlertTriangle, List } from 'lucide-react';
+import { Swords, X, BookOpen, ChevronLeft, ChevronRight, RefreshCw, AlertTriangle, List, Gamepad2, UserRound } from 'lucide-react';
+import GamePanel from '../components/game/GamePanel';
 import type { CombatEncounter, Relationship, ConsequenceSeed } from '../services/playthroughApi';
 import RPGPanel from '../components/RPGPanel';
 import ChapterNav from '../components/ChapterNav';
@@ -120,6 +121,7 @@ export default function StoryReaderPage() {
   const [consequences, setConsequences] = useState<ConsequenceSeed[]>([]);
   const [flashbackQueue, setFlashbackQueue] = useState<ConsequenceSeed[]>([]);
   const [isRelationshipModalOpen, setIsRelationshipModalOpen] = useState(false);
+  const [gamePanelOpen, setGamePanelOpen] = useState(false);
   const [prevLevel, setPrevLevel] = useState<number | null>(null);
   const [levelUpModal, setLevelUpModal] = useState<{ show: boolean; newLevel: number; levelTitle?: string; xpToNext: number }>({
     show: false,
@@ -448,6 +450,27 @@ export default function StoryReaderPage() {
     return (
       <div className="max-w-7xl mx-auto p-8">
         <LoadingSkeleton variant="story" />
+      </div>
+    );
+  }
+
+  // Protagonist guard — must create protagonist before playing
+  if (!isLoadingState && !protagonist) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-ink-950">
+        <div className="text-center max-w-md px-6 animate-fade-in">
+          <div className="w-20 h-20 rounded-full bg-accent-600/10 border border-accent-600/20 flex items-center justify-center mx-auto mb-6">
+            <UserRound size={36} className="text-accent-400" />
+          </div>
+          <h2 className="font-display text-2xl text-ink-100 mb-3">{t.playthrough.createProtagonist}</h2>
+          <p className="text-ink-200/60 text-sm mb-8">{t.playthrough.createProtagonistRequired}</p>
+          <button
+            onClick={() => navigate(`/worlds/${worldId}/playthroughs/${playthroughId}/characters/new?role=protagonist`)}
+            className="inline-flex items-center gap-2 bg-accent-600 hover:bg-accent-500 text-white px-8 py-3.5 rounded-2xl font-display text-base transition-all duration-200 shadow-lg hover:shadow-accent-600/30"
+          >
+            {t.playthrough.createProtagonist}
+          </button>
+        </div>
       </div>
     );
   }
@@ -837,6 +860,31 @@ export default function StoryReaderPage() {
           </button>
         </div>
       </div>
+
+      {/* Floating Game Menu button */}
+      <button
+        onClick={() => setGamePanelOpen(true)}
+        className="fixed bottom-20 lg:bottom-6 right-4 z-30 bg-accent-600 hover:bg-accent-500 text-white rounded-full p-3.5 shadow-lg hover:shadow-accent-600/30 transition-all duration-200"
+        title={t.playthrough.gameMenu}
+      >
+        <Gamepad2 size={22} />
+      </button>
+
+      {/* Game Panel Modal */}
+      <GamePanel
+        isOpen={gamePanelOpen}
+        onClose={() => setGamePanelOpen(false)}
+        playthroughId={playthroughId!}
+        protagonist={protagonist}
+        sortedNpcs={sortedNpcs}
+        sortedItems={sortedItems}
+        sortedSpecialItems={sortedSpecialItems}
+        characters={characters}
+        relationships={relationships}
+        setDetailEntity={setDetailEntity}
+        setIsRelationshipModalOpen={setIsRelationshipModalOpen}
+        t={t}
+      />
 
       {/* Entity Detail Modal */}
       <EntityDetailModal entity={detailEntity} onClose={() => setDetailEntity(null)} />

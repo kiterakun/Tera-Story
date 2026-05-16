@@ -107,6 +107,10 @@ export async function generateChapter(
   if (playthrough.userId.toString() !== userId) throw new Error('Unauthorized');
   if (playthrough.status !== 'active') throw new Error('Playthrough is not active');
 
+  // 1b. Protagonist must exist before generating any chapter
+  const protagonist = await Character.findOne({ playthroughId, role: 'protagonist' }).lean();
+  if (!protagonist) throw new Error('Protagonist must be created before starting the story');
+
   // 2. Load user AI settings → build provider registry (auto-create defaults if missing)
   let settings = await UserSettings.findOne({ userId });
   if (!settings) {
@@ -383,6 +387,10 @@ export async function generateChapterStream(
   if (!playthrough) throw new Error('Playthrough not found');
   if (playthrough.userId.toString() !== userId) throw new Error('Unauthorized');
   if (playthrough.status !== 'active') throw new Error('Playthrough is not active');
+
+  // Protagonist must exist before generating any chapter
+  const protagonistCheck = await Character.findOne({ playthroughId, role: 'protagonist' }).lean();
+  if (!protagonistCheck) throw new Error('Protagonist must be created before starting the story');
 
   let settings = await UserSettings.findOne({ userId });
   if (!settings) {

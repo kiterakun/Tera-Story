@@ -17,7 +17,7 @@ interface StoryState {
   invalidateCharacters: () => Promise<void>;
   invalidateItems: () => Promise<void>;
   invalidateSpecialItems: () => Promise<void>;
-  createCharacter: (playthroughId: string, data: { name: string; description: string; role: 'protagonist' | 'npc' }) => Promise<Character>;
+  createCharacter: (playthroughId: string, data: { name: string; description: string; role: 'protagonist' | 'npc'; background?: string; personality?: string; goals?: string; appearance?: string }) => Promise<Character>;
   refreshAll: (playthroughId: string) => Promise<void>;
 }
 

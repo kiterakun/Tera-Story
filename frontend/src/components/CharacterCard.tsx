@@ -62,10 +62,37 @@ export default function CharacterCard({ character }: { character: Character }) {
           {character.dynamicStats.map((stat) => (
             <div key={stat.k} className="flex justify-between items-center bg-ink-950/50 rounded-lg px-2.5 py-1.5">
               <span className="text-ink-200/50 text-xs capitalize">{stat.k}</span>
-              <span className="text-ink-100 font-mono text-xs">{stat.v}</span>
+              <span className="text-ink-100 font-mono text-xs">
+                {stat.t === 'pool' && stat.maxV !== undefined
+                  ? `${stat.v}/${stat.maxV}`
+                  : String(stat.v)}
+              </span>
             </div>
           ))}
         </div>
+      )}
+
+      {/* New character fields (collapsible) */}
+      {(character.background || character.personality || character.goals || character.appearance) && (
+        <details className="group">
+          <summary className="text-xs text-ink-200/50 cursor-pointer hover:text-ink-200/80 transition-colors">
+            {t.characterPanel.protagonist === 'Protagonist' ? 'Details' : 'Chi tiết'}
+          </summary>
+          <div className="mt-2 space-y-2 text-xs text-ink-200/70">
+            {character.background && (
+              <p><span className="text-ink-200/50">{t.characterPanel.background || 'Background'}:</span> {character.background}</p>
+            )}
+            {character.personality && (
+              <p><span className="text-ink-200/50">{t.characterPanel.personality || 'Personality'}:</span> {character.personality}</p>
+            )}
+            {character.goals && (
+              <p><span className="text-ink-200/50">{t.characterPanel.goals || 'Goals'}:</span> {character.goals}</p>
+            )}
+            {character.appearance && (
+              <p><span className="text-ink-200/50">{t.characterPanel.appearance || 'Appearance'}:</span> {character.appearance}</p>
+            )}
+          </div>
+        </details>
       )}
     </div>
   );
