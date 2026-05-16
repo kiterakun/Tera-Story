@@ -2,16 +2,13 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useChapterGeneration } from '../hooks/useChapterGeneration';
 import { useSSE } from '../hooks/useSSE';
-import { StoryContent, type EntityRef } from '../components/StoryContent';
 import { EntityDetailModal, type EntityData } from '../components/EntityDetailModal';
-import { ChoiceCards } from '../components/ChoiceCards';
-import { CombatPanel } from '../components/CombatPanel';
 import * as storyApi from '../services/storyApi';
 import * as playthroughApi from '../services/playthroughApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
-import { Swords, BookOpen, ChevronLeft, ChevronRight, List, Gamepad2, UserRound } from 'lucide-react';
+import { Swords, Gamepad2 } from 'lucide-react';
 import GamePanel from '../components/game/GamePanel';
 import type { CombatEncounter, Relationship, ConsequenceSeed } from '../services/playthroughApi';
 import RPGPanel from '../components/RPGPanel';
@@ -22,29 +19,14 @@ import { ConsequenceFlashback } from '../components/ConsequenceFlashback';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { LevelUpModal } from '../components/progression/LevelUpModal';
 import { useProgression } from '../hooks/useProgression';
-import { ChapterStatusOverlay } from '../components/ChapterStatusOverlay';
-import { MobileDrawer } from '../components/MobileDrawer';
-
-// Matches backend Chapter model
-interface Chapter {
-  _id: string;
-  content: string;
-  chapterIndex: number;
-  choices: Choice[];
-  status?: 'generating' | 'completed' | 'failed';
-  toolsStatus?: 'pending' | 'running' | 'completed' | 'failed';
-  playerChoice?: string;
-  metadata?: {
-    contextTokens?: number;
-    tokensUsed?: number;
-  };
-}
-
-// Matches backend ChoiceSchema (_id: false)
-interface Choice {
-  text: string;
-  type: 'continue' | 'new_arc' | 'custom';
-}
+import type { Chapter, Choice } from '../types';
+import { type EntityRef } from '../components/StoryContent';
+import { 
+  ProtagonistGuard, 
+  ReaderHeader, 
+  ReaderContent, 
+  ReaderMobileNav 
+} from '../components/story-reader';
 
 interface ImageCompletedEvent {
   entityType?: string;
@@ -133,7 +115,6 @@ export default function StoryReaderPage() {
   
   const { isGenerating, isRetryingTools, isStreaming, streamingText, streamPhase, error, generateChapterStream, retryChapter, retryTools, clearError } = useChapterGeneration();
   
-  // Individual selectors to avoid getSnapshot infinite loop
   const characters = useStoryStore(s => s.characters);
   const items = useStoryStore(s => s.items);
   const specialItems = useStoryStore(s => s.specialItems);
@@ -162,12 +143,10 @@ export default function StoryReaderPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const isGeneratingRef = useRef(false);
 
-  // Keep ref in sync so polling callbacks can check current value
   useEffect(() => {
     isGeneratingRef.current = isGenerating;
   }, [isGenerating]);
 
-  // Chapter navigation
   const totalChapters = chapters.length;
   const isOnLatest = currentChapterIdx === -1 || currentChapterIdx >= totalChapters - 1;
   const activeChapter = isOnLatest ? chapters[totalChapters - 1] : chapters[currentChapterIdx];
@@ -187,14 +166,12 @@ export default function StoryReaderPage() {
     setCurrentChapterIdx(-1);
   }, []);
 
-  // Auto-scroll when generating
   useEffect(() => {
     if (isGenerating) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [isGenerating]);
 
-  // Initial load
   useEffect(() => {
     if (playthroughId) {
       loadStoryState();
@@ -205,37 +182,28 @@ export default function StoryReaderPage() {
       loadActiveCombat();
       loadConsequences();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playthroughId]);
 
-  // Poll for chapter updates during generation
-  // Detects Pass 1 completion from DB while the API call is still blocking on Pass 2
   useEffect(() => {
     if (!isGenerating || !playthroughId) return;
 
     const pollInterval = setInterval(async () => {
-      // Guard: don't fire if generation already finished (prevents stale overwrites)
       if (!isGeneratingRef.current) return;
 
       try {
         const state = await storyApi.getStoryState(playthroughId);
-
-        // Guard after async: generation may have ended while request was in-flight
         if (!isGeneratingRef.current) return;
 
         const stateChapters: Chapter[] = state.chapters || (state.latestChapter ? [state.latestChapter] : []);
-
         if (stateChapters.length > 0) {
           const latest = stateChapters[stateChapters.length - 1];
-          // If the latest chapter now has content (Pass 1 done), update UI so user can start reading
           if (latest?.content) {
             setChapters(stateChapters);
             setChoices(state.choices || []);
           }
         }
-      } catch {
-        // Polling failure is non-critical — silently ignore
-      }
+      } catch { /* polling error is non-critical */ }
     }, 3000);
 
     return () => clearInterval(pollInterval);
@@ -248,7 +216,6 @@ export default function StoryReaderPage() {
       
       if (state.chapters && state.chapters.length > 0) {
         setChapters(state.chapters);
-        // Extract contextTokens from the latest chapter's metadata
         const latest = state.chapters[state.chapters.length - 1];
         if (latest.metadata?.contextTokens) {
           setContextTokens(latest.metadata.contextTokens);
@@ -286,7 +253,6 @@ export default function StoryReaderPage() {
     setCurrentChapterIdx(-1);
   };
 
-  // Check for level-up after each generation
   useEffect(() => {
     if (progress && prevLevel !== null && progress.level > prevLevel) {
       setLevelUpModal({
@@ -338,43 +304,25 @@ export default function StoryReaderPage() {
     onImageCompleted: async (payload) => {
       const event = toImageCompletedEvent(payload);
       showSuccess('Image ready', `${event.entityType ?? 'Entity'} image has been generated.`);
-
-      await Promise.all([
-        invalidateCharacters(),
-        invalidateItems(),
-        invalidateSpecialItems(),
-      ]);
+      await Promise.all([invalidateCharacters(), invalidateItems(), invalidateSpecialItems()]);
     },
     onChapterCompleted: async (payload) => {
       const event = toChapterCompletedEvent(payload);
-      const chapterLabel = typeof event.chapterIndex === 'number'
-        ? `Chapter ${event.chapterIndex + 1} completed`
-        : 'Chapter completed';
-
+      const chapterLabel = typeof event.chapterIndex === 'number' ? `Chapter ${event.chapterIndex + 1} completed` : 'Chapter completed';
       showSuccess(chapterLabel, 'Story data refreshed.');
       await reloadAfterGeneration();
     },
     onCombatResolved: async (payload) => {
       const event = toCombatResolvedEvent(payload);
       const result = event.result ? event.result.replace(/_/g, ' ') : 'resolved';
-
       showSuccess('Combat resolved', `Result: ${result}`);
-      await Promise.all([
-        loadActiveCombat(),
-        invalidateCharacters(),
-        loadStoryState(),
-      ]);
+      await Promise.all([loadActiveCombat(), invalidateCharacters(), loadStoryState()]);
     },
     onEntityUpdated: async (payload) => {
       const event = toEntityUpdatedEvent(payload);
       const name = event.name ?? event.entityType ?? 'Entity';
-
       showSuccess('Entity updated', `${name} changed.`);
-      await Promise.all([
-        invalidateCharacters(),
-        invalidateItems(),
-        invalidateSpecialItems(),
-      ]);
+      await Promise.all([invalidateCharacters(), invalidateItems(), invalidateSpecialItems()]);
     },
   });
 
@@ -384,7 +332,6 @@ export default function StoryReaderPage() {
     setChoices([]);
     setIsNewGame(false);
     setCurrentChapterIdx(-1);
-
     await generateChapterStream(playthroughId, choiceText);
     await reloadAfterGeneration();
   };
@@ -395,7 +342,6 @@ export default function StoryReaderPage() {
     setIsNewGame(false);
     setChoices([]);
     setCurrentChapterIdx(-1);
-
     await generateChapterStream(playthroughId, 'Begin the story');
     await reloadAfterGeneration();
   };
@@ -403,14 +349,13 @@ export default function StoryReaderPage() {
   const handleRetry = async () => {
     if (!latestChapter || !playthroughId) return;
     clearError();
-
     await retryChapter(latestChapter._id);
     await reloadAfterGeneration();
   };
+
   const handleRetryTools = async () => {
     if (!latestChapter || !playthroughId) return;
     clearError();
-
     await retryTools(latestChapter._id);
     await reloadAfterGeneration();
   };
@@ -418,7 +363,6 @@ export default function StoryReaderPage() {
   const handleSummarizeArc = async () => {
     if (!playthroughId || isSummarizingArc) return;
     if (!confirm(t.storyReader.confirmSummarize)) return;
-
     setIsSummarizingArc(true);
     try {
       await storyApi.summarizeArc(playthroughId);
@@ -434,7 +378,6 @@ export default function StoryReaderPage() {
     }
   };
 
-  // Handle entity clicks from story content or sidebar
   const handleEntityClick = useCallback((entity: EntityRef) => {
     if (entity.type === 'char') {
       const char = characters.find(c => c.name === entity.name);
@@ -449,37 +392,22 @@ export default function StoryReaderPage() {
   }, [characters, items, specialItems]);
 
   if (isLoadingState && chapters.length === 0) {
-    return (
-      <div className="max-w-7xl mx-auto p-8">
-        <LoadingSkeleton variant="story" />
-      </div>
-    );
+    return <div className="max-w-7xl mx-auto p-8"><LoadingSkeleton variant="story" /></div>;
   }
 
-  // Protagonist guard — must create protagonist before playing
   if (!isLoadingState && !protagonist) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-ink-950">
-        <div className="text-center max-w-md px-6 animate-fade-in">
-          <div className="w-20 h-20 rounded-full bg-accent-600/10 border border-accent-600/20 flex items-center justify-center mx-auto mb-6">
-            <UserRound size={36} className="text-accent-400" />
-          </div>
-          <h2 className="font-display text-2xl text-ink-100 mb-3">{t.playthrough.createProtagonist}</h2>
-          <p className="text-ink-200/60 text-sm mb-8">{t.playthrough.createProtagonistRequired}</p>
-          <button
-            onClick={() => navigate(`/worlds/${worldId}/playthroughs/${playthroughId}/characters/new?role=protagonist`)}
-            className="inline-flex items-center gap-2 bg-accent-600 hover:bg-accent-500 text-white px-8 py-3.5 rounded-2xl font-display text-base transition-all duration-200 shadow-lg hover:shadow-accent-600/30"
-          >
-            {t.playthrough.createProtagonist}
-          </button>
-        </div>
-      </div>
+      <ProtagonistGuard 
+        worldId={worldId!} 
+        playthroughId={playthroughId!} 
+        onNavigate={navigate} 
+      />
     );
   }
 
   return (
     <div className="flex bg-ink-950 min-h-[calc(100vh-4rem)] relative">
-      {/* Left sidebar — Chapter Navigation */}
+      {/* Desktop Left sidebar — Chapter Navigation */}
       <div className="hidden lg:flex flex-col w-64 border-r border-ink-700 bg-ink-900/50 p-5 shrink-0">
         <h3 className="font-display text-sm text-ink-100 mb-4 border-b border-ink-700 pb-3 uppercase tracking-wider">{t.storyReader.storyNavigation}</h3>
         <ChapterNav
@@ -502,144 +430,50 @@ export default function StoryReaderPage() {
       </div>
 
       {/* Center: Reading column */}
-      <div className="flex-1 overflow-y-auto">
-        <article className="max-w-[65ch] mx-auto font-serif text-ink-100 leading-[1.8] text-lg py-8 px-4 md:py-16">
-
-          {/* Begin Story — fresh playthrough with no chapters */}
-          {isNewGame && chapters.length === 0 && !isGenerating && (
-            <div className="text-center py-16 animate-fade-in">
-              <div className="mb-6">
-                <BookOpen size={48} className="mx-auto text-accent-400/60" />
-              </div>
-              <h2 className="font-display text-2xl text-ink-100 mb-3">{t.storyReader.beginAdventure}</h2>
-              <p className="text-ink-200/60 text-base mb-8 max-w-md mx-auto">{t.storyReader.beginAdventureDesc}</p>
-              <button
-                onClick={handleBeginStory}
-                className="inline-flex items-center gap-2 bg-accent-600 hover:bg-accent-500 text-white px-8 py-3.5 rounded-2xl font-display text-base transition-all duration-200 shadow-lg hover:shadow-accent-600/30"
-              >
-                {t.storyReader.beginStory}
-              </button>
-            </div>
-          )}
-
-          {/* Chapter header + navigation */}
-          {activeChapter && !isNewGame && (
-            <div className="flex items-center justify-between mb-8 font-sans">
-              <button
-                onClick={() => goToChapter((isOnLatest ? totalChapters - 1 : currentChapterIdx) - 1)}
-                disabled={isOnLatest ? totalChapters <= 1 : currentChapterIdx <= 0}
-                className="p-2 rounded-xl text-ink-200/60 hover:text-ink-100 hover:bg-ink-800/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                title={t.storyReader.prevChapter}
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <h3 className="font-display text-sm text-ink-200/60 uppercase tracking-wider">
-                {t.storyNav.chapter} {(isOnLatest ? totalChapters : currentChapterIdx + 1)}{totalChapters > 0 ? ` / ${totalChapters}` : ''}
-              </h3>
-              <button
-                onClick={() => {
-                  const next = (isOnLatest ? totalChapters - 1 : currentChapterIdx) + 1;
-                  if (next >= totalChapters - 1) goToLatest();
-                  else goToChapter(next);
-                }}
-                disabled={isOnLatest}
-                className="p-2 rounded-xl text-ink-200/60 hover:text-ink-100 hover:bg-ink-800/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                title={t.storyReader.nextChapter}
-              >
-                <ChevronRight size={20} />
-              </button>
-            </div>
-          )}
-          
-          {/* Current chapter content (with entity highlighting) */}
-          {activeChapter && activeChapter.content && activeChapter.status !== 'failed' && (
-            <div className="text-ink-200/90 animate-fade-in">
-              <StoryContent
-                text={activeChapter.content}
-                onEntityClick={handleEntityClick}
-              />
-            </div>
-          )}
-
-          {/* Chapter status overlays */}
-          {isGenerating && (!latestChapter || !latestChapter.content) && (
-            <ChapterStatusOverlay
-              status="generating-first"
-              isStreaming={isStreaming}
-              streamingText={streamingText}
-              streamPhase={streamPhase}
-              onEntityClick={handleEntityClick}
+      <div className="flex-1 flex flex-col min-w-0">
+        {activeChapter && !isNewGame && (
+          <div className="max-w-[65ch] mx-auto w-full px-4 pt-8">
+            <ReaderHeader
+              currentChapterIdx={currentChapterIdx}
+              totalChapters={totalChapters}
+              isOnLatest={isOnLatest}
+              onGoToChapter={goToChapter}
+              onGoToLatest={goToLatest}
             />
-          )}
-
-          {isGenerating && isOnLatest && latestChapter?.content && !isToolsRunning && (
-            <ChapterStatusOverlay
-              status="generating-next"
-              isStreaming={isStreaming}
-              streamingText={streamingText}
-              streamPhase={streamPhase}
-              onEntityClick={handleEntityClick}
-            />
-          )}
-
-          {isOnLatest && isLatestFailed && !isGenerating && (
-            <ChapterStatusOverlay
-              status="failed"
-              error={error}
-              onRetry={handleRetry}
-            />
-          )}
-
-          {isOnLatest && activeChapter && activeChapter.content && isToolsRunning && !isRetryingTools && (
-            <ChapterStatusOverlay status="tools-running" />
-          )}
-
-          {isOnLatest && isLatestToolsFailed && !isGenerating && !isRetryingTools && (
-            <ChapterStatusOverlay
-              status="tools-failed"
-              onRetryTools={handleRetryTools}
-            />
-          )}
-
-          {isRetryingTools && (
-            <ChapterStatusOverlay status="retrying-tools" />
-          )}
-
-          {error && !isLatestFailed && !isGenerating && (
-            <ChapterStatusOverlay status="generic-error" error={error} />
-          )}
-
-          {/* Combat Panel — active combat encounter */}
-          {activeCombat && activeCombat.status === 'active' && isOnLatest && !isGenerating && (
-            <div className="mt-8 animate-fade-in">
-              <CombatPanel
-                combat={activeCombat}
-                onCombatUpdate={(updated) => setActiveCombat(updated)}
-                onCombatEnd={() => {
-                  loadActiveCombat();
-                  reloadAfterGeneration();
-                }}
-              />
-            </div>
-          )}
-
-          {/* Choice Cards — only on the latest chapter */}
-          {showChoices && (
-            <div className="mt-16 md:mt-24 animate-fade-in">
-              <ChoiceCards
-                choices={choices}
-                isGenerating={isGenerating}
-                playthroughId={playthroughId!}
-                onChoiceSelect={handleChoiceSelect}
-              />
-            </div>
-          )}
-
-          <div ref={bottomRef} className="h-24 lg:h-16" />
-        </article>
+          </div>
+        )}
+        
+        <ReaderContent
+          isNewGame={isNewGame}
+          chapters={chapters}
+          activeChapter={activeChapter ?? null}
+          latestChapter={latestChapter ?? null}
+          isGenerating={isGenerating}
+          isStreaming={isStreaming}
+          streamingText={streamingText}
+          streamPhase={streamPhase}
+          isOnLatest={isOnLatest}
+          isLatestFailed={isLatestFailed}
+          isLatestToolsFailed={isLatestToolsFailed}
+          isToolsRunning={isToolsRunning}
+          isRetryingTools={isRetryingTools}
+          error={error}
+          choices={choices}
+          playthroughId={playthroughId!}
+          activeCombat={activeCombat}
+          showChoices={showChoices}
+          onBeginStory={handleBeginStory}
+          onEntityClick={handleEntityClick}
+          onRetry={handleRetry}
+          onRetryTools={handleRetryTools}
+          onChoiceSelect={handleChoiceSelect}
+          onCombatUpdate={(updated) => setActiveCombat(updated)}
+          onCombatEnd={() => { loadActiveCombat(); reloadAfterGeneration(); }}
+          bottomRef={bottomRef}
+        />
       </div>
 
-      {/* Right sidebar — RPG Panel (desktop) */}
+      {/* Desktop Right sidebar — RPG Panel */}
       <div className="hidden xl:flex flex-col w-72 border-l border-ink-700 bg-ink-900/40 p-5 shrink-0 max-h-[calc(100vh-4rem)]">
         <h3 className="font-display text-sm text-ink-100 mb-4 border-b border-ink-700 pb-3 uppercase tracking-wider shrink-0">{t.storyReader.rpgPanel}</h3>
         <RPGPanel
@@ -659,7 +493,7 @@ export default function StoryReaderPage() {
         />
       </div>
 
-      {/* Floating RPG toggle — visible lg to xl only (mobile uses bottom bar) */}
+      {/* Floating RPG toggle — Tablet view */}
       <button
         onClick={() => { setRpgOpen(v => !v); setNavOpen(false); }}
         className="hidden lg:block xl:hidden fixed right-4 top-1/2 -translate-y-1/2 z-30 bg-ink-800 border border-ink-700 rounded-l-xl p-3 hover:border-accent-400/50 transition-all duration-200 shadow-lg"
@@ -668,89 +502,42 @@ export default function StoryReaderPage() {
         <Swords size={18} className="text-ink-100" />
       </button>
 
-      {/* Mobile RPG drawer */}
-      <MobileDrawer
-        isOpen={rpgOpen}
-        onClose={() => setRpgOpen(false)}
-        title={t.storyReader.rpgPanel}
-        side="right"
-      >
-        <RPGPanel
-          rpgTab={rpgTab}
-          setRpgTab={setRpgTab}
-          tabLabels={tabLabels}
-          protagonist={protagonist}
-          sortedNpcs={sortedNpcs}
-          sortedItems={sortedItems}
-          sortedSpecialItems={sortedSpecialItems}
-          characters={characters}
-          relationships={relationships}
-          setDetailEntity={setDetailEntity}
-          setIsRelationshipModalOpen={setIsRelationshipModalOpen}
-          isRelationshipModalOpen={isRelationshipModalOpen}
-          t={t}
-        />
-      </MobileDrawer>
+      {/* Mobile navigation and drawers */}
+      <ReaderMobileNav
+        navOpen={navOpen}
+        setNavOpen={setNavOpen}
+        rpgOpen={rpgOpen}
+        setRpgOpen={setRpgOpen}
+        chapters={chapters}
+        goToChapter={goToChapter}
+        isOnLatest={isOnLatest}
+        currentChapterIdx={currentChapterIdx}
+        totalChapters={totalChapters}
+        contextTokens={contextTokens}
+        handleSummarizeArc={handleSummarizeArc}
+        isSummarizingArc={isSummarizingArc}
+        isGenerating={isGenerating}
+        activeChapter={activeChapter}
+        isLatestFailed={isLatestFailed}
+        isLatestToolsFailed={isLatestToolsFailed}
+        isNewGame={isNewGame}
+        handleBeginStory={handleBeginStory}
+        navigateBack={() => navigate(-1)}
+        rpgTab={rpgTab}
+        setRpgTab={setRpgTab}
+        tabLabels={tabLabels}
+        protagonist={protagonist}
+        sortedNpcs={sortedNpcs}
+        sortedItems={sortedItems}
+        sortedSpecialItems={sortedSpecialItems}
+        characters={characters}
+        relationships={relationships}
+        setDetailEntity={setDetailEntity}
+        setIsRelationshipModalOpen={setIsRelationshipModalOpen}
+        isRelationshipModalOpen={isRelationshipModalOpen}
+      />
 
-      {/* Mobile chapter navigation drawer */}
-      <MobileDrawer
-        isOpen={navOpen}
-        onClose={() => setNavOpen(false)}
-        title={t.storyReader.storyNavigation}
-        side="left"
-      >
-        <ChapterNav
-          chapters={chapters}
-          goToChapter={(idx) => { goToChapter(idx); setNavOpen(false); }}
-          isOnLatest={isOnLatest}
-          currentChapterIdx={currentChapterIdx}
-          totalChapters={totalChapters}
-          contextTokens={contextTokens}
-          handleSummarizeArc={handleSummarizeArc}
-          isSummarizingArc={isSummarizingArc}
-          isGenerating={isGenerating}
-          t={t}
-          activeChapter={activeChapter}
-          isLatestFailed={isLatestFailed}
-          isLatestToolsFailed={isLatestToolsFailed}
-          isNewGame={isNewGame}
-          handleBeginStory={handleBeginStory}
-        />
-      </MobileDrawer>
-
-      {/* Mobile bottom navigation bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-ink-900/95 backdrop-blur-md border-t border-ink-700 safe-area-bottom">
-        <div className="flex items-stretch h-14">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 text-ink-200/60 hover:text-ink-100 active:bg-ink-800/50 transition-colors"
-          >
-            <ChevronLeft size={20} />
-            <span className="text-[10px] font-medium">{t.storyReader.mobileBack}</span>
-          </button>
-          <button
-            onClick={() => { setNavOpen(v => !v); setRpgOpen(false); }}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors active:bg-ink-800/50 ${navOpen ? 'text-accent-400' : 'text-ink-200/60 hover:text-ink-100'}`}
-          >
-            <div className="relative">
-              <List size={20} />
-              {totalChapters > 0 && (
-                <span className="absolute -top-1.5 -right-2.5 text-[9px] font-bold bg-accent-600 text-white rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">{totalChapters}</span>
-              )}
-            </div>
-            <span className="text-[10px] font-medium">{t.storyReader.mobileChapters}</span>
-          </button>
-          <button
-            onClick={() => { setRpgOpen(v => !v); setNavOpen(false); }}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors active:bg-ink-800/50 ${rpgOpen ? 'text-accent-400' : 'text-ink-200/60 hover:text-ink-100'}`}
-          >
-            <Swords size={20} />
-            <span className="text-[10px] font-medium">{t.storyReader.mobileRpg}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Floating Game Menu button */}
+      {/* Global Modals and Buttons */}
       <button
         onClick={() => setGamePanelOpen(true)}
         className="fixed bottom-20 lg:bottom-6 right-4 z-30 bg-accent-600 hover:bg-accent-500 text-white rounded-full p-3.5 shadow-lg hover:shadow-accent-600/30 transition-all duration-200"
@@ -759,7 +546,6 @@ export default function StoryReaderPage() {
         <Gamepad2 size={22} />
       </button>
 
-      {/* Game Panel Modal */}
       <GamePanel
         isOpen={gamePanelOpen}
         onClose={() => setGamePanelOpen(false)}
@@ -775,10 +561,8 @@ export default function StoryReaderPage() {
         t={t}
       />
 
-      {/* Entity Detail Modal */}
       <EntityDetailModal entity={detailEntity} onClose={() => setDetailEntity(null)} />
-
-      {/* Relationship Web Modal */}
+      
       <RelationshipWebModal
         isOpen={isRelationshipModalOpen}
         onClose={() => setIsRelationshipModalOpen(false)}
@@ -786,8 +570,8 @@ export default function StoryReaderPage() {
         characters={characters}
       />
 
-      {/* Flashback Banner */}
       <ConsequenceFlashback consequences={flashbackQueue} />
+      
       <LevelUpModal
         isOpen={levelUpModal.show}
         newLevel={levelUpModal.newLevel}

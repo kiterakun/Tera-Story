@@ -92,10 +92,10 @@ describe('ChroniclePage', () => {
     expect(screen.getByText('Cảnh')).toBeInTheDocument();
     expect(screen.getByText('Lựa chọn')).toBeInTheDocument();
     expect(screen.getByText('Trận chiến')).toBeInTheDocument();
-    expect(screen.getByText('Thời gian')).toBeInTheDocument();
+    expect(screen.getByText('Thời gian chơi')).toBeInTheDocument();
     // Unique stat values (5 and 60p are unambiguous)
     expect(screen.getByText('5')).toBeInTheDocument();
-    expect(screen.getByText('60p')).toBeInTheDocument();
+    expect(screen.getByText('60ph')).toBeInTheDocument();
   });
 
   it('shows empty state when no chronicle', () => {

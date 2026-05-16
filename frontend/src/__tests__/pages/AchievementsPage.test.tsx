@@ -7,8 +7,10 @@ vi.mock('../../hooks/useAchievements', () => ({
 }));
 
 import { useAchievements } from '../../hooks/useAchievements';
+import type { AchievementWithProgress } from '../../services/achievementApi';
 
-const mockAchievement = {
+const mockAchievement: AchievementWithProgress = {
+  _id: 'ach-1',
   key: 'test_ach',
   name: { en: 'Test', vi: 'Kiểm tra' },
   description: { en: 'Test desc', vi: 'Mô tả' },
@@ -17,6 +19,7 @@ const mockAchievement = {
   rarity: 'common',
   hidden: false,
   unlocked: true,
+  unlockedAt: '2026-05-12T00:00:00.000Z',
   progress: 1,
   unlockCriteria: { type: 'count', field: 'scenes', threshold: 1 },
   xpReward: 50,
@@ -24,7 +27,7 @@ const mockAchievement = {
 };
 
 const defaultMockReturn = {
-  achievements: [] as typeof mockAchievement[],
+  achievements: [] as AchievementWithProgress[],
   stats: { total: 0, unlocked: 0, percentComplete: 0 },
   isLoading: true,
   error: null as string | null,
@@ -63,7 +66,7 @@ describe('AchievementsPage', () => {
 
     // Stats summary
     expect(screen.getByText('Thành Tựu')).toBeInTheDocument();
-    expect(screen.getByText('1/1 đã mở khóa — 100% hoàn thành')).toBeInTheDocument();
+    expect(screen.getByText('Đã mở khóa 1/1 (100%)')).toBeInTheDocument();
 
     // Achievement card visible
     expect(screen.getByText('Kiểm tra')).toBeInTheDocument();
@@ -83,7 +86,7 @@ describe('AchievementsPage', () => {
     renderWithRouter(<AchievementsPage />);
 
     expect(screen.getByText('Chưa có thành tựu nào.')).toBeInTheDocument();
-    expect(screen.getByText('Hoàn thành một cảnh truyện để bắt đầu!')).toBeInTheDocument();
+    expect(screen.getByText('Bắt đầu chơi hoặc hoàn thành nhiệm vụ để nhận được chúng.')).toBeInTheDocument();
   });
 
   it('shows category filter tabs', () => {
@@ -109,7 +112,7 @@ describe('AchievementsPage', () => {
 
   it('shows stats summary when achievements loaded', () => {
     vi.mocked(useAchievements).mockReturnValue({
-      achievements: [mockAchievement, { ...mockAchievement, key: 'ach_2', unlocked: false }],
+      achievements: [mockAchievement, { ...mockAchievement, _id: 'ach-2', key: 'ach_2', unlocked: false, unlockedAt: null }],
       stats: { total: 5, unlocked: 3, percentComplete: 60 },
       isLoading: false,
       error: null,
@@ -118,7 +121,7 @@ describe('AchievementsPage', () => {
 
     renderWithRouter(<AchievementsPage />);
 
-    expect(screen.getByText('3/5 đã mở khóa — 60% hoàn thành')).toBeInTheDocument();
+    expect(screen.getByText('Đã mở khóa 3/5 (60%)')).toBeInTheDocument();
   });
 
   it('shows error state with retry button', () => {
@@ -138,11 +141,13 @@ describe('AchievementsPage', () => {
   });
 
   it('shows hidden achievement placeholder for locked hidden achievements', () => {
-    const hiddenLocked = {
+    const hiddenLocked: AchievementWithProgress = {
       ...mockAchievement,
+      _id: 'hidden_1',
       key: 'hidden_one',
       hidden: true,
       unlocked: false,
+      unlockedAt: null,
       progress: 0,
       name: { en: 'Secret', vi: 'Bí mật' },
       description: { en: '???', vi: '???' },

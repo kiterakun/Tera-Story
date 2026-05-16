@@ -27,6 +27,19 @@ export interface EnrichWorldResult {
     description: string;
     fields: Array<{ name: string; type: 'text' | 'number' | 'enum'; options?: string[] }>;
   }>;
+  organizationTemplates?: Array<{
+    type: string;
+    description: string;
+    defaultStats: Array<{
+      key: string;
+      type: 'number' | 'text' | 'progress' | 'enum' | 'pool';
+      min?: number;
+      max?: number;
+      defaultValue?: string | number;
+      displayFormat?: string;
+      options?: string[];
+    }>;
+  }>;
 }
 
 export interface EnrichCharacterResult {

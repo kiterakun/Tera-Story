@@ -18,14 +18,26 @@ router.use('/:worldId/playthroughs', playthroughsRouter);
 
 // --- Validation Schemas ---
 
-const resourceTemplateSchema = z.object({
+type ResourceTemplateInput = {
+  key: string;
+  type: 'number' | 'text' | 'progress' | 'enum' | 'pool' | 'object';
+  min?: number;
+  max?: number;
+  defaultValue?: string | number;
+  displayFormat?: string;
+  options?: string[];
+  children?: ResourceTemplateInput[];
+};
+
+const resourceTemplateSchema: z.ZodType<ResourceTemplateInput> = z.object({
   key: z.string().min(1),
-  type: z.enum(['number', 'text', 'progress', 'enum']),
+  type: z.enum(['number', 'text', 'progress', 'enum', 'pool', 'object']),
   min: z.number().optional(),
   max: z.number().optional(),
   defaultValue: z.union([z.string(), z.number()]).optional(),
   displayFormat: z.string().optional(),
   options: z.array(z.string()).optional(),
+  children: z.lazy(() => z.array(resourceTemplateSchema)).optional(),
 }).superRefine((data, ctx) => {
   if (data.type === 'enum') {
     if (!data.options || data.options.length === 0) {
@@ -50,17 +62,23 @@ const resourceTemplateSchema = z.object({
         });
       }
     }
-  } else {
+  } else if (data.type !== 'object') {
     if (data.defaultValue !== undefined && typeof data.defaultValue !== 'number') {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'defaultValue must be a number for non-enum types',
+        message: 'defaultValue must be a number for non-enum, non-object types',
         path: ['defaultValue'],
       });
     }
   }
 });
 
+
+const organizationTemplateSchema = z.object({
+  type: z.string().min(1),
+  description: z.string().optional(),
+  defaultStats: z.array(resourceTemplateSchema).optional(),
+});
 
 const createWorldSchema = z.object({
   name: z.string().min(1, 'Name is required').trim(),
@@ -69,6 +87,7 @@ const createWorldSchema = z.object({
   imageUrl: z.string().url().optional(),
   resourceTemplates: z.array(resourceTemplateSchema).optional(),
   locationResourceTemplates: z.array(resourceTemplateSchema).optional(),
+  organizationTemplates: z.array(organizationTemplateSchema).optional(),
   generateMap: z.boolean().optional().default(true),
 });
 
@@ -79,6 +98,7 @@ const updateWorldSchema = z.object({
   imageUrl: z.string().url().nullable().optional(),
   resourceTemplates: z.array(resourceTemplateSchema).optional(),
   locationResourceTemplates: z.array(resourceTemplateSchema).optional(),
+  organizationTemplates: z.array(organizationTemplateSchema).optional(),
 });
 
 // --- Routes ---

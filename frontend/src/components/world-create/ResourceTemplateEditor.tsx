@@ -11,6 +11,7 @@ interface ResourceTemplateEditorProps {
   addLabel: string;
   nameLabel: string;
   namePlaceholder: string;
+  accentColor?: string;
 }
 
 
@@ -22,6 +23,7 @@ export function ResourceTemplateEditor({
   addLabel,
   nameLabel,
   namePlaceholder,
+  accentColor = 'bg-accent-400',
 }: ResourceTemplateEditorProps) {
   const t = useTranslation();
 
@@ -74,7 +76,7 @@ export function ResourceTemplateEditor({
       <div className="flex justify-between items-center mb-5">
         <div>
           <h2 className="text-lg font-display text-ink-100 flex items-center gap-2">
-            <span className="w-1.5 h-5 bg-accent-400 rounded-full" />
+            <span className={`w-1.5 h-5 ${accentColor} rounded-full`} />
             {title}
           </h2>
           {hint && (
