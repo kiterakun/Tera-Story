@@ -5,6 +5,7 @@ interface WorldTemplateData {
   description: string;
   genre: 'fantasy' | 'sci-fi' | 'wuxia' | 'modern' | 'custom';
   resourceTemplates: IResourceTemplate[];
+  locationResourceTemplates?: IResourceTemplate[];
   specialItemTemplates?: ISpecialItemTemplate[];
 }
 

@@ -106,12 +106,13 @@ export interface AddLocationParams {
   description: string;
   type: 'town' | 'dungeon' | 'wilderness' | 'ruin' | 'sanctuary' | 'crossroad';
   connectedTo?: string;
+  dynamicStats?: Array<{ k: string; v: string | number | boolean; t: string; maxV?: number }>;
 }
 
 export async function addLocation(
   params: AddLocationParams
 ): Promise<ILocationDocument> {
-  const { regionId, playthroughId, name, description, type, connectedTo } = params;
+  const { regionId, playthroughId, name, description, type, connectedTo, dynamicStats } = params;
 
   const region = await Region.findById(regionId).lean();
   if (!region) {
@@ -143,6 +144,7 @@ export async function addLocation(
     discoveredAt: Date.now(),
     status: 'known',
     connectedLocations,
+    dynamicStats: dynamicStats || [],
   });
 
   if (connectedTo) {

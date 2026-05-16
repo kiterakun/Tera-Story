@@ -30,7 +30,9 @@ export interface ContextAgentParams {
 
 export type ContextOutput = IContextOutput;
 
-const SYSTEM_PROMPT = renderPrompt('context.prompt.md');
+function getSystemPrompt(language: string): string {
+  return renderPrompt('context.prompt.md', { language });
+}
 
 export async function runContextAgent(
   params: ContextAgentParams
@@ -45,10 +47,11 @@ export async function runContextAgent(
   if (!world) throw new Error('World not found');
 
   // 2. Fetch all characters, items, special items, relationships, consequences, combat, continents in parallel
+  // Explicitly filter archived entities for clarity (pre-hooks also handle this)
   const [characters, items, specialItems, specialItemTemplates, relationships, allConsequences, activeCombatDoc, continents] = await Promise.all([
-    Character.find({ playthroughId }).lean(),
-    Item.find({ playthroughId }).lean(),
-    SpecialItem.find({ playthroughId }).lean(),
+    Character.find({ playthroughId, archivedAt: null }).lean(),
+    Item.find({ playthroughId, archivedAt: null }).lean(),
+    SpecialItem.find({ playthroughId, archivedAt: null }).lean(),
     SpecialItemTemplate.find({ worldId: playthrough.worldId }).lean(),
     Relationship.find({ playthroughId }).lean(),
     ConsequenceSeed.find({ playthroughId, activated: false }).lean(),
@@ -60,8 +63,8 @@ export async function runContextAgent(
   let geography: {
     currentContinent: { name: string; description: string; terrainType: string };
     currentRegion: { name: string; description: string; terrainType: string; dangerLevel: number } | null;
-    currentLocation: { name: string; type: string; description: string; status: string } | null;
-    nearbyLocations: { name: string; type: string; description: string; status: string }[];
+    currentLocation: { name: string; type: string; description: string; status: string; dynamicStats: Record<string, string | number | boolean> } | null;
+    nearbyLocations: { name: string; type: string; description: string; status: string; dynamicStats: Record<string, string | number | boolean> }[];
   } | undefined;
 
   if (playthrough.currentLocationId) {
@@ -79,7 +82,11 @@ export async function runContextAgent(
         playthroughId,
         status: { $in: ['known', 'visited'] },
         _id: { $ne: currentLocation._id },
+        archivedAt: null,
       }).lean();
+
+      const locDynStats = (loc: { dynamicStats?: Array<{ k: string; v: string | number | boolean }> }) =>
+        Object.fromEntries((loc.dynamicStats || []).map(s => [s.k, s.v]));
 
       geography = {
         currentContinent: currentContinent
@@ -88,8 +95,8 @@ export async function runContextAgent(
         currentRegion: currentRegion
           ? { name: currentRegion.name, description: currentRegion.description, terrainType: currentRegion.terrainType, dangerLevel: currentRegion.dangerLevel }
           : null,
-        currentLocation: { name: currentLocation.name, type: currentLocation.type, description: currentLocation.description, status: currentLocation.status },
-        nearbyLocations: nearbyLocations.map(l => ({ name: l.name, type: l.type, description: l.description, status: l.status })),
+        currentLocation: { name: currentLocation.name, type: currentLocation.type, description: currentLocation.description, status: currentLocation.status, dynamicStats: locDynStats(currentLocation) },
+        nearbyLocations: nearbyLocations.map(l => ({ name: l.name, type: l.type, description: l.description, status: l.status, dynamicStats: locDynStats(l) })),
       };
     }
   } else {
@@ -98,13 +105,17 @@ export async function runContextAgent(
     if (firstContinent) {
       const continentRegions = await Region.find({ continentId: firstContinent._id }).lean();
       const firstRegion = continentRegions[0];
-      let nearbyLocations: { name: string; type: string; description: string; status: string }[] = [];
+      let nearbyLocations: { name: string; type: string; description: string; status: string; dynamicStats: Record<string, string | number | boolean> }[] = [];
       if (firstRegion) {
         nearbyLocations = (await Location.find({
           regionId: firstRegion._id,
           playthroughId,
-          status: { $in: ['known', 'visited'] }
-        }).lean()).map(l => ({ name: l.name, type: l.type, description: l.description, status: l.status }));
+          status: { $in: ['known', 'visited'] },
+          archivedAt: null,
+        }).lean()).map(l => ({
+          name: l.name, type: l.type, description: l.description, status: l.status,
+          dynamicStats: Object.fromEntries(((l as { dynamicStats?: Array<{ k: string; v: string | number | boolean }> }).dynamicStats || []).map(s => [s.k, s.v])),
+        }));
       }
       geography = {
         currentContinent: { name: firstContinent.name, description: firstContinent.description, terrainType: firstContinent.terrainType },
@@ -283,7 +294,7 @@ Based on the player's choice and the FULL story state above (including all items
   // Using streamText lets the SDK properly parse chunks, then we await the full text.
   const result = streamText({
     model,
-    system: SYSTEM_PROMPT,
+    system: getSystemPrompt(language),
     prompt: userPrompt,
     temperature: 0.3,
   });
@@ -339,6 +350,10 @@ Based on the player's choice and the FULL story state above (including all items
     status: (c as { status?: string }).status ?? 'active',
     description: c.description,
     dynamicStats: Object.fromEntries(c.dynamicStats.map((s) => [s.k, s.v])),
+    background: (c as { background?: string }).background || '',
+    personality: (c as { personality?: string }).personality || '',
+    goals: (c as { goals?: string }).goals || '',
+    appearance: (c as { appearance?: string }).appearance || '',
   }));
 
   // Build structured entity refs directly from DB (authoritative, not LLM-summarized)
@@ -424,6 +439,14 @@ Based on the player's choice and the FULL story state above (including all items
     resourceTemplates: (world.resourceTemplates || []).map((t) => ({
       key: t.key,
       type: t.type,
+      ...(t.min !== undefined ? { min: t.min } : {}),
+      ...(t.max !== undefined ? { max: t.max } : {}),
+      ...(t.defaultValue !== undefined ? { defaultValue: t.defaultValue } : {}),
+      ...(t.options && t.options.length > 0 ? { options: t.options } : {}),
+    })),
+    locationResourceTemplates: ((world as { locationResourceTemplates?: Array<{ key: string; type: string; min?: number; max?: number; defaultValue?: string | number; options?: string[] }> }).locationResourceTemplates || []).map((t) => ({
+      key: t.key,
+      type: t.type as 'number' | 'text' | 'progress' | 'enum' | 'pool',
       ...(t.min !== undefined ? { min: t.min } : {}),
       ...(t.max !== undefined ? { max: t.max } : {}),
       ...(t.defaultValue !== undefined ? { defaultValue: t.defaultValue } : {}),

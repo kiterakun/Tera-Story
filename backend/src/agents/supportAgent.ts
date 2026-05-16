@@ -10,6 +10,7 @@ interface EnrichWorldResult {
   description: string;
   genre: string;
   resourceTemplates: IResourceTemplate[];
+  locationResourceTemplates?: IResourceTemplate[];
   specialItemTemplates?: Array<{
     category: string;
     description: string;
@@ -21,6 +22,10 @@ interface EnrichCharacterResult {
   characterName: string;
   characterDescription: string;
   suggestedStats: IDynamicStat[];
+  background?: string;
+  personality?: string;
+  goals?: string;
+  appearance?: string;
 }
 
 export async function enrichWorld(

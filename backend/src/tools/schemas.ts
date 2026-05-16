@@ -143,3 +143,22 @@ export const updateRelationshipOutput = z.discriminatedUnion('updated', [
   }),
   z.object({ updated: z.literal(false), error: z.string() }),
 ]);
+
+// ── Archive ──
+
+export const archiveEntityOutput = z.discriminatedUnion('archived', [
+  z.object({
+    archived: z.literal(true),
+    entityType: z.string(),
+    entityName: z.string(),
+    reason: z.string().optional(),
+  }),
+  z.object({ archived: z.literal(false), error: z.string() }),
+]);
+
+// ── Location Stats ──
+
+export const updateLocationStatsOutput = z.discriminatedUnion('updated', [
+  z.object({ updated: z.literal(true), locationName: z.string() }),
+  z.object({ updated: z.literal(false), error: z.string() }),
+]);

@@ -1,9 +1,20 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { IDynamicStat } from '../types/character.types';
 
 const PositionSchema = new Schema(
   {
     x: { type: Number, required: true },
     y: { type: Number, required: true },
+  },
+  { _id: false }
+);
+
+const DynamicStatSchema = new Schema(
+  {
+    k: { type: String, required: true },
+    v: { type: Schema.Types.Mixed },
+    t: { type: String, required: true },
+    maxV: { type: Number },
   },
   { _id: false }
 );
@@ -18,6 +29,8 @@ export interface ILocationDocument extends Document {
   discoveredAt: number;
   status: 'undiscovered' | 'known' | 'visited' | 'cleared';
   connectedLocations: mongoose.Types.ObjectId[];
+  dynamicStats: IDynamicStat[];
+  archivedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
@@ -66,6 +79,11 @@ const LocationSchema = new Schema<ILocationDocument>(
         ref: 'Location',
       },
     ],
+    dynamicStats: {
+      type: [DynamicStatSchema],
+      default: [],
+    },
+    archivedAt: { type: Date, default: null },
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
@@ -73,11 +91,15 @@ const LocationSchema = new Schema<ILocationDocument>(
 
 LocationSchema.index({ regionId: 1, playthroughId: 1 });
 
-// Soft delete: auto-filter non-deleted documents
+// Soft delete: auto-filter non-deleted and non-archived documents
 LocationSchema.pre(['find', 'findOne', 'findOneAndUpdate', 'countDocuments'], function () {
   const filter = this.getFilter() as Record<string, unknown>;
   if (!('deletedAt' in filter)) {
     this.setQuery({ ...filter, deletedAt: null });
+  }
+  if (!('archivedAt' in filter)) {
+    const currentFilter = this.getFilter() as Record<string, unknown>;
+    this.setQuery({ ...currentFilter, archivedAt: null });
   }
 });
 

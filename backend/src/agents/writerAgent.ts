@@ -13,6 +13,8 @@ import { makeUpdateRelationshipTool } from '../tools/updateRelationship';
 import { makePlantConsequenceTool, makeActivateConsequenceTool } from '../tools/plantConsequence';
 import { makeInitiateCombatTool } from '../tools/initiateCombat';
 import { makeDiscoverLocationTool } from '../tools/discoverLocation';
+import { makeArchiveEntityTool } from '../tools/archiveEntity';
+import { makeUpdateLocationStatsTool } from '../tools/updateLocationStats';
 import { emit } from '../services/sseManager';
 
 export interface WriterAgentParams {
@@ -39,7 +41,9 @@ export interface WriterAgentParams {
 // Pass 1 — WRITE: Pure prose, no tools. Lean prompt focused on storytelling.
 // ────────────────────────────────────────────────────────────────────────────
 
-const WRITER_SYSTEM_PROMPT = renderPrompt('writer.prompt.xml');
+function getWriterSystemPrompt(language: string): string {
+  return renderPrompt('writer.prompt.xml', { language });
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 // Pass 2 — TOOLS: Read the finished chapter, execute all game-state changes.
@@ -85,7 +89,13 @@ export async function runWriterAgent(
           ? ` [Stats: ${Object.entries(c.dynamicStats).map(([k, v]) => `${k}=${v}`).join(', ')}]`
           : '';
         const statusTag = c.status && c.status !== 'active' ? ` [STATUS: ${c.status.toUpperCase()}]` : '';
-        return `- ${c.name} (${c.role}${statusTag}): ${c.description}${statsStr}`;
+        const extra: string[] = [];
+        if ('background' in c && c.background) extra.push(`Background: ${c.background}`);
+        if ('personality' in c && c.personality) extra.push(`Personality: ${c.personality}`);
+        if ('goals' in c && c.goals) extra.push(`Goals: ${c.goals}`);
+        if ('appearance' in c && c.appearance) extra.push(`Appearance: ${c.appearance}`);
+        const extraStr = extra.length > 0 ? `\n  ${extra.join('; ')}` : '';
+        return `- ${c.name} (${c.role}${statusTag}): ${c.description}${statsStr}${extraStr}`;
       }).join('\n')
     : 'No characters yet — you may create new ones.';
 
@@ -123,6 +133,18 @@ export async function runWriterAgent(
         return desc;
       }).join('\n')
     : 'No resource templates defined.';
+
+  const locationResourceTemplatesBlock = contextOutput.locationResourceTemplates && contextOutput.locationResourceTemplates.length > 0
+    ? contextOutput.locationResourceTemplates.map(rt => {
+        let desc = `- ${rt.key} (${rt.type}`;
+        if (rt.min !== undefined) desc += `, min: ${rt.min}`;
+        if (rt.max !== undefined) desc += `, max: ${rt.max}`;
+        if (rt.defaultValue !== undefined) desc += `, default: ${rt.defaultValue}`;
+        if (rt.options && rt.options.length > 0) desc += `, options: ${rt.options.join('|')}`;
+        desc += ')';
+        return desc;
+      }).join('\n')
+    : 'No location resource templates defined.';
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // PASS 1 — WRITE the chapter (no tools, pure prose)
@@ -194,7 +216,7 @@ Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[speci
 
     const writeStream = streamText({
       model,
-      system: `${WRITER_SYSTEM_PROMPT}\nWrite in ${language}.`,
+      system: getWriterSystemPrompt(language),
       prompt: writePrompt,
     });
 
@@ -237,8 +259,10 @@ Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[speci
     initiateCombat: makeInitiateCombatTool(playthroughId, chapterId),
     summarizeArc: makeSummarizeArcTool(),
     ...(contextOutput.currentRegionId
-      ? { discoverLocation: makeDiscoverLocationTool({ playthroughId, regionId: contextOutput.currentRegionId }) }
+      ? { discoverLocation: makeDiscoverLocationTool({ playthroughId, regionId: contextOutput.currentRegionId, worldId }) }
       : {}),
+    archiveEntity: makeArchiveEntityTool(playthroughId),
+    updateLocationStats: makeUpdateLocationStatsTool(playthroughId),
   };
 
   const choicesTool = makeGenerateChoicesTool(chapterId);
@@ -252,6 +276,8 @@ Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[speci
     updateRelationship: 'relationship:updated',
     initiateCombat: 'combat:initiated',
     discoverLocation: 'location:discovered',
+    archiveEntity: 'entity:archived',
+    updateLocationStats: 'location_stats:updated',
   };
 
   const toolsPrompt = `
@@ -279,21 +305,26 @@ ${templateCategoriesBlock}
 === RESOURCE TEMPLATES / CHARACTER STATS (MUST provide dynamicStats when calling createCharacter) ===
 ${resourceTemplatesBlock}
 
+=== LOCATION RESOURCE TEMPLATES (use when calling updateLocationStats or discoverLocation) ===
+${locationResourceTemplatesBlock}
+
 === MATURE CONSEQUENCES (mark as activated if woven into this chapter) ===
 ${consequencesBlock}
 
 === INSTRUCTIONS ===
 Based on the chapter above:
-1. Create any NEW characters that appeared (not in EXISTING CHARACTERS). Provide dynamicStats with values meaningful to their role. If a stat has options, you MUST choose exactly one of those options.
+1. Create any NEW characters that appeared (not in EXISTING CHARACTERS). Provide dynamicStats with values meaningful to their role. If a stat has options, you MUST choose exactly one of those options. Include background and personality for significant characters.
 2. Create any NEW items that appeared (not in EXISTING ITEMS).
 3. Create any NEW special items/abilities (not in EXISTING SPECIAL ITEMS). Category MUST match AVAILABLE SPECIAL ITEM CATEGORIES. If a custom field has options, you MUST choose exactly one of those options.
-4. Update stats for characters whose attributes changed. Reference their CURRENT values above and calculate new values based on events.
+4. Update stats for characters whose attributes changed. Reference their CURRENT values above and calculate new values based on events. For pool-type stats, you may also update maxV.
 5. Update entity statuses for any deaths, injuries, destructions, etc.
 6. Update relationships if character dynamics changed (new alliance, betrayal, rivalry, romance, etc.).
 7. Plant consequence seeds for significant player decisions with delayed effects.
 8. Activate any MATURE CONSEQUENCES that were incorporated into this chapter.
 9. Initiate combat if a fight scene begins in this chapter.
 10. Call summarizeArc ONLY if a major story arc concluded.
+11. Archive entities (characters, items, special items, locations) that have died, been consumed, destroyed, or are no longer relevant to the story.
+12. Update location stats if locations changed (e.g., a town was attacked, corruption spread, population changed).
 
 Call all applicable tools NOW in ONE step. Do NOT output any text — ONLY tool calls.`.trim();
 

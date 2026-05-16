@@ -14,6 +14,7 @@ export interface ISpecialItemDocument extends Document {
   playthroughId: mongoose.Types.ObjectId;
   createdInChapterId?: mongoose.Types.ObjectId;
   customFields: Record<string, unknown>; // values matching SpecialItemTemplate.fields
+  archivedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
@@ -68,6 +69,7 @@ const SpecialItemSchema = new Schema<ISpecialItemDocument>(
       type: Schema.Types.Mixed,
       default: {},
     },
+    archivedAt: { type: Date, default: null },
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
@@ -77,11 +79,15 @@ const SpecialItemSchema = new Schema<ISpecialItemDocument>(
 SpecialItemSchema.index({ playthroughId: 1, category: 1 });
 SpecialItemSchema.index({ ownerId: 1 });
 
-// Soft delete: auto-filter non-deleted documents
+// Soft delete: auto-filter non-deleted and non-archived documents
 SpecialItemSchema.pre(['find', 'findOne', 'findOneAndUpdate', 'countDocuments'], function () {
   const filter = this.getFilter() as Record<string, unknown>;
   if (!('deletedAt' in filter)) {
     this.setQuery({ ...filter, deletedAt: null });
+  }
+  if (!('archivedAt' in filter)) {
+    const currentFilter = this.getFilter() as Record<string, unknown>;
+    this.setQuery({ ...currentFilter, archivedAt: null });
   }
 });
 

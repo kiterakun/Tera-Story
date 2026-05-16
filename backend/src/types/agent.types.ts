@@ -14,6 +14,10 @@ export interface ICharacterRef {
   status: string;
   description: string;
   dynamicStats: Record<string, string | number | boolean>;
+  background?: string;
+  personality?: string;
+  goals?: string;
+  appearance?: string;
 }
 
 export interface IRelationshipRef {
@@ -49,14 +53,15 @@ export interface IContextOutput {
   currentScene: string;
   relevantPlotPoints: string[];
   resourceTemplates?: IResourceTemplate[];
+  locationResourceTemplates?: IResourceTemplate[];
   relationships: IRelationshipRef[];
   matureConsequences: IConsequenceSeedRef[];
   activeCombat: ICombatRef | null;
   geography?: {
     currentContinent?: { name: string; description: string; terrainType: string };
     currentRegion?: { name: string; description: string; terrainType: string; dangerLevel: number } | null;
-    currentLocation?: { name: string; type: string; description: string; status: string } | null;
-    nearbyLocations?: Array<{ name: string; type: string; description: string; status: string }>;
+    currentLocation?: { name: string; type: string; description: string; status: string; dynamicStats?: Record<string, string | number | boolean> } | null;
+    nearbyLocations?: Array<{ name: string; type: string; description: string; status: string; dynamicStats?: Record<string, string | number | boolean> }>;
   };
   currentRegionId?: string;
   usage?: { inputTokens: number; outputTokens: number };
@@ -77,6 +82,7 @@ export interface ISupportOutput {
   description?: string;
   genre?: string;
   resourceTemplates?: import('./world.types').IResourceTemplate[];
+  locationResourceTemplates?: import('./world.types').IResourceTemplate[];
   // For character enrichment
   characterName?: string;
   characterDescription?: string;

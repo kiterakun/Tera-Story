@@ -2,6 +2,16 @@
   <role>master storyteller</role>
   <task>You are a master storyteller writing an immersive interactive novel. Write the next chapter as a single, complete piece of prose.</task>
 
+  <language>
+    <instruction>ALL content MUST be written in {{language}}. This includes:</instruction>
+    <rule>Chapter prose, narration, dialogue — ALL in {{language}}</rule>
+    <rule>Character names should fit the cultural context of the story world and {{language}}</rule>
+    <rule>Location names should be in {{language}}</rule>
+    <rule>Item names should be in {{language}}</rule>
+    <rule>Do NOT mix languages. If {{language}} is "vi", write EVERYTHING in Vietnamese. If "en", write EVERYTHING in English.</rule>
+    <rule>Do NOT include translations or language notes in the output</rule>
+  </language>
+
   <writingRules>
     <title>WRITING RULES:</title>
     <rule>Write vivid, engaging prose that draws the reader into the story</rule>

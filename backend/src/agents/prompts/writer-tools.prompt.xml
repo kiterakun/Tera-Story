@@ -4,6 +4,11 @@
 
   <instruction>Read the chapter content carefully and call ALL necessary tools in a SINGLE step. Do NOT output any prose or story text — ONLY call tools.</instruction>
 
+  <language>
+    <rule>ALL tool arguments (names, descriptions, reasons) MUST be written in {{language}}</rule>
+    <rule>Do NOT mix languages. If {{language}} is "vi", write ALL tool arguments in Vietnamese. If "en", write in English.</rule>
+  </language>
+
   <toolCallingRules>
     <title>TOOL CALLING RULES:</title>
 
@@ -22,11 +27,13 @@
 
     <rule number="4" tool="updateStats">updateStats — For each character whose stats changed during the chapter:</rule>
     <detail>Reference CURRENT stat values and calculate realistic NEW values based on story events</detail>
-    <detail>Values must match data types: numbers for 'number'/'progress' type, strings for 'text'/'enum' type</detail>
+    <detail>Values must match data types: numbers for 'number'/'progress'/'pool' type, strings for 'text'/'enum' type</detail>
+    <detail>For 'pool' type stats (e.g. HP, MP): you can update both 'value' (current) and 'maxV' (current maximum). maxV changes when buffs/debuffs/permanent changes affect the cap.</detail>
     <stat-validation>
       <rule>For 'enum' type stats: choose the value ONLY from the stat's options array listed in resourceTemplates</rule>
       <rule>For 'number' type stats: the value must be within the [min, max] range specified in resourceTemplates</rule>
       <rule>For 'progress' type stats: the value must be a number from 0 to 100</rule>
+      <rule>For 'pool' type stats: the value must be within [0, maxV] range. maxV must be within [min, max] range from resourceTemplates.</rule>
     </stat-validation>
 
     <rule number="5" tool="updateEntityStatus">updateEntityStatus — For state changes:</rule>
@@ -67,6 +74,17 @@
 
     <rule number="12" tool="generateChoices">generateChoices — You MUST call this with 3-4 meaningful choices for the reader UNLESS you are calling initiateCombat or an active combat is continuing. If combat is active or just initiated, DO NOT call generateChoices.</rule>
     <detail>One or more choices MAY include a travelTo field with a location ID — use this when the choice involves traveling to a specific nearby location. The location IDs can be found in the CONTEXT under NEARBY LOCATIONS or TRAVEL OPTIONS. Only add travelTo if the choice explicitly involves going to a specific known location.</detail>
+
+    <rule number="13" tool="archiveEntity">archiveEntity — When a character dies permanently, an item is fully consumed/destroyed beyond recovery, or a location becomes completely irrelevant to future story:</rule>
+    <detail>Only archive entities that will NEVER appear again in the story</detail>
+    <detail>Do NOT archive main characters or important NPCs unless their story arc is truly complete</detail>
+    <detail>Do NOT archive items that might still be referenced or needed</detail>
+    <detail>Provide a brief reason for archiving</detail>
+
+    <rule number="14" tool="updateLocationStats">updateLocationStats — When story events change a location's properties:</rule>
+    <detail>Danger level increases after an attack, population changes, corruption spreads, resources are depleted</detail>
+    <detail>Only update stats that actually changed based on the chapter events</detail>
+    <detail>For pool type stats, you can update both value and maxV</detail>
   </toolCallingRules>
 
   <finalInstructions>

@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IResourceTemplateDocument {
   key: string;
-  type: 'number' | 'text' | 'progress' | 'enum';
+  type: 'number' | 'text' | 'progress' | 'enum' | 'pool';
   min?: number;
   max?: number;
   defaultValue?: string | number;
@@ -17,6 +17,7 @@ export interface IWorldDocument extends Document {
   userId: mongoose.Types.ObjectId;
   imageUrl?: string;
   resourceTemplates: IResourceTemplateDocument[];
+  locationResourceTemplates: IResourceTemplateDocument[];
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
@@ -28,7 +29,7 @@ const ResourceTemplateSchema = new Schema<IResourceTemplateDocument>(
     type: {
       type: String,
       required: true,
-      enum: ['number', 'text', 'progress', 'enum'],
+      enum: ['number', 'text', 'progress', 'enum', 'pool'],
     },
     min: { type: Number },
     max: { type: Number },
@@ -65,6 +66,10 @@ const WorldSchema = new Schema<IWorldDocument>(
     },
     deletedAt: { type: Date, default: null },
     resourceTemplates: {
+      type: [ResourceTemplateSchema],
+      default: [],
+    },
+    locationResourceTemplates: {
       type: [ResourceTemplateSchema],
       default: [],
     },

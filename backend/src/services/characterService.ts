@@ -7,6 +7,7 @@ import { IDynamicStat } from '../types/character.types';
 /**
  * Initialize dynamicStats from world resourceTemplates.
  * Each template becomes { k: template.key, v: template.defaultValue ?? 0, t: template.type }.
+ * For 'pool' type: v and maxV are both set from defaultValue (or max).
  */
 export async function initializeDynamicStats(
   worldId: string
@@ -34,6 +35,66 @@ export async function initializeDynamicStats(
     } else {
       defaultVal = 0;
     }
+
+    // For pool type, set maxV from defaultValue or max
+    if (tpl.type === 'pool') {
+      const poolVal = typeof defaultVal === 'number' ? defaultVal : (tpl.max ?? 0);
+      return {
+        k: tpl.key,
+        v: poolVal,
+        t: tpl.type,
+        maxV: poolVal,
+      };
+    }
+
+    return {
+      k: tpl.key,
+      v: defaultVal,
+      t: tpl.type,
+    };
+  });
+}
+
+/**
+ * Initialize dynamicStats for a location from world locationResourceTemplates.
+ */
+export async function initializeLocationDynamicStats(
+  worldId: string
+): Promise<IDynamicStat[]> {
+  const world = await World.findById(worldId).lean();
+
+  if (!world) {
+    throw new Error('World not found');
+  }
+
+  const templates = world.locationResourceTemplates;
+
+  if (!templates || !Array.isArray(templates)) {
+    return [];
+  }
+
+  return templates.map((tpl) => {
+    let defaultVal: string | number | boolean;
+    if (tpl.defaultValue !== undefined && tpl.defaultValue !== null) {
+      defaultVal = tpl.defaultValue as string | number | boolean;
+    } else if (tpl.type === 'enum' && tpl.options && tpl.options.length > 0) {
+      defaultVal = tpl.options[0] || '';
+    } else if (tpl.type === 'text') {
+      defaultVal = '';
+    } else {
+      defaultVal = 0;
+    }
+
+    if (tpl.type === 'pool') {
+      const poolVal = typeof defaultVal === 'number' ? defaultVal : (tpl.max ?? 0);
+      return {
+        k: tpl.key,
+        v: poolVal,
+        t: tpl.type,
+        maxV: poolVal,
+      };
+    }
+
     return {
       k: tpl.key,
       v: defaultVal,
@@ -45,7 +106,8 @@ export async function initializeDynamicStats(
 function validateStatValue(
   template: IResourceTemplateDocument,
   key: string,
-  value: unknown
+  value: unknown,
+  maxV?: number
 ): void {
   if (template.type === 'enum') {
     if (typeof value !== 'string') {
@@ -77,6 +139,29 @@ function validateStatValue(
     if (value < 0 || value > 100) {
       throw new Error(`Progress stat "${key}" must be between 0 and 100`);
     }
+    return;
+  }
+
+  if (template.type === 'pool') {
+    if (typeof value !== 'number') {
+      throw new Error(`Stat "${key}" requires a number value for pool type`);
+    }
+    const hardMax = template.max ?? 999;
+    const min = template.min ?? 0;
+    if (value < min) {
+      throw new Error(`Value ${value} is below minimum ${min}`);
+    }
+    if (value > hardMax) {
+      throw new Error(`Value ${value} is above hard max ${hardMax}`);
+    }
+    if (maxV !== undefined) {
+      if (typeof maxV !== 'number') {
+        throw new Error(`maxV for stat "${key}" must be a number`);
+      }
+      if (maxV < min || maxV > hardMax) {
+        throw new Error(`maxV ${maxV} is out of range [${min}, ${hardMax}]`);
+      }
+    }
   }
 }
 
@@ -84,13 +169,15 @@ function validateStatValue(
  * Update a single dynamic stat for a character.
  * Validates values against the world's resourceTemplates before saving.
  * Unknown stat keys are allowed for custom stats.
+ * For pool type, accepts optional maxV parameter to update the max value.
  */
 export async function updateStat(
   characterId: string,
   key: string,
   value: unknown,
   userId: string,
-  playthroughId?: string
+  playthroughId?: string,
+  maxV?: number
 ): Promise<void> {
   const character = await Character.findById(characterId);
 
@@ -121,13 +208,26 @@ export async function updateStat(
   const template = world.resourceTemplates?.find((t) => t.key === key);
 
   if (template) {
-    validateStatValue(template, key, value);
+    validateStatValue(template, key, value, maxV);
+  }
+
+  // For pool type: auto-clamp v if v > maxV
+  if (template?.type === 'pool' && maxV !== undefined && typeof value === 'number') {
+    if (value > maxV) {
+      value = maxV;
+    }
+  }
+
+  // Build update: always set v, optionally set maxV for pool type
+  const $set: Record<string, unknown> = { 'dynamicStats.$[elem].v': value };
+  if (maxV !== undefined && template?.type === 'pool') {
+    $set['dynamicStats.$[elem].maxV'] = maxV;
   }
 
   // Update the specific dynamicStats entry using arrayFilters
   const result = await Character.findOneAndUpdate(
     { _id: characterId },
-    { $set: { 'dynamicStats.$[elem].v': value } },
+    { $set },
     { arrayFilters: [{ 'elem.k': key }], returnDocument: 'after' }
   );
 

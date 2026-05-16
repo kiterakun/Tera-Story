@@ -68,6 +68,7 @@ const createWorldSchema = z.object({
   genre: z.enum(['fantasy', 'sci-fi', 'wuxia', 'modern', 'custom']),
   imageUrl: z.string().url().optional(),
   resourceTemplates: z.array(resourceTemplateSchema).optional(),
+  locationResourceTemplates: z.array(resourceTemplateSchema).optional(),
   generateMap: z.boolean().optional().default(true),
 });
 
@@ -77,6 +78,7 @@ const updateWorldSchema = z.object({
   genre: z.enum(['fantasy', 'sci-fi', 'wuxia', 'modern', 'custom']).optional(),
   imageUrl: z.string().url().nullable().optional(),
   resourceTemplates: z.array(resourceTemplateSchema).optional(),
+  locationResourceTemplates: z.array(resourceTemplateSchema).optional(),
 });
 
 // --- Routes ---
@@ -100,6 +102,7 @@ router.post('/from-template/:templateId', async (req: AuthRequest, res: Response
       genre: template.genre,
       userId,
       resourceTemplates: template.resourceTemplates,
+      ...(template.locationResourceTemplates ? { locationResourceTemplates: template.locationResourceTemplates } : {}),
     });
 
     // Create special item templates as separate documents if template has them

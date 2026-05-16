@@ -62,7 +62,7 @@ router.post(
     try {
       const userId = req.user!.id;
       const { playthroughId } = req.params;
-      const { name, role, description } = req.body;
+      const { name, role, description, background, personality, goals, appearance } = req.body;
 
       // Validate required fields
       if (!name || typeof name !== 'string' || !name.trim()) {
@@ -109,6 +109,10 @@ router.post(
         worldId,
         userId,
         dynamicStats,
+        background: background || '',
+        personality: personality || '',
+        goals: goals || '',
+        appearance: appearance || '',
       });
 
       // Fire-and-forget image generation
@@ -164,7 +168,7 @@ router.put(
     try {
       const userId = req.user!.id;
       const { id } = req.params;
-      const { name, description, imageUrl, status, role } = req.body;
+      const { name, description, imageUrl, status, role, background, personality, goals, appearance } = req.body;
 
       const character = await Character.findById(id).lean();
 
@@ -184,6 +188,10 @@ router.put(
       if (imageUrl !== undefined) update.imageUrl = imageUrl;
       if (status !== undefined) update.status = status;
       if (role !== undefined) update.role = role;
+      if (background !== undefined) update.background = background;
+      if (personality !== undefined) update.personality = personality;
+      if (goals !== undefined) update.goals = goals;
+      if (appearance !== undefined) update.appearance = appearance;
 
       const updated = await Character.findByIdAndUpdate(
         id,

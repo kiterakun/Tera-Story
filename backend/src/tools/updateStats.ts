@@ -6,7 +6,7 @@ import { updateStatsOutput, validateToolOutput } from './schemas';
 
 export function makeUpdateStatsTool(playthroughId: string, userId: string) {
   return tool({
-    description: 'Update character statistics after story events',
+    description: 'Update character statistics after story events. For pool type stats (HP, MP, etc.), you can also update maxV to change the current maximum.',
     inputSchema: z.object({
       characterName: z.string().describe('Name of the character to update'),
       updates: z
@@ -16,6 +16,10 @@ export function makeUpdateStatsTool(playthroughId: string, userId: string) {
             value: z
               .union([z.string(), z.number()])
               .describe('The new value for the stat'),
+            maxV: z
+              .number()
+              .optional()
+              .describe('New max value (only for pool type stats like HP, MP)'),
           })
         )
         .describe('Array of stat updates to apply'),
@@ -32,9 +36,9 @@ export function makeUpdateStatsTool(playthroughId: string, userId: string) {
 
       const characterId = character._id.toString();
 
-      for (const { key, value } of updates) {
+      for (const { key, value, maxV } of updates) {
         try {
-          await updateStat(characterId, key, value, userId, playthroughId);
+          await updateStat(characterId, key, value, userId, playthroughId, maxV);
         } catch {
           // Skip stats that don't exist in template — non-fatal
         }

@@ -1,8 +1,8 @@
 export interface IResourceTemplate {
   key: string;
-  type: 'number' | 'text' | 'progress' | 'enum';
+  type: 'number' | 'text' | 'progress' | 'enum' | 'pool';
   min?: number;
-  max?: number;
+  max?: number;        // for 'pool' type: hard cap; for 'number': range max
   defaultValue?: string | number;
   displayFormat?: string; // e.g. "{v} MP" where {v} = value
   options?: string[]; // for 'enum' type
@@ -29,6 +29,7 @@ export interface IWorld {
   userId: string;
   imageUrl?: string;
   resourceTemplates: IResourceTemplate[];
+  locationResourceTemplates: IResourceTemplate[];
   createdAt: Date;
   updatedAt: Date;
 }
