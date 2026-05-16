@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWorldStore } from "../stores/worldStore";
 import { useTranslation } from "../i18n";
@@ -73,10 +73,11 @@ export default function WorldCreatePage() {
   const handleResourceChange = (
     index: number,
     field: keyof ResourceTemplate,
-    value: unknown,
+    value: string | string[],
   ) => {
     const updated = [...resources];
     const item = updated[index];
+    if (!item) return;
 
     if (field === "type") {
       item.type = value as ResourceTemplate["type"];
@@ -88,7 +89,7 @@ export default function WorldCreatePage() {
       item.options = value as string[];
     } else if (field === "min" || field === "max" || field === "defaultValue") {
       if (field === "defaultValue") {
-        item.defaultValue = item.type !== "text" && item.type !== "enum" && value !== "" ? Number(value) : value;
+        item.defaultValue = item.type !== "text" && item.type !== "enum" && value !== "" ? Number(value) : (value as string);
       } else {
         item[field] = value !== "" ? Number(value) : undefined;
       }
@@ -112,10 +113,11 @@ export default function WorldCreatePage() {
   const handleLocationResourceChange = (
     index: number,
     field: keyof ResourceTemplate,
-    value: unknown,
+    value: string | string[],
   ) => {
     const updated = [...locationResources];
     const item = updated[index];
+    if (!item) return;
 
     if (field === "type") {
       item.type = value as ResourceTemplate["type"];
@@ -127,7 +129,7 @@ export default function WorldCreatePage() {
       item.options = value as string[];
     } else if (field === "min" || field === "max" || field === "defaultValue") {
       if (field === "defaultValue") {
-        item.defaultValue = item.type !== "text" && item.type !== "enum" && value !== "" ? Number(value) : value;
+        item.defaultValue = item.type !== "text" && item.type !== "enum" && value !== "" ? Number(value) : (value as string);
       } else {
         item[field] = value !== "" ? Number(value) : undefined;
       }
@@ -154,24 +156,30 @@ export default function WorldCreatePage() {
     value: string,
   ) => {
     const updated = [...specialItemTemplates];
-    updated[index] = { ...updated[index], [field]: value };
+    const item = updated[index];
+    if (!item) return;
+    updated[index] = { ...item, [field]: value } as SpecialItemTemplate;
     setSpecialItemTemplates(updated);
   };
 
   const handleAddField = (templateIndex: number) => {
     const updated = [...specialItemTemplates];
+    const item = updated[templateIndex];
+    if (!item) return;
     updated[templateIndex] = {
-      ...updated[templateIndex],
-      fields: [...updated[templateIndex].fields, { name: "", type: "text" }],
+      ...item,
+      fields: [...item.fields, { name: "", type: "text" }],
     };
     setSpecialItemTemplates(updated);
   };
 
   const handleRemoveField = (templateIndex: number, fieldIndex: number) => {
     const updated = [...specialItemTemplates];
+    const item = updated[templateIndex];
+    if (!item) return;
     updated[templateIndex] = {
-      ...updated[templateIndex],
-      fields: updated[templateIndex].fields.filter((_, i) => i !== fieldIndex),
+      ...item,
+      fields: item.fields.filter((_, i) => i !== fieldIndex),
     };
     setSpecialItemTemplates(updated);
   };
@@ -183,17 +191,22 @@ export default function WorldCreatePage() {
     value: unknown,
   ) => {
     const updated = [...specialItemTemplates];
-    const fields = [...updated[templateIndex].fields];
+    const item = updated[templateIndex];
+    if (!item) return;
+    const fields = [...item.fields];
+    const field = fields[fieldIndex];
+    if (!field) return;
+
     fields[fieldIndex] = {
-      ...fields[fieldIndex],
+      ...field,
       [key]:
         key === "type"
           ? (value as SpecialItemFieldDefinition["type"])
           : key === "options"
           ? (Array.isArray(value) ? value : (value as string).split(",").map((s) => s.trim()).filter(Boolean))
           : value,
-    };
-    updated[templateIndex] = { ...updated[templateIndex], fields };
+    } as SpecialItemFieldDefinition;
+    updated[templateIndex] = { ...item, fields };
     setSpecialItemTemplates(updated);
   };
 
@@ -217,7 +230,7 @@ export default function WorldCreatePage() {
       showSuccess(t.toast.worldCreated);
       
       // Check if map was generated with regions
-      if (returnedMapData && returnedMapData.regions.length > 0) {
+      if (returnedMapData && returnedMapData.regions && returnedMapData.regions.length > 0) {
         setCreatedWorld(newWorld);
         setMapData(returnedMapData);
         setStep("map");
@@ -327,7 +340,7 @@ export default function WorldCreatePage() {
     pool: 'border-l-red-400',
   };
 
-  const typeIcons: Record<ResourceTemplate['type'], (size?: number) => JSX.Element> = {
+  const typeIcons: Record<ResourceTemplate['type'], (size?: number) => React.ReactNode> = {
     number: (s = 14) => <Hash size={s} className="text-blue-400" />,
     text: (s = 14) => <Type size={s} className="text-green-400" />,
     progress: (s = 14) => <Gauge size={s} className="text-amber-400" />,
@@ -344,7 +357,7 @@ export default function WorldCreatePage() {
   };
 
   // Get selected region details
-  const selectedRegion = mapData?.regions.find(r => r._id === selectedRegionId);
+  const selectedRegion = mapData?.regions?.find(r => r._id === selectedRegionId);
   const selectedContinent = selectedRegion 
     ? mapData?.continents.find(c => c._id === selectedRegion.continentId)
     : null;
@@ -376,7 +389,7 @@ export default function WorldCreatePage() {
               
               {/* Region Selection List */}
               <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-                {mapData?.regions.map(region => {
+                {mapData?.regions?.map(region => {
                   const continent = mapData.continents.find(c => c._id === region.continentId);
                   const isSelected = region._id === selectedRegionId;
 
@@ -489,16 +502,16 @@ export default function WorldCreatePage() {
                   disabled={step === "creating"}
                   className="w-full px-5 py-2.5 font-medium text-ink-200 hover:text-ink-100 transition-colors text-sm rounded-xl hover:bg-ink-800 disabled:opacity-50"
                 >
-                  {t.worldCreate.skipMap || 'Skip & View World'}
+                  {(t.worldCreate as unknown as Record<string, string>).skipMap || 'Skip & View World'}
                 </button>
               </div>
 
               {/* World Info */}
               {createdWorld && (
                 <div className="bg-ink-800/30 border border-ink-700/50 rounded-xl p-4">
-                  <p className="text-xs text-ink-200/60 mb-1">{t.worldCreate.worldCreated || 'World Created'}</p>
+                  <p className="text-xs text-ink-200/60 mb-1">{(t.worldCreate as unknown as Record<string, string>).worldCreated || 'World Created'}</p>
                   <p className="text-sm font-medium text-ink-100">{createdWorld.name}</p>
-                  <p className="text-xs text-ink-200/40 mt-1">{mapData?.regions.length || 0} regions</p>
+                  <p className="text-xs text-ink-200/40 mt-1">{mapData?.regions?.length || 0} regions</p>
                 </div>
               )}
             </div>

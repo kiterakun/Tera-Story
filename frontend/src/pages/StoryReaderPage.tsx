@@ -102,7 +102,7 @@ function toEntityUpdatedEvent(value: unknown): EntityUpdatedEvent {
 
 export default function StoryReaderPage() {
   const t = useTranslation();
-  const { playthroughId } = useParams<{ playthroughId: string }>();
+  const { worldId, playthroughId } = useParams<{ worldId: string; playthroughId: string }>();
   const navigate = useNavigate();
   
   const [chapters, setChapters] = useState<Chapter[]>([]);
