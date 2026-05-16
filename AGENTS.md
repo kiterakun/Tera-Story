@@ -1,10 +1,10 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-05-12
-**Branch:** main
+**Generated:** 2026-05-16
+**Branch:** master
 
 ## OVERVIEW
-Tera-Story is an AI-powered interactive storytelling platform. Backend (Express + MongoDB/Mongoose + TypeScript) serves a REST API consumed by the React frontend (Vite + TailwindCSS + Zustand). AI agents (writer, image, context, support) generate narrative content via the Vercel AI SDK.
+Tera-Story is an AI-powered interactive storytelling platform. Backend (Express + MongoDB/Mongoose + TypeScript) serves a REST API consumed by the React frontend (Vite + TailwindCSS + Zustand). AI agents (writer, image, context, support, map) generate narrative content via the Vercel AI SDK. The system features a 4-level geographic hierarchy (World > Continent > Region > Location), dynamic stat system with pool type (HP/MP current/max), entity archiving, and a game-like UI panel.
 
 ## STRUCTURE
 ```
@@ -12,36 +12,40 @@ Tera-Story/
 ├── backend/           # Express REST API server
 │   └── src/
 │       ├── agents/    # AI agents (writer, image, context, support, map)
+│       │   ├── contextAgent.ts   # Story state analysis + context builder
+│       │   ├── writerAgent.ts    # Two-pass narrative generation (prose + tools)
+│       │   ├── supportAgent.ts   # World/character enrichment + whispers
+│       │   ├── imageAgent.ts     # Image generation queue
+│       │   ├── mapAgent.ts       # World map + location generation
+│       │   └── prompts/          # LLM prompt templates (XML/MD)
 │       ├── config/    # Database & app configuration
+│       ├── jobs/      # Scheduled jobs (dailyReset)
 │       ├── middleware/ # Auth, error handling, uploads
-│       ├── models/    # Mongoose schemas
+│       ├── models/    # Mongoose schemas (14 models)
 │       ├── providers/ # LLM provider setup (OpenAI, Gemini, Anthropic)
-│       ├── routes/    # 17 API route modules
+│       ├── routes/    # API route modules
+│       ├── seed/      # World templates seeder
 │       ├── services/  # Business logic layer
-│       │   ├── achievementService.ts  # Achievement check & unlock
-│       │   └── chronicleService.ts    # Chronicle cache generation
-│       ├── tools/     # Game mechanic tools (plant, combat, etc.)
-│       └── __tests__/ # Centralized tests (28 files)
+│       ├── tools/     # Vercel AI SDK tools (15 tools)
+│       ├── types/     # TypeScript interfaces
+│       └── __tests__/ # Vitest tests
 ├── frontend/          # React SPA
 │   └── src/
 │       ├── components/ # Reusable UI components
-│       │   ├── echoes/        # Echo indicator + list
-│       │   ├── progression/   # Level badge, XP bar, panel, modal
-│       │   └── whispers/      # Whispers modal
+│       │   ├── game/         # GamePanel (7-tab game interface)
+│       │   ├── echoes/       # Echo indicator + list
+│       │   ├── progression/  # Level badge, XP bar, panel, modal
+│       │   ├── daily/        # Daily check-in, quests, streak
+│       │   ├── social/       # Leaderboard, share, privacy
+│       │   ├── fate/         # Peek modal, chapter detail
+│       │   └── whispers/     # Whispers modal
 │       ├── pages/     # Route pages (lazy-loaded)
-│       │   ├── GalleryPage.tsx       # Story card grid + detail modal
-│       │   ├── AchievementsPage.tsx  # Achievement grid + progress
-│       │   └── ChroniclePage.tsx     # Arc timeline + stats + share
 │       ├── stores/    # Zustand state stores
-│       ├── services/  # API client functions
-│       │   ├── galleryApi.ts      # Gallery API calls
-│       │   ├── achievementApi.ts  # Achievement API calls
-│       │   └── chronicleApi.ts    # Chronicle API calls
+│       ├── services/  # Axios-based API client functions
 │       ├── hooks/     # Custom React hooks
-│       │   ├── useGallery.ts      # Gallery state
-│       │   ├── useAchievements.ts # Achievement state
-│       │   └── useChronicle.ts    # Chronicle state
-│       └── i18n/      # Internationalization (EN/VI)
+│       ├── types/     # TypeScript entity interfaces
+│       ├── i18n/      # Internationalization (EN/VI)
+│       └── utils/     # Helper functions
 └── .sisyphus/         # Agent workspace (do not modify manually)
 ```
 
@@ -49,14 +53,49 @@ Tera-Story/
 | Task | Location | Notes |
 |------|----------|-------|
 | Add API endpoint | `backend/src/routes/` | One file per resource group |
-| Add AI behavior | `backend/src/agents/` | Each agent has system prompt + image gen |
-| Add game mechanic | `backend/src/tools/` | Tools are called by agents during play |
-| Add database schema | `backend/src/models/` | Mongoose models with TypeScript interfaces |
+| Add AI behavior | `backend/src/agents/` | Each agent has system prompt in `prompts/` |
+| Add game mechanic tool | `backend/src/tools/` | Vercel AI SDK `tool()` with Zod schema |
+| Add database schema | `backend/src/models/` | Mongoose schemas with TypeScript interfaces |
 | Add frontend page | `frontend/src/pages/` | Auto-registered via React.lazy in App.tsx |
 | Add global state | `frontend/src/stores/` | Zustand stores with persist middleware |
 | Add API client | `frontend/src/services/` | Axios-based API functions |
 | Add UI component | `frontend/src/components/` | TailwindCSS + Lucide icons |
-| Add translation | `frontend/src/i18n/` | JSON key-value; EN, VI |
+| Add translation | `frontend/src/i18n/` | Key-value; EN, VI |
+| Add custom hook | `frontend/src/hooks/` | State + API call patterns |
+
+## CORE SYSTEMS
+
+### Dynamic Stat System
+Characters, Items, SpecialItems, and Locations have `dynamicStats: IDynamicStat[]` where each stat is `{ k, v, t, maxV? }`. Stats are initialized from World `resourceTemplates` (for characters) or `locationResourceTemplates` (for locations).
+
+**Stat types:** `number` | `text` | `progress` | `enum` | `pool`
+- **pool**: Has `v` (current) + `maxV` (current maximum). Example: HP 80/100. Agent can update both. If `maxV` decreases, `v` auto-clamps.
+- **progress**: Like number but rendered as a progress bar (0-100 scale).
+- **enum**: Must pick from `resourceTemplate.options[]`.
+
+### Entity Archive System
+Characters, Items, SpecialItems, and Locations have `archivedAt: Date | null`. Pre-query hooks auto-filter `archivedAt: null` so archived entities are excluded from agent context. Archive viewer queries use `{ archivedAt: { $ne: null } }` to bypass.
+
+- **Auto-archive**: Agent calls `archiveEntity` tool for dead/consumed/irrelevant entities.
+- **Manual archive**: User can archive/restore via `GamePanel > Archive` tab.
+- **Restore**: `POST /api/archive/:playthroughId/restore` sets `archivedAt = null`.
+
+### Character Extended Fields
+Characters have: `name`, `description`, `role`, `status`, `dynamicStats`, `background` (backstory), `personality` (traits), `goals` (motivations), `appearance` (physical description), `archivedAt`, `deletedAt`.
+
+### Two-Pass Writer Agent
+1. **Pass 1 (WRITE)**: Pure prose generation, no tools. 800-1500 words. Uses entity markup `[[char:Name]]`, `[[item:Name:rarity]]`, `[[special:Name:rarity]]`.
+2. **Pass 2 (TOOLS)**: Analyzes chapter, calls all game-state tools in a single step. 15 tools available.
+3. **Choices**: Separate step generates 3-4 reader choices with optional `travelTo` for location travel.
+
+### Protagonist-First Flow
+Playthrough creation requires a protagonist character before any chapter can be generated. Both `storyOrchestrator.generateChapter()` and `generateChapterStream()` enforce this guard.
+
+### Language System
+User language is stored in `UserSettings.language` (default `'en'`). Injected into all agent prompts via `{{language}}` template variable. Agents produce all content (names, descriptions, tool args) in the user's language.
+
+### 4-Level Geography
+World > Continent > Region > Location. Top 3 levels are world-level (shared). Location is playthrough-specific. Player position tracked via `playthrough.currentLocationId`.
 
 ## CODE MAP
 | Symbol | Type | Location | Role |
@@ -65,81 +104,53 @@ Tera-Story/
 | `storyOrchestrator` | Module | `backend/src/services/storyOrchestrator.ts` | Core storytelling loop |
 | `CombatService` | Class | `backend/src/services/combatService.ts` | Combat mechanics |
 | `progressionService` | Module | `backend/src/services/progressionService.ts` | XP/level curve, stat increments |
-| `writerAgent` | Agent | `backend/src/agents/writerAgent.ts` | Narrative generation |
-| `imageAgent` | Agent | `backend/src/agents/imageAgent.ts` | Image generation/queue |
-| `contextAgent` | Agent | `backend/src/agents/contextAgent.ts` | Story state analysis |
-| `supportAgent` | Agent | `backend/src/agents/supportAgent.ts` | World/character enrichment + generateWhispers |
-| `PlantConsequence` | Tool | `backend/src/tools/plantConsequence.ts` | Plant consequence mechanic |
-| `Echo` | Model | `backend/src/models/Echo.ts` | Delayed consequence tracking |
-| `WhispersCache` | Model | `backend/src/models/WhispersCache.ts` | AI-generated world whispers |
-| `echoesRouter` | Router | `backend/src/routes/echoes.ts` | Echo CRUD + pending/upcoming/resolve |
-| `whispersRouter` | Router | `backend/src/routes/whispers.ts` | Whispers generation + mark-viewed |
-| `progressionRouter` | Router | `backend/src/routes/progression.ts` | XP award, progress, level history |
+| `characterService` | Module | `backend/src/services/characterService.ts` | Stat init, validation, pool type |
+| `writerAgent` | Agent | `backend/src/agents/writerAgent.ts` | Two-pass narrative + tools |
+| `contextAgent` | Agent | `backend/src/agents/contextAgent.ts` | Story state analysis + context JSON |
+| `supportAgent` | Agent | `backend/src/agents/supportAgent.ts` | World/character enrichment + whispers |
+| `mapAgent` | Agent | `backend/src/agents/mapAgent.ts` | World map + location generation |
+| `imageAgent` | Agent | `backend/src/agents/imageAgent.ts` | Image generation queue |
+| `archiveEntity` | Tool | `backend/src/tools/archiveEntity.ts` | Archive dead/consumed entities |
+| `updateLocationStats` | Tool | `backend/src/tools/updateLocationStats.ts` | Update location dynamicStats |
+| `updateStats` | Tool | `backend/src/tools/updateStats.ts` | Update character stats (incl. pool maxV) |
+| `createCharacter` | Tool | `backend/src/tools/createCharacter.ts` | Create NPC with stats + extended fields |
+| `createItem` | Tool | `backend/src/tools/createItem.ts` | Create story items |
+| `createSpecialItem` | Tool | `backend/src/tools/createSpecialItem.ts` | Create abilities/skills |
+| `discoverLocation` | Tool | `backend/src/tools/discoverLocation.ts` | Create new map locations |
+| `updateEntityStatus` | Tool | `backend/src/tools/updateEntityStatus.ts` | Change entity status |
+| `updateRelationship` | Tool | `backend/src/tools/updateRelationship.ts` | Manage character relationships |
+| `plantConsequence` | Tool | `backend/src/tools/plantConsequence.ts` | Plant delayed consequence seeds |
+| `initiateCombat` | Tool | `backend/src/tools/initiateCombat.ts` | Start combat encounter |
+| `generateChoices` | Tool | `backend/src/tools/generateChoices.ts` | Set reader choices |
+| `summarizeArc` | Tool | `backend/src/tools/summarizeArc.ts` | Summarize and complete arc |
+| `archiveRouter` | Router | `backend/src/routes/archive.ts` | Archive list + restore |
+| `Character` | Model | `backend/src/models/Character.ts` | Characters with extended fields + archive |
+| `Item` | Model | `backend/src/models/Item.ts` | Items with archive |
+| `SpecialItem` | Model | `backend/src/models/SpecialItem.ts` | Abilities with archive |
+| `Location` | Model | `backend/src/models/Location.ts` | Locations with dynamicStats + archive |
+| `World` | Model | `backend/src/models/World.ts` | World with resourceTemplates + locationResourceTemplates |
+| `GamePanel` | Component | `frontend/src/components/game/GamePanel.tsx` | 7-tab game interface |
+| `RPGPanel` | Component | `frontend/src/components/RPGPanel.tsx` | Stats/Inventory/Abilities/Relations tabs |
+| `EntityDetailModal` | Component | `frontend/src/components/EntityDetailModal.tsx` | Entity detail with extended fields |
+| `CharacterCard` | Component | `frontend/src/components/CharacterCard.tsx` | Character card with pool stats |
+| `archiveApi` | API Client | `frontend/src/services/archiveApi.ts` | Archive API calls |
+| `useArchive` | Hook | `frontend/src/hooks/useArchive.ts` | Archive state + restore |
+| `useMap` | Hook | `frontend/src/hooks/useMap.ts` | Map context + locations |
 | `App` | Component | `frontend/src/App.tsx` | Root with lazy routes |
-| `useAuthStore` | Store | `frontend/src/stores/authStore.ts` | Auth state |
+| `useAuthStore` | Store | `frontend/src/stores/authStore.ts` | Auth state (persisted) |
 | `useStoryStore` | Store | `frontend/src/stores/storyStore.ts` | Narrative state |
 | `useSettingsStore` | Store | `frontend/src/stores/settingsStore.ts` | App settings + i18n |
-| `progressionApi` | API Client | `frontend/src/services/progressionApi.ts` | Progression API calls |
-| `useProgression` | Hook | `frontend/src/hooks/useProgression.ts` | XP/level/stat client state |
-| `useEchoes` | Hook | `frontend/src/hooks/useEchoes.ts` | Echo list + resolve client state |
-| `useWhispers` | Hook | `frontend/src/hooks/useWhispers.ts` | Whispers + mark-viewed client state |
-| `LevelBadge` | Component | `frontend/src/components/progression/LevelBadge.tsx` | Level badge with tier colors |
-| `XPBar` | Component | `frontend/src/components/progression/XPBar.tsx` | Animated XP progress bar |
-| `ProgressPanel` | Component | `frontend/src/components/progression/ProgressPanel.tsx` | Full stats grid + recent activity |
-| `LevelUpModal` | Component | `frontend/src/components/progression/LevelUpModal.tsx` | Scale-in level-up animation |
-| `EchoIndicator` | Component | `frontend/src/components/echoes/EchoIndicator.tsx` | Inline echo status indicator |
-| `EchoList` | Component | `frontend/src/components/echoes/EchoList.tsx` | Expandable echo list with status badges |
-| `WhispersModal` | Component | `frontend/src/components/whispers/WhispersModal.tsx` | Full-screen whisper cards + skip/continue |
+| `Echo` | Model | `backend/src/models/Echo.ts` | Delayed consequence tracking |
+| `WhispersCache` | Model | `backend/src/models/WhispersCache.ts` | AI-generated world whispers |
 | `StoryCard` | Model | `backend/src/models/StoryCard.ts` | Pivotal scene collectible card |
-| `Achievement` | Model | `backend/src/models/Achievement.ts` | Achievement definitions + categories |
+| `Achievement` | Model | `backend/src/models/Achievement.ts` | Achievement definitions |
 | `UserAchievement` | Model | `backend/src/models/UserAchievement.ts` | Player achievement progress |
-| `achievementService` | Module | `backend/src/services/achievementService.ts` | Achievement check & unlock logic |
-| `chronicleService` | Module | `backend/src/services/chronicleService.ts` | Chronicle cache generation |
-| `galleryRouter` | Router | `backend/src/routes/gallery.ts` | Cards gallery + share endpoints |
-| `achievementsRouter` | Router | `backend/src/routes/achievements.ts` | Achievement list + check endpoint |
-| `chronicleRouter` | Router | `backend/src/routes/chronicle.ts` | Playthrough chronicle + stats |
-| `galleryApi` | API Client | `frontend/src/services/galleryApi.ts` | Gallery API calls |
-| `achievementApi` | API Client | `frontend/src/services/achievementApi.ts` | Achievement API calls |
-| `chronicleApi` | API Client | `frontend/src/services/chronicleApi.ts` | Chronicle API calls |
-| `useGallery` | Hook | `frontend/src/hooks/useGallery.ts` | Gallery state |
-| `useAchievements` | Hook | `frontend/src/hooks/useAchievements.ts` | Achievement state |
-| `useChronicle` | Hook | `frontend/src/hooks/useChronicle.ts` | Chronicle state |
-| `GalleryPage` | Component | `frontend/src/pages/GalleryPage.tsx` | Story card grid + detail |
-| `AchievementsPage` | Component | `frontend/src/pages/AchievementsPage.tsx` | Achievement grid + progress |
-| `ChroniclePage` | Component | `frontend/src/pages/ChroniclePage.tsx` | Arc timeline + stats + share |
-| `DailyLogin` | Model | `backend/src/models/DailyLogin.ts` | Daily login streak tracking |
+| `CombatEncounter` | Model | `backend/src/models/CombatEncounter.ts` | Active combat state |
+| `Relationship` | Model | `backend/src/models/Relationship.ts` | Character relationship graph |
+| `ConsequenceSeed` | Model | `backend/src/models/ConsequenceSeed.ts` | Delayed consequence seeds |
+| `DailyLogin` | Model | `backend/src/models/DailyLogin.ts` | Daily login streak |
 | `DailyQuest` | Model | `backend/src/models/DailyQuest.ts` | Daily quest objectives |
-| `StreakFreeze` | Model | `backend/src/models/StreakFreeze.ts` | Streak protection tokens |
-| `Friendship` | Model | `backend/src/models/Friendship.ts` | Friend relationship tracking |
-| `dailyService` | Module | `backend/src/services/dailyService.ts` | Streak, claim, quest generation |
-| `fateThreadsService` | Module | `backend/src/services/fateThreadsService.ts` | Graph builder + ghost peek |
-| `socialService` | Module | `backend/src/services/socialService.ts` | Friend CRUD + search |
-| `leaderboardService` | Module | `backend/src/services/leaderboardService.ts` | Leaderboard computation |
-| `dailyRouter` | Router | `backend/src/routes/daily.ts` | Daily claim + quests |
-| `fateThreadsRouter` | Router | `backend/src/routes/fateThreads.ts` | Thread graph + peek |
-| `friendsRouter` | Router | `backend/src/routes/friends.ts` | Friend management |
-| `leaderboardRouter` | Router | `backend/src/routes/leaderboard.ts` | Leaderboard data |
-| `privacyRouter` | Router | `backend/src/routes/privacy.ts` | Privacy settings |
-| `shareRouter` | Router | `backend/src/routes/share.ts` | Public share endpoints |
-| `dailyApi` | API Client | `frontend/src/services/dailyApi.ts` | Daily API calls |
-| `fateThreadsApi` | API Client | `frontend/src/services/fateThreadsApi.ts` | Fate threads API calls |
-| `friendsApi` | API Client | `frontend/src/services/friendsApi.ts` | Friends API calls |
-| `leaderboardApi` | API Client | `frontend/src/services/leaderboardApi.ts` | Leaderboard API calls |
-| `useDaily` | Hook | `frontend/src/hooks/useDaily.ts` | Daily status + claim |
-| `useFateThreads` | Hook | `frontend/src/hooks/useFateThreads.ts` | Thread graph state |
-| `useFriends` | Hook | `frontend/src/hooks/useFriends.ts` | Friends state |
-| `useLeaderboard` | Hook | `frontend/src/hooks/useLeaderboard.ts` | Leaderboard state |
-| `FateThreadsPage` | Component | `frontend/src/pages/FateThreadsPage.tsx` | Interactive branch graph |
-| `FriendsPage` | Component | `frontend/src/pages/FriendsPage.tsx` | Friend list + search |
-| `DailyCheckInModal` | Component | `frontend/src/components/daily/DailyCheckInModal.tsx` | 7-day check-in modal |
-| `DailyQuestsWidget` | Component | `frontend/src/components/daily/DailyQuestsWidget.tsx` | Daily quest tracker |
-| `StreakBadge` | Component | `frontend/src/components/daily/StreakBadge.tsx` | Streak display badge |
-| `LeaderboardWidget` | Component | `frontend/src/components/social/LeaderboardWidget.tsx` | Compact leaderboard |
-| `ShareMenu` | Component | `frontend/src/components/social/ShareMenu.tsx` | Share link/social |
-| `PrivacySettings` | Component | `frontend/src/components/social/PrivacySettings.tsx` | Privacy toggles |
-| `PeekModal` | Component | `frontend/src/components/fate/PeekModal.tsx` | Ghost thread peek |
-| `ChapterDetailPanel` | Component | `frontend/src/components/fate/ChapterDetailPanel.tsx` | Chapter detail panel |
-| `dailyResetJob` | Job | `backend/src/jobs/dailyReset.ts` | Daily quest + streak reset |
+| `Friendship` | Model | `backend/src/models/Friendship.ts` | Friend relationship |
 
 ## CONVENTIONS
 - **TypeScript strict** everywhere — `noUncheckedIndexedAccess` enabled
@@ -149,8 +160,11 @@ Tera-Story/
 - **Error handling**: Backend uses custom error classes (AppError, NotFoundError, etc.) via errorHandler middleware
 - **API responses**: Consistent JSON shape `{ status, data, message }`
 - **State management**: Zustand with `persist` middleware for settings/auth
-- **Styling**: TailwindCSS v4 utility classes; custom theme colors (gold, narration, gem, tech)
+- **Styling**: TailwindCSS v4 utility classes; custom theme colors (ink, accent)
 - **Git commits**: `type: description` format (feat, fix, refactor, chore)
+- **AI Tools**: Factory pattern `makeXxxTool(params)` returning Vercel AI SDK `tool()` with Zod schemas
+- **Soft delete**: Pre-query hooks auto-filter `deletedAt: null` and `archivedAt: null`
+- **SSE events**: Real-time updates via Server-Sent Events for entity changes
 
 ## ANTI-PATTERNS (THIS PROJECT)
 - **DO NOT** use `new: true` in Mongoose — use `returnDocument: 'after'`
@@ -158,6 +172,8 @@ Tera-Story/
 - **DO NOT** use `flex-shrink-0` — use `shrink-0` (Tailwind v4)
 - **DO NOT** add new dependencies without discussion
 - **DO NOT** remove existing tests to make test suite pass
+- **DO NOT** create trivial/background characters in tools — only significant recurring NPCs
+- **DO NOT** create overly common special items — they must be unique and story-relevant
 
 ## COMMANDS
 ```bash
@@ -165,7 +181,7 @@ Tera-Story/
 cd backend
 npm run dev        # Start dev server (ts-node-dev)
 npm run build      # Compile TypeScript
-npm test           # Run tests
+npm test           # Run tests (Vitest)
 npm run test:watch # Watch mode
 
 # Frontend
@@ -180,6 +196,8 @@ npm test           # Run tests
 - No CI/CD pipeline configured — GitHub Actions recommended
 - No Docker setup — consider for deployment
 - Backend tests use MongoDB Memory Server
-- AI agents (writer, image, context, support, map) rely on environment variables for API keys
+- AI agents rely on environment variables for API keys (OpenAI, Anthropic, Google)
 - Image generation uses an in-memory queue system
-- i18n supports English and Vietnamese
+- i18n supports English and Vietnamese via custom `useTranslation()` hook (no external lib)
+- Writer agent uses `{{language}}` template variable for language-aware prompt rendering
+- 579 backend tests across 42 test files
