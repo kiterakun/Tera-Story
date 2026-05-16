@@ -52,6 +52,13 @@ export interface IContextOutput {
   relationships: IRelationshipRef[];
   matureConsequences: IConsequenceSeedRef[];
   activeCombat: ICombatRef | null;
+  geography?: {
+    currentContinent?: { name: string; description: string; terrainType: string };
+    currentRegion?: { name: string; description: string; terrainType: string; dangerLevel: number } | null;
+    currentLocation?: { name: string; type: string; description: string; status: string } | null;
+    nearbyLocations?: Array<{ name: string; type: string; description: string; status: string }>;
+  };
+  currentRegionId?: string;
   usage?: { inputTokens: number; outputTokens: number };
 }
 

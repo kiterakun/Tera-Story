@@ -491,6 +491,43 @@ const en = {
     playthroughs: 'Playthroughs',
     recentActivity: 'Recent Activity',
   },
+
+  // Map / Location Journal
+  map: {
+    title: 'Location Journal',
+    currentLocation: 'Current Location',
+    noLocation: 'No location set',
+    noLocationHint: 'Your journey has not yet begun. Start a playthrough to begin exploring.',
+    connectedLocations: 'Connected Destinations',
+    noConnected: 'No connected locations discovered yet.',
+    discoveredLocations: 'Discovered Locations',
+    noDiscovered: 'No locations discovered yet.',
+    travelTo: 'Travel to',
+    status: {
+      undiscovered: 'Unknown',
+      known: 'Known',
+      visited: 'Visited',
+      cleared: 'Cleared',
+    },
+    type: {
+      town: 'Town',
+      dungeon: 'Dungeon',
+      wilderness: 'Wilderness',
+      ruin: 'Ruin',
+      sanctuary: 'Sanctuary',
+      crossroad: 'Crossroad',
+    },
+    region: 'Region',
+    continent: 'Continent',
+    dangerLevel: 'Danger Level',
+    loading: 'Loading location data...',
+    error: 'Failed to load locations',
+    retry: 'Retry',
+    emptyTitle: 'No Locations Discovered',
+    emptyHint: 'Your journey has not yet begun. Start a playthrough to begin exploring the world.',
+    current: 'Current',
+    locations: 'locations',
+  },
 };
 
 export type Translations = typeof en;

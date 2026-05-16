@@ -84,6 +84,65 @@ router.get('/travel-options/:locationId', authMiddleware, async (req: AuthReques
   res.json({ status: 'success', data: { currentLocation, destinations } });
 });
 
+// ── Playthrough-specific endpoints ─────────────────────────────────────
+
+router.get('/playthrough/:playthroughId/locations', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const { playthroughId } = req.params;
+
+  const locations = await Location.find({ playthroughId }).lean();
+
+  // Group by region for structured display
+  const regionIds = [...new Set(locations.map(l => l.regionId.toString()))];
+  const regions = await Region.find({ _id: { $in: regionIds } }).lean();
+  const regionMap = new Map(regions.map(r => [r._id.toString(), r]));
+
+  const locationsWithRegions = locations.map(loc => ({
+    ...loc,
+    region: regionMap.get(loc.regionId.toString()) || null,
+  }));
+
+  res.json({ status: 'success', data: { locations: locationsWithRegions } });
+});
+
+router.get('/playthrough/:playthroughId/current', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const { playthroughId } = req.params;
+
+  const { Playthrough } = await import('../models/Playthrough');
+  const playthrough = await Playthrough.findById(playthroughId).lean();
+  if (!playthrough) {
+    res.status(404).json({ status: 'error', message: 'Playthrough not found' });
+    return;
+  }
+
+  if (!playthrough.currentLocationId) {
+    res.json({ status: 'success', data: { currentLocation: null, region: null, continent: null, connectedLocations: [] } });
+    return;
+  }
+
+  const currentLocation = await Location.findById(playthrough.currentLocationId).lean();
+  if (!currentLocation) {
+    res.json({ status: 'success', data: { currentLocation: null, region: null, continent: null, connectedLocations: [] } });
+    return;
+  }
+
+  const region = await Region.findById(currentLocation.regionId).lean();
+  const continent = region ? await Continent.findById(region.continentId).lean() : null;
+
+  // Get connected locations
+  const connectedIds = currentLocation.connectedLocations || [];
+  const connectedLocations = await Location.find({ _id: { $in: connectedIds } }).lean();
+
+  res.json({
+    status: 'success',
+    data: {
+      currentLocation,
+      region,
+      continent,
+      connectedLocations,
+    },
+  });
+});
+
 const generateMapSchema = z.object({
   modelProvider: z.enum(['writer', 'context', 'support']).default('writer'),
 });

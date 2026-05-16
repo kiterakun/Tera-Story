@@ -8,5 +8,4 @@ Thumbs.db
 *.log
 uploads/
 .vscode/
-issue.md
-features/
+kite/

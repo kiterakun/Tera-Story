@@ -227,6 +227,13 @@ router.delete('/:id', async (req: AuthRequest, res: Response): Promise<void> => 
       // Character model not yet defined, skip
     }
 
+    try {
+      const Location = mongoose.models.Location || mongoose.model('Location');
+      await Location.deleteMany({ playthroughId: id });
+    } catch {
+      // Location model not yet defined, skip
+    }
+
     await Playthrough.findByIdAndDelete(id);
 
     res.json({ message: 'Playthrough deleted successfully' });

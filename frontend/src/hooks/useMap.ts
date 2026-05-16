@@ -1,85 +1,60 @@
 import { useState, useCallback } from 'react';
 import * as mapApi from '../services/mapApi';
-import type { Continent, Region, Location } from '../services/mapApi';
+import type { Location, Region, Continent, LocationWithContext } from '../services/mapApi';
 
-type ZoomLevel = 1 | 2 | 3;
+interface LocationWithFullContext {
+  location: Location;
+  region: Region | null;
+  continent: Continent | null;
+  connectedLocations: Location[];
+}
 
 export function useMap() {
-  const [continents, setContinents] = useState<Continent[]>([]);
-  const [regions, setRegions] = useState<Region[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [currentZoom, setCurrentZoom] = useState<ZoomLevel>(1);
-  const [selectedContinent, setSelectedContinent] = useState<Continent | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [currentContext, setCurrentContext] = useState<LocationWithFullContext | null>(null);
+  const [playthroughLocations, setPlaythroughLocations] = useState<LocationWithContext[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMap = useCallback(async (worldId: string) => {
+  const fetchCurrentLocation = useCallback(async (playthroughId: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await mapApi.getWorldMap(worldId);
-      setContinents(data.continents);
-      setCurrentZoom(1);
-      setSelectedContinent(null);
-      setSelectedRegion(null);
-      setSelectedLocation(null);
-      setRegions([]);
-      setLocations([]);
+      const data = await mapApi.getCurrentLocationContext(playthroughId);
+      if (data.currentLocation) {
+        setCurrentContext({
+          location: data.currentLocation,
+          region: data.region,
+          continent: data.continent,
+          connectedLocations: data.connectedLocations,
+        });
+      } else {
+        setCurrentContext(null);
+      }
     } catch {
-      setError('Failed to load world map');
+      setError('Failed to load current location');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const zoomToContinent = useCallback(async (worldId: string, continentId: string) => {
-    const continent = continents.find(c => c._id === continentId);
-    if (!continent) return;
-    setSelectedContinent(continent);
+  const fetchAllLocations = useCallback(async (playthroughId: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await mapApi.getContinent(worldId, continentId);
-      setRegions(data.regions);
-      setCurrentZoom(2);
-      setSelectedRegion(null);
-      setSelectedLocation(null);
-      setLocations([]);
+      const data = await mapApi.getPlaythroughLocations(playthroughId);
+      setPlaythroughLocations(data.locations);
     } catch {
-      setError('Failed to load continent regions');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [continents]);
-
-  const zoomToRegion = useCallback(async (worldId: string, regionId: string, playthroughId: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await mapApi.getRegion(worldId, regionId, playthroughId);
-      setSelectedRegion(data.region);
-      setLocations(data.locations);
-      setCurrentZoom(3);
-      setSelectedLocation(null);
-    } catch {
-      setError('Failed to load region locations');
+      setError('Failed to load locations');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const selectLocation = useCallback((location: Location | null) => {
-    setSelectedLocation(location);
-  }, []);
-
-  const travel = useCallback(async (worldId: string, locationId: string, playthroughId: string) => {
+  const fetchTravelOptions = useCallback(async (worldId: string, locationId: string, playthroughId: string) => {
     setIsLoading(true);
     setError(null);
     try {
       const data = await mapApi.getTravelOptions(worldId, locationId, playthroughId);
-      setSelectedLocation(data.currentLocation);
       return data;
     } catch {
       setError('Failed to load travel options');
@@ -89,47 +64,23 @@ export function useMap() {
     }
   }, []);
 
-  const zoomOut = useCallback(() => {
-    if (currentZoom === 3) {
-      setCurrentZoom(2);
-      setSelectedRegion(null);
-      setSelectedLocation(null);
-      setLocations([]);
-    } else if (currentZoom === 2) {
-      setCurrentZoom(1);
-      setSelectedContinent(null);
-      setSelectedRegion(null);
-      setSelectedLocation(null);
-      setRegions([]);
-      setLocations([]);
+  const selectLocation = useCallback((location: Location | null) => {
+    if (currentContext) {
+      setCurrentContext({
+        ...currentContext,
+        location: location || currentContext.location,
+      });
     }
-  }, [currentZoom]);
-
-  const resetView = useCallback(() => {
-    setCurrentZoom(1);
-    setSelectedContinent(null);
-    setSelectedRegion(null);
-    setSelectedLocation(null);
-    setRegions([]);
-    setLocations([]);
-  }, []);
+  }, [currentContext]);
 
   return {
-    continents,
-    regions,
-    locations,
-    currentZoom,
-    selectedContinent,
-    selectedRegion,
-    selectedLocation,
+    currentContext,
+    playthroughLocations,
     isLoading,
     error,
-    fetchMap,
-    zoomToContinent,
-    zoomToRegion,
+    fetchCurrentLocation,
+    fetchAllLocations,
+    fetchTravelOptions,
     selectLocation,
-    travel,
-    zoomOut,
-    resetView,
   };
 }

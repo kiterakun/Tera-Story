@@ -493,6 +493,43 @@ const vi: Translations = {
     playthroughs: 'Lượt chơi',
     recentActivity: 'Hoạt động gần đây',
   },
+
+  // Map / Location Journal
+  map: {
+    title: 'Nhật ký Địa điểm',
+    currentLocation: 'Vị trí Hiện tại',
+    noLocation: 'Chưa có vị trí',
+    noLocationHint: 'Cuộc hành trình chưa bắt đầu. Tạo một lượt chơi để bắt đầu khám phá.',
+    connectedLocations: 'Điểm đến Kết nối',
+    noConnected: 'Chưa phát hiện địa điểm kết nối nào.',
+    discoveredLocations: 'Địa điểm Đã phát hiện',
+    noDiscovered: 'Chưa phát hiện địa điểm nào.',
+    travelTo: 'Di chuyển đến',
+    status: {
+      undiscovered: 'Chưa biết',
+      known: 'Đã biết',
+      visited: 'Đã ghé',
+      cleared: 'Đã khám phá',
+    },
+    type: {
+      town: 'Thị trấn',
+      dungeon: 'Ngục tối',
+      wilderness: 'Hoang dã',
+      ruin: 'Tàn tích',
+      sanctuary: 'Thánh địa',
+      crossroad: 'Ngã rẽ',
+    },
+    region: 'Khu vực',
+    continent: 'Lục địa',
+    dangerLevel: 'Mức độ Nguy hiểm',
+    loading: 'Đang tải dữ liệu địa điểm...',
+    error: 'Tải địa điểm thất bại',
+    retry: 'Thử lại',
+    emptyTitle: 'Chưa phát hiện Địa điểm',
+    emptyHint: 'Cuộc hành trình chưa bắt đầu. Tạo một lượt chơi để bắt đầu khám phá thế giới.',
+    current: 'Hiện tại',
+    locations: 'địa điểm',
+  },
 };
 
 export default vi;

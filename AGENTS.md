@@ -11,7 +11,7 @@ Tera-Story is an AI-powered interactive storytelling platform. Backend (Express 
 Tera-Story/
 ├── backend/           # Express REST API server
 │   └── src/
-│       ├── agents/    # AI agents (writer, image, context, support)
+│       ├── agents/    # AI agents (writer, image, context, support, map)
 │       ├── config/    # Database & app configuration
 │       ├── middleware/ # Auth, error handling, uploads
 │       ├── models/    # Mongoose schemas
@@ -180,6 +180,6 @@ npm test           # Run tests
 - No CI/CD pipeline configured — GitHub Actions recommended
 - No Docker setup — consider for deployment
 - Backend tests use MongoDB Memory Server
-- AI agents (writer, image, context, support) rely on environment variables for API keys
+- AI agents (writer, image, context, support, map) rely on environment variables for API keys
 - Image generation uses an in-memory queue system
 - i18n supports English and Vietnamese

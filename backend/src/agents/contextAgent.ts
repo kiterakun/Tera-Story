@@ -56,31 +56,65 @@ export async function runContextAgent(
     Continent.find({ worldId: playthrough.worldId }).lean(),
   ]);
 
-  // 2b. Build geography data from first continent
-  const firstContinent = continents[0];
+  // 2b. Build geography data from player's actual location
   let geography: {
     currentContinent: { name: string; description: string; terrainType: string };
-    regions: { name: string; description: string; dangerLevel: number }[];
-    currentRegion: { name: string; description: string; dangerLevel: number } | null;
-    nearbyLocations: { name: string; type: string; description: string }[];
+    currentRegion: { name: string; description: string; terrainType: string; dangerLevel: number } | null;
+    currentLocation: { name: string; type: string; description: string; status: string } | null;
+    nearbyLocations: { name: string; type: string; description: string; status: string }[];
   } | undefined;
-  if (firstContinent) {
-    const continentRegions = await Region.find({ continentId: firstContinent._id }).lean();
-    const firstRegion = continentRegions[0];
-    let nearbyLocations: { name: string; type: string; description: string }[] = [];
-    if (firstRegion) {
-      nearbyLocations = (await Location.find({
-        regionId: firstRegion._id,
+
+  if (playthrough.currentLocationId) {
+    // Resolve player's actual geography from currentLocationId
+    const currentLocation = await Location.findById(playthrough.currentLocationId).lean();
+    if (currentLocation) {
+      const currentRegion = await Region.findById(currentLocation.regionId).lean();
+      const currentContinent = currentRegion
+        ? await Continent.findById(currentRegion.continentId).lean()
+        : null;
+
+      // Get playthrough-specific locations in the same region (excluding current)
+      const nearbyLocations = await Location.find({
+        regionId: currentLocation.regionId,
         playthroughId,
-        status: { $in: ['known', 'visited'] }
-      }).lean()) as unknown as { name: string; type: string; description: string }[];
+        status: { $in: ['known', 'visited'] },
+        _id: { $ne: currentLocation._id },
+      }).lean();
+
+      geography = {
+        currentContinent: currentContinent
+          ? { name: currentContinent.name, description: currentContinent.description, terrainType: currentContinent.terrainType }
+          : { name: 'Unknown', description: '', terrainType: 'plains' },
+        currentRegion: currentRegion
+          ? { name: currentRegion.name, description: currentRegion.description, terrainType: currentRegion.terrainType, dangerLevel: currentRegion.dangerLevel }
+          : null,
+        currentLocation: { name: currentLocation.name, type: currentLocation.type, description: currentLocation.description, status: currentLocation.status },
+        nearbyLocations: nearbyLocations.map(l => ({ name: l.name, type: l.type, description: l.description, status: l.status })),
+      };
     }
-    geography = {
-      currentContinent: firstContinent as unknown as { name: string; description: string; terrainType: string },
-      regions: continentRegions as unknown as { name: string; description: string; dangerLevel: number }[],
-      currentRegion: (firstRegion as unknown as { name: string; description: string; dangerLevel: number }) || null,
-      nearbyLocations,
-    };
+  } else {
+    // Fallback: no currentLocationId set, use first continent/region
+    const firstContinent = continents[0];
+    if (firstContinent) {
+      const continentRegions = await Region.find({ continentId: firstContinent._id }).lean();
+      const firstRegion = continentRegions[0];
+      let nearbyLocations: { name: string; type: string; description: string; status: string }[] = [];
+      if (firstRegion) {
+        nearbyLocations = (await Location.find({
+          regionId: firstRegion._id,
+          playthroughId,
+          status: { $in: ['known', 'visited'] }
+        }).lean()).map(l => ({ name: l.name, type: l.type, description: l.description, status: l.status }));
+      }
+      geography = {
+        currentContinent: { name: firstContinent.name, description: firstContinent.description, terrainType: firstContinent.terrainType },
+        currentRegion: firstRegion
+          ? { name: firstRegion.name, description: firstRegion.description, terrainType: firstRegion.terrainType, dangerLevel: firstRegion.dangerLevel }
+          : null,
+        currentLocation: null,
+        nearbyLocations,
+      };
+    }
   }
 
   // 3. Fetch recent chapters from current arc (limit 5 most recent)
@@ -205,9 +239,10 @@ export async function runContextAgent(
   if (geography) {
     geographyInfo = [
       '=== GEOGRAPHY ===',
-      `Current Continent: ${geography.currentContinent.name} \u2014 ${geography.currentContinent.description} (${geography.currentContinent.terrainType})`,
-      geography.currentRegion ? `Current Region: ${geography.currentRegion.name} \u2014 ${geography.currentRegion.description} (danger level: ${geography.currentRegion.dangerLevel})` : null,
-      geography.nearbyLocations.length > 0 ? `Nearby Locations: ${geography.nearbyLocations.map((l: { name: string; type: string }) => `${l.name} (${l.type})`).join(', ')}` : null,
+      `Current Continent: ${geography.currentContinent.name} — ${geography.currentContinent.description} (${geography.currentContinent.terrainType})`,
+      geography.currentRegion ? `Current Region: ${geography.currentRegion.name} — ${geography.currentRegion.description} (terrain: ${geography.currentRegion.terrainType}, danger: ${geography.currentRegion.dangerLevel})` : null,
+      geography.currentLocation ? `Current Location: ${geography.currentLocation.name} (${geography.currentLocation.type}) — ${geography.currentLocation.description} [${geography.currentLocation.status}]` : null,
+      geography.nearbyLocations.length > 0 ? `Nearby Locations: ${geography.nearbyLocations.map(l => `${l.name} (${l.type}, ${l.status})`).join(', ')}` : null,
     ].filter(Boolean).join('\n');
   }
 
@@ -278,10 +313,17 @@ Based on the player's choice and the FULL story state above (including all items
         terrainType: z.string(),
         dangerLevel: z.number(),
       }).optional().nullable(),
+      currentLocation: z.object({
+        name: z.string(),
+        type: z.string(),
+        description: z.string(),
+        status: z.string(),
+      }).optional().nullable(),
       nearbyLocations: z.array(z.object({
         name: z.string(),
         type: z.string(),
         description: z.string(),
+        status: z.string(),
       })).optional(),
     }).optional(),
   });
@@ -391,6 +433,9 @@ Based on the player's choice and the FULL story state above (including all items
     matureConsequences: consequenceRefs,
     activeCombat,
     geography,
+    currentRegionId: playthrough.currentLocationId
+      ? (await Location.findById(playthrough.currentLocationId).lean())?.regionId?.toString()
+      : undefined,
     currentScene: validated.currentScene ?? '',
     relevantPlotPoints: validated.relevantPlotPoints ?? [],
     usage: usage ? { inputTokens: usage.inputTokens ?? 0, outputTokens: usage.outputTokens ?? 0 } : undefined,

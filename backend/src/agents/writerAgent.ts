@@ -12,6 +12,7 @@ import { makeGenerateChoicesTool } from '../tools/generateChoices';
 import { makeUpdateRelationshipTool } from '../tools/updateRelationship';
 import { makePlantConsequenceTool, makeActivateConsequenceTool } from '../tools/plantConsequence';
 import { makeInitiateCombatTool } from '../tools/initiateCombat';
+import { makeDiscoverLocationTool } from '../tools/discoverLocation';
 import { emit } from '../services/sseManager';
 
 export interface WriterAgentParams {
@@ -235,6 +236,9 @@ Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[speci
     activateConsequence: makeActivateConsequenceTool(playthroughId, chapterId),
     initiateCombat: makeInitiateCombatTool(playthroughId, chapterId),
     summarizeArc: makeSummarizeArcTool(),
+    ...(contextOutput.currentRegionId
+      ? { discoverLocation: makeDiscoverLocationTool({ playthroughId, regionId: contextOutput.currentRegionId }) }
+      : {}),
   };
 
   const choicesTool = makeGenerateChoicesTool(chapterId);
@@ -247,6 +251,7 @@ Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[speci
     updateEntityStatus: 'entity:updated',
     updateRelationship: 'relationship:updated',
     initiateCombat: 'combat:initiated',
+    discoverLocation: 'location:discovered',
   };
 
   const toolsPrompt = `

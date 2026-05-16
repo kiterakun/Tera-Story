@@ -1,33 +1,9 @@
 import { api } from './api';
 import type { World, SpecialItemTemplate } from '@/types';
+import type { MapData } from './mapApi';
 
 export type { World, ResourceTemplate, SpecialItemTemplate, SpecialItemFieldDefinition } from '@/types';
-
-export interface Region {
-  _id: string;
-  continentId: string;
-  name: string;
-  description: string;
-  terrainType: string;
-  position: { x: number; y: number };
-}
-
-export interface Continent {
-  _id: string;
-  worldId: string;
-  name: string;
-  description: string;
-  terrainType: string;
-  climate: string;
-  dominantCulture: string;
-  position: { x: number; y: number };
-  regions: Region[];
-}
-
-export interface MapData {
-  continents: Continent[];
-  regions: Region[];
-}
+export type { Continent, Region, MapData } from './mapApi';
 
 export async function listWorlds(): Promise<World[]> {
   const { data } = await api.get('/worlds');

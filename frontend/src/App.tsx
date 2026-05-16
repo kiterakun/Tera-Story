@@ -89,6 +89,7 @@ function App() {
                 <Route path="/chronicle/:playthroughId" element={<ProtectedRoute><ChroniclePage /></ProtectedRoute>} />
                 <Route path="/friends" element={<ProtectedRoute><FriendsPage /></ProtectedRoute>} />
                 <Route path="/worlds/:worldId/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
+                <Route path="/playthroughs/:playthroughId/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
                 <Route path="/worlds/:worldId/playthroughs/:playthroughId/characters/create" element={<ProtectedRoute><CharacterCreatePage /></ProtectedRoute>} />
               </Routes>
             </Layout>

@@ -315,88 +315,50 @@ export default function WorldCreatePage() {
                 </div>
               )}
               
-              <svg viewBox="0 0 400 400" className="w-full h-full max-h-[500px]">
-                {/* Ocean background */}
-                <rect x="0" y="0" width="400" height="400" fill="#1e3a5f" rx="8" />
-                
-                {/* Continents */}
-                {mapData?.continents.map(continent => (
-                  <g key={continent._id}>
-                    <ellipse
-                      cx={continent.position.x}
-                      cy={continent.position.y}
-                      rx={60}
-                      ry={45}
-                      fill={terrainColors[continent.terrainType] || terrainColors.default}
-                      opacity={0.3}
-                      stroke={terrainColors[continent.terrainType] || terrainColors.default}
-                      strokeWidth={2}
-                    />
-                  </g>
-                ))}
-                
-                {/* Regions */}
+              {/* Region Selection List */}
+              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
                 {mapData?.regions.map(region => {
+                  const continent = mapData.continents.find(c => c._id === region.continentId);
                   const isSelected = region._id === selectedRegionId;
-                  const regionColor = terrainColors[region.terrainType] || terrainColors.default;
-                  
+
                   return (
-                    <g
+                    <button
                       key={region._id}
-                      className="cursor-pointer"
+                      type="button"
                       onClick={() => setSelectedRegionId(region._id)}
+                      className={`w-full text-left p-4 rounded-xl border transition-all duration-200 ${
+                        isSelected
+                          ? 'border-accent-400 bg-accent-600/10 shadow-lg shadow-accent-600/10'
+                          : 'border-ink-700 bg-ink-900 hover:border-ink-600 hover:bg-ink-800/80'
+                      }`}
                     >
-                      <circle
-                        cx={region.position.x}
-                        cy={region.position.y}
-                        r={isSelected ? 20 : 16}
-                        fill={regionColor}
-                        opacity={isSelected ? 1 : 0.7}
-                        stroke={isSelected ? '#fbbf24' : 'transparent'}
-                        strokeWidth={isSelected ? 3 : 0}
-                        className="transition-all duration-200 hover:opacity-100"
-                      />
-                      {isSelected && (
-                        <circle
-                          cx={region.position.x}
-                          cy={region.position.y}
-                          r={24}
-                          fill="none"
-                          stroke="#fbbf24"
-                          strokeWidth={2}
-                          opacity={0.5}
-                          className="animate-ping"
-                        />
-                      )}
-                      <text
-                        x={region.position.x}
-                        y={region.position.y + 32}
-                        textAnchor="middle"
-                        fill="#e2e8f0"
-                        fontSize="10"
-                        className="pointer-events-none select-none"
-                      >
-                        {region.name}
-                      </text>
-                    </g>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-display text-ink-100">{region.name}</h3>
+                          {continent && (
+                            <p className="text-xs text-ink-200/60 mt-0.5">
+                              {continent.name} — {continent.climate}
+                            </p>
+                          )}
+                        </div>
+                        <span
+                          className="px-2 py-1 rounded-md text-xs text-white shrink-0"
+                          style={{ backgroundColor: terrainColors[region.terrainType] || terrainColors.default }}
+                        >
+                          {region.terrainType}
+                        </span>
+                      </div>
+                      <p className="text-sm text-ink-200/80 mt-2">{region.description}</p>
+                    </button>
                   );
                 })}
-                
-                {/* Legend */}
-                <g transform="translate(10, 350)">
-                  <text x="0" y="0" fill="#94a3b8" fontSize="10">
-                    {t.worldCreate.terrainTypes || 'Terrain'}:
-                  </text>
-                  {Object.entries(terrainColors).slice(0, 6).map(([terrain, color], i) => (
-                    <g key={terrain} transform={`translate(${i * 65}, 12)`}>
-                      <circle cx="5" cy="0" r="5" fill={color} />
-                      <text x="14" y="4" fill="#94a3b8" fontSize="9" className="capitalize">
-                        {terrain}
-                      </text>
-                    </g>
-                  ))}
-                </g>
-              </svg>
+                {(!mapData?.regions || mapData.regions.length === 0) && (
+                  <div className="text-center py-8 text-ink-400">
+                    <MapPin size={32} className="mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">{t.worldCreate.noRegions || 'No regions available'}</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

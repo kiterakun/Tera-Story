@@ -60,7 +60,12 @@
 
     <rule number="10" tool="summarizeArc">summarizeArc — ONLY if a major story arc has clearly concluded in this chapter</rule>
 
-    <rule number="11" tool="generateChoices">generateChoices — You MUST call this with 3-4 meaningful choices for the reader UNLESS you are calling initiateCombat or an active combat is continuing. If combat is active or just initiated, DO NOT call generateChoices.</rule>
+    <rule number="11" tool="discoverLocation">discoverLocation — When the chapter introduces a NEW, SIGNIFICANT location that the characters visit for the first time:</rule>
+    <detail>Provide name, description, and type (town, dungeon, wilderness, ruin, sanctuary, crossroad)</detail>
+    <detail>Use connectedTo to link to an existing location if the characters traveled from a known place</detail>
+    <detail>Only call this for locations that are important to the story — NOT for generic places mentioned in passing</detail>
+
+    <rule number="12" tool="generateChoices">generateChoices — You MUST call this with 3-4 meaningful choices for the reader UNLESS you are calling initiateCombat or an active combat is continuing. If combat is active or just initiated, DO NOT call generateChoices.</rule>
     <detail>One or more choices MAY include a travelTo field with a location ID — use this when the choice involves traveling to a specific nearby location. The location IDs can be found in the CONTEXT under NEARBY LOCATIONS or TRAVEL OPTIONS. Only add travelTo if the choice explicitly involves going to a specific known location.</detail>
   </toolCallingRules>
 
