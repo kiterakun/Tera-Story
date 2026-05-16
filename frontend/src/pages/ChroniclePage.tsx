@@ -5,6 +5,7 @@ import type { ArcSummary } from '../services/chronicleApi';
 import {
   ScrollText, BookOpen, GitBranch, Swords, Clock, Share2, ChevronDown, ChevronUp, Image,
 } from 'lucide-react';
+import { useTranslation } from '../i18n';
 import { useState } from 'react';
 
 function ArcSection({
@@ -18,6 +19,7 @@ function ArcSection({
   isLast: boolean;
   isCurrent: boolean;
 }) {
+  const t = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -41,10 +43,10 @@ function ArcSection({
       <div className="pb-8">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-gold">
-            Arc {index + 1}: {arc.title}
+            {t.chronicle.arcLabel.replace('{count}', String(index + 1))}: {arc.title}
           </h3>
           <span className="rounded-full bg-ink-800 px-2 py-0.5 text-xs text-ink-400">
-            {arc.sceneCount} cảnh
+            {arc.sceneCount} {t.chronicle.scenes}
           </span>
         </div>
         <p className="mt-2 text-sm leading-relaxed text-narration">{arc.summary}</p>
@@ -84,11 +86,11 @@ function ArcSection({
           >
             {expanded ? (
               <>
-                <ChevronUp size={14} /> Thu gọn
+                <ChevronUp size={14} /> {t.chronicle.collapse}
               </>
             ) : (
               <>
-                <ChevronDown size={14} /> Xem tất cả {arc.sceneCount} cảnh
+                <ChevronDown size={14} /> {t.chronicle.seeAll.replace('{count}', String(arc.sceneCount))}
               </>
             )}
           </button>
@@ -117,6 +119,7 @@ function ChronicleSkeleton() {
 }
 
 export default function ChroniclePage() {
+  const t = useTranslation();
   const { playthroughId } = useParams<{ playthroughId: string }>();
   const { chronicle, isLoading, error, refetch } = useChronicle(playthroughId ?? '');
 
@@ -125,7 +128,7 @@ export default function ChroniclePage() {
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <p className="text-red-400">{error}</p>
         <button onClick={refetch} className="mt-4 rounded-lg bg-gold px-4 py-2 text-sm text-ink-950 hover:bg-gold/80">
-          Thử lại
+          {t.chronicle.retry}
         </button>
       </div>
     );
@@ -137,8 +140,8 @@ export default function ChroniclePage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <ScrollText size={48} className="text-ink-600" />
-        <p className="mt-4 text-lg text-narration">Hành trình của bạn đang bắt đầu...</p>
-        <p className="mt-1 text-sm text-ink-500">Hoàn thành các cảnh truyện để xem biên niên sử.</p>
+        <p className="mt-4 text-lg text-narration">{t.chronicle.empty}</p>
+        <p className="mt-1 text-sm text-ink-500">{t.chronicle.emptyHint}</p>
       </div>
     );
   }
@@ -166,14 +169,14 @@ export default function ChroniclePage() {
           <div>
             <h1 className="text-2xl font-bold text-gold">{chronicle.playthroughName}</h1>
             <p className="mt-1 text-sm text-narration">
-              {chronicle.status === 'completed' ? 'Đã hoàn thành' : 'Đang tiến hành'}
+              {chronicle.status === 'completed' ? t.chronicle.completed : t.chronicle.inProgress}
             </p>
           </div>
           <button
             onClick={handleShare}
             className="flex items-center gap-2 rounded-lg border border-ink-700 px-4 py-2 text-sm text-ink-300 hover:bg-ink-800 transition-colors"
           >
-            <Share2 size={16} /> Chia sẻ
+            <Share2 size={16} /> {t.chronicle.share}
           </button>
         </div>
       </div>
@@ -183,24 +186,26 @@ export default function ChroniclePage() {
         <div className="rounded-lg border border-ink-800 bg-ink-900/50 p-4 text-center">
           <BookOpen size={20} className="mx-auto text-gold" />
           <p className="mt-2 text-2xl font-bold text-ink-200">{stats?.totalScenes ?? '-'}</p>
-          <p className="text-xs text-ink-500">Cảnh</p>
+          <p className="text-xs text-ink-500">{t.chronicle.sceneLabel}</p>
         </div>
         <div className="rounded-lg border border-ink-800 bg-ink-900/50 p-4 text-center">
           <GitBranch size={20} className="mx-auto text-gold" />
           <p className="mt-2 text-2xl font-bold text-ink-200">{stats?.totalChoices ?? '-'}</p>
-          <p className="text-xs text-ink-500">Lựa chọn</p>
+          <p className="text-xs text-ink-500">{t.chronicle.choiceLabel}</p>
         </div>
         <div className="rounded-lg border border-ink-800 bg-ink-900/50 p-4 text-center">
           <Swords size={20} className="mx-auto text-gold" />
           <p className="mt-2 text-2xl font-bold text-ink-200">{stats?.totalCombats ?? '-'}</p>
-          <p className="text-xs text-ink-500">Trận chiến</p>
+          <p className="text-xs text-ink-500">{t.chronicle.battleLabel}</p>
         </div>
         <div className="rounded-lg border border-ink-800 bg-ink-900/50 p-4 text-center">
           <Clock size={20} className="mx-auto text-gold" />
           <p className="mt-2 text-2xl font-bold text-ink-200">
-            {stats?.totalPlayTimeMinutes != null ? `${Math.round(stats.totalPlayTimeMinutes)}p` : '-'}
+            {stats?.totalPlayTimeMinutes != null 
+              ? t.chronicle.timeUnit.replace('{count}', String(Math.round(stats.totalPlayTimeMinutes))) 
+              : '-'}
           </p>
-          <p className="text-xs text-ink-500">Thời gian</p>
+          <p className="text-xs text-ink-500">{t.chronicle.timeLabel}</p>
         </div>
       </div>
 
@@ -219,7 +224,7 @@ export default function ChroniclePage() {
         </div>
       ) : (
         <div className="py-10 text-center">
-          <p className="text-sm text-ink-500">Chưa có dữ liệu arc.</p>
+          <p className="text-sm text-ink-500">{t.chronicle.noArcData}</p>
         </div>
       )}
     </div>

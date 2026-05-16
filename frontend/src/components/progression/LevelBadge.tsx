@@ -1,4 +1,5 @@
 import type { FC } from 'react';
+import { useTranslation } from '../../i18n';
 
 interface LevelBadgeProps {
   level: number;
@@ -20,10 +21,11 @@ const levelColors = (level: number): string => {
 };
 
 export const LevelBadge: FC<LevelBadgeProps> = ({ level, size = 'md' }) => {
+  const t = useTranslation();
   return (
     <span
       className={`inline-flex items-center justify-center rounded-full font-bold ${sizeClasses[size]} ${levelColors(level)}`}
-      title={`Level ${level}`}
+      title={t.common.level.replace('{count}', String(level))}
     >
       {level}
     </span>

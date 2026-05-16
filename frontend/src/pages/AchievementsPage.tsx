@@ -2,21 +2,13 @@ import { useState } from 'react';
 import { useAchievements } from '../hooks/useAchievements';
 import type { AchievementWithProgress } from '../services/achievementApi';
 import { Trophy, Lock, HelpCircle, Award } from 'lucide-react';
+import { useTranslation, useLanguage } from '../i18n';
 
 const RARITY_COLORS: Record<string, string> = {
   common: 'border-ink-500 bg-ink-800/50',
   uncommon: 'border-emerald-500 bg-emerald-500/10',
   rare: 'border-blue-500 bg-blue-500/10',
   epic: 'border-purple-500 bg-purple-500/10 ring-2 ring-purple-400/30',
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  exploration: 'Khám phá',
-  combat: 'Chiến đấu',
-  collection: 'Sưu tập',
-  social: 'Xã hội',
-  milestone: 'Cột mốc',
-  hidden: 'Ẩn',
 };
 
 function AchievementCard({
@@ -26,6 +18,8 @@ function AchievementCard({
   achievement: AchievementWithProgress;
   onClick: () => void;
 }) {
+  const t = useTranslation();
+  const lang = useLanguage();
   const isHidden = achievement.hidden && !achievement.unlocked;
   const isInProgress = !achievement.unlocked && achievement.progress > 0;
 
@@ -48,11 +42,11 @@ function AchievementCard({
         )}
         <div className="min-w-0 flex-1">
           <h3 className={`text-sm font-semibold ${achievement.unlocked ? 'text-accent-400' : 'text-ink-500'}`}>
-            {isHidden ? 'Thành tựu ẩn' : achievement.name.vi}
+            {isHidden ? t.achievements.hidden : (lang === 'vi' ? achievement.name.vi : achievement.name.en)}
           </h3>
           {!isHidden && (
             <p className="mt-0.5 text-xs text-narration line-clamp-2">
-              {achievement.description.vi}
+              {lang === 'vi' ? achievement.description.vi : achievement.description.en}
             </p>
           )}
           {isInProgress && achievement.unlockCriteria.threshold && (
@@ -72,7 +66,7 @@ function AchievementCard({
           )}
           {achievement.unlocked && achievement.unlockedAt && (
             <p className="mt-1 text-[10px] text-ink-500">
-              {new Date(achievement.unlockedAt).toLocaleDateString('vi-VN')}
+              {t.achievements.unlockedAt.replace('{date}', new Date(achievement.unlockedAt).toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-US'))}
             </p>
           )}
           {!achievement.unlocked && !isHidden && !isInProgress && (
@@ -90,6 +84,8 @@ function AchievementCard({
 }
 
 export default function AchievementsPage() {
+  const t = useTranslation();
+  const lang = useLanguage();
   const [selectedAchievement, setSelectedAchievement] = useState<AchievementWithProgress | null>(null);
   const [filters, setFilters] = useState<{
     category?: string;
@@ -103,7 +99,7 @@ export default function AchievementsPage() {
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <p className="text-red-400">{error}</p>
         <button onClick={refetch} className="mt-4 rounded-lg bg-accent-600 px-4 py-2 text-sm text-white hover:bg-accent-500 shadow-sm transition-all">
-          Thử lại
+          {t.achievements.retry}
         </button>
       </div>
     );
@@ -113,8 +109,8 @@ export default function AchievementsPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <Award size={48} className="text-ink-600" />
-        <p className="mt-4 text-lg text-narration">Chưa có thành tựu nào.</p>
-        <p className="mt-1 text-sm text-ink-500">Hoàn thành một cảnh truyện để bắt đầu!</p>
+        <p className="mt-4 text-lg text-narration">{t.achievements.empty}</p>
+        <p className="mt-1 text-sm text-ink-500">{t.achievements.emptyHint}</p>
         {isLoading && (
           <div className="mt-4 h-5 w-5 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
         )}
@@ -126,10 +122,13 @@ export default function AchievementsPage() {
     <div className="p-4 md:p-6">
       {/* Stats header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-accent-400">Thành Tựu</h1>
+        <h1 className="text-2xl font-bold text-accent-400">{t.achievements.title}</h1>
         {stats && (
           <p className="mt-1 text-sm text-narration">
-            {stats.unlocked}/{stats.total} đã mở khóa — {stats.percentComplete}% hoàn thành
+            {t.achievements.unlockedLabel
+              .replace('{unlocked}', String(stats.unlocked))
+              .replace('{total}', String(stats.total))
+              .replace('{percent}', String(stats.percentComplete))}
           </p>
         )}
       </div>
@@ -152,7 +151,7 @@ export default function AchievementsPage() {
                   : 'bg-ink-800 text-ink-400 hover:bg-ink-700'
               }`}
             >
-              {cat === 'all' ? 'Tất cả' : CATEGORY_LABELS[cat]}
+              {cat === 'all' ? t.achievements.all : t.achievements.categories[cat]}
             </button>
           )
         )}
@@ -166,10 +165,10 @@ export default function AchievementsPage() {
           }
           className="ml-auto rounded-lg border border-ink-700 bg-ink-900 px-3 py-1.5 text-sm text-ink-300"
         >
-          <option value="all">Tất cả</option>
-          <option value="unlocked">Đã mở khóa</option>
-          <option value="locked">Chưa mở</option>
-          <option value="in_progress">Đang tiến hành</option>
+          <option value="all">{t.achievements.all}</option>
+          <option value="unlocked">{t.achievements.unlocked}</option>
+          <option value="locked">{t.achievements.locked}</option>
+          <option value="in_progress">{t.achievements.inProgress}</option>
         </select>
       </div>
 
@@ -199,12 +198,12 @@ export default function AchievementsPage() {
                 <Trophy size={32} />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-accent-400">{selectedAchievement.name.vi}</h2>
-                <p className="text-sm text-narration">{selectedAchievement.description.vi}</p>
+                <h2 className="text-xl font-bold text-accent-400">{lang === 'vi' ? selectedAchievement.name.vi : selectedAchievement.name.en}</h2>
+                <p className="text-sm text-narration">{lang === 'vi' ? selectedAchievement.description.vi : selectedAchievement.description.en}</p>
               </div>
             </div>
             <div className="flex items-center gap-4 text-sm text-ink-400">
-              <span>{CATEGORY_LABELS[selectedAchievement.category]}</span>
+              <span>{t.achievements.categories[selectedAchievement.category as keyof typeof t.achievements.categories]}</span>
               <span className={`rounded-full px-2 py-0.5 text-xs ${RARITY_COLORS[selectedAchievement.rarity]}`}>
                 {selectedAchievement.rarity}
               </span>
@@ -212,14 +211,14 @@ export default function AchievementsPage() {
             </div>
             {selectedAchievement.unlocked && selectedAchievement.unlockedAt && (
               <p className="mt-4 text-xs text-ink-500">
-                Mở khóa: {new Date(selectedAchievement.unlockedAt).toLocaleDateString('vi-VN')}
+                {t.achievements.unlockedAt.replace('{date}', new Date(selectedAchievement.unlockedAt).toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-US'))}
               </p>
             )}
             <button
               onClick={() => setSelectedAchievement(null)}
               className="mt-6 w-full rounded-lg border border-ink-700 py-2 text-sm text-ink-300 hover:bg-ink-800 transition-colors"
             >
-              Đóng
+              {t.achievements.close}
             </button>
           </div>
         </div>

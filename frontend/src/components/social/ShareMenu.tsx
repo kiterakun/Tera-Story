@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import type { FC } from 'react';
 import { Share2, Copy, Download, Facebook, Twitter, X } from 'lucide-react';
 import { showSuccess, showError } from '../../lib/toast';
+import { useTranslation } from '../../i18n';
 
 interface ShareMenuProps {
   shareType: 'story' | 'card' | 'chronicle';
@@ -10,6 +11,7 @@ interface ShareMenuProps {
 }
 
 export const ShareMenu: FC<ShareMenuProps> = ({ shareType, shareId, imageUrl }) => {
+  const t = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -30,16 +32,16 @@ export const ShareMenu: FC<ShareMenuProps> = ({ shareType, shareId, imageUrl }) 
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
-      showSuccess('Đã sao chép!');
+      showSuccess(t.share.copied);
       setIsOpen(false);
     } catch {
-      showError('Không thể sao chép link');
+      showError(t.share.copyFailed);
     }
   };
 
   const handleDownload = async () => {
     if (!imageUrl) {
-      showError('Không có ảnh để tải');
+      showError(t.share.noImage);
       return;
     }
     try {
@@ -53,10 +55,10 @@ export const ShareMenu: FC<ShareMenuProps> = ({ shareType, shareId, imageUrl }) 
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showSuccess('Đã tải ảnh!');
+      showSuccess(t.share.downloaded);
       setIsOpen(false);
     } catch {
-      showError('Không thể tải ảnh');
+      showError(t.share.downloadFailed);
     }
   };
 
@@ -67,7 +69,7 @@ export const ShareMenu: FC<ShareMenuProps> = ({ shareType, shareId, imageUrl }) 
   };
 
   const handleTwitterShare = () => {
-    const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent('Khám phá câu chuyện của tôi trên Tera-Story!')}`;
+    const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(t.share.twitterText)}`;
     window.open(twitterUrl, '_blank', 'width=600,height=400');
     setIsOpen(false);
   };
@@ -79,13 +81,13 @@ export const ShareMenu: FC<ShareMenuProps> = ({ shareType, shareId, imageUrl }) 
         className="flex items-center gap-2 rounded-lg bg-ink-800 border border-ink-700 px-4 py-2 text-sm font-medium text-ink-200 hover:bg-ink-700 transition-colors"
       >
         <Share2 size={16} />
-        Chia sẻ
+        {t.share.title}
       </button>
 
       {isOpen && (
         <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-ink-700 bg-ink-900 shadow-2xl z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-ink-700">
-            <span className="text-sm font-semibold text-ink-200">Chia sẻ</span>
+            <span className="text-sm font-semibold text-ink-200">{t.share.title}</span>
             <button
               onClick={() => setIsOpen(false)}
               className="text-ink-500 hover:text-ink-300 transition-colors"
@@ -99,14 +101,14 @@ export const ShareMenu: FC<ShareMenuProps> = ({ shareType, shareId, imageUrl }) 
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-ink-200 hover:bg-ink-800 transition-colors"
             >
               <Copy size={16} className="text-ink-400" />
-              Sao chép link
+              {t.share.copyLink}
             </button>
             <button
               onClick={handleDownload}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-ink-200 hover:bg-ink-800 transition-colors"
             >
               <Download size={16} className="text-ink-400" />
-              Tải ảnh PNG
+              {t.share.downloadPNG}
             </button>
             <button
               onClick={handleFacebookShare}

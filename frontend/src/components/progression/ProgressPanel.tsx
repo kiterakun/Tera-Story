@@ -26,7 +26,7 @@ export const ProgressPanel: FC = () => {
   if (error || !progress) {
     return (
       <div className="text-center py-8 text-ink-400">
-        <p>{error ?? 'No progression data'}</p>
+        <p>{error ?? t.progression.noProgressionData}</p>
       </div>
     );
   }
@@ -45,7 +45,7 @@ export const ProgressPanel: FC = () => {
         <LevelBadge level={progress.level} size="lg" />
         <div>
           <p className="text-lg font-semibold text-ink-100">{progress.levelTitle}</p>
-          <p className="text-sm text-ink-400">Level {progress.level}</p>
+          <p className="text-sm text-ink-400">{t.common.level.replace('{count}', String(progress.level))}</p>
         </div>
       </div>
 

@@ -3,12 +3,13 @@ import type { FC } from 'react';
 import { useLeaderboard } from '../../hooks/useLeaderboard';
 import type { LeaderboardType, LeaderboardScope, LeaderboardPeriod } from '../../services/leaderboardApi';
 import { Trophy, Medal, Users, Globe } from 'lucide-react';
+import { useTranslation } from '../../i18n';
 
-const TYPE_OPTIONS: { value: LeaderboardType; label: string }[] = [
-  { value: 'scenes', label: 'Cảnh' },
-  { value: 'achievements', label: 'Thành tựu' },
-  { value: 'streak', label: 'Streak' },
-  { value: 'cards', label: 'Thẻ bài' },
+const TYPE_OPTIONS: { value: LeaderboardType; labelKey: string }[] = [
+  { value: 'scenes', labelKey: 'scenes' },
+  { value: 'achievements', labelKey: 'achievements' },
+  { value: 'streak', labelKey: 'streak' },
+  { value: 'cards', labelKey: 'cards' },
 ];
 
 const TOP_COLORS: Record<number, string> = {
@@ -28,6 +29,7 @@ export const LeaderboardWidget: FC = () => {
     error,
     fetchLeaderboard,
   } = useLeaderboard();
+  const t = useTranslation();
 
   useEffect(() => {
     fetchLeaderboard(type, scope, period);
@@ -75,7 +77,7 @@ export const LeaderboardWidget: FC = () => {
             onClick={() => fetchLeaderboard(type, scope, period)}
             className="mt-3 rounded-lg bg-ink-800 px-4 py-1.5 text-xs text-ink-300 hover:bg-ink-700 transition-colors"
           >
-            Thử lại
+            {t.common.retry}
           </button>
         </div>
       );
@@ -87,8 +89,8 @@ export const LeaderboardWidget: FC = () => {
           <Users size={32} className="text-ink-600 mb-2" />
           <p className="text-sm text-ink-400">
             {scope === 'friends'
-              ? 'Thêm bạn bè để xem bảng xếp hạng!'
-              : 'Chưa có dữ liệu bảng xếp hạng'}
+              ? t.leaderboard.addFriendsPrompt
+              : t.leaderboard.noData}
           </p>
         </div>
       );
@@ -153,7 +155,7 @@ export const LeaderboardWidget: FC = () => {
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-ink-700">
         <Trophy size={18} className="text-gold shrink-0" />
-        <h3 className="text-sm font-bold text-ink-100">Bảng xếp hạng</h3>
+        <h3 className="text-sm font-bold text-ink-100">{t.leaderboard.title}</h3>
       </div>
 
       {/* Type tabs */}
@@ -168,7 +170,7 @@ export const LeaderboardWidget: FC = () => {
                 : 'text-ink-400 hover:text-ink-200'
             }`}
           >
-            {opt.label}
+            {t.leaderboard.types[opt.labelKey as keyof typeof t.leaderboard.types]}
           </button>
         ))}
       </div>
@@ -184,7 +186,7 @@ export const LeaderboardWidget: FC = () => {
           }`}
         >
           {scope === 'friends' ? <Users size={12} /> : <Globe size={12} />}
-          {scope === 'friends' ? 'Bạn bè' : 'Toàn cầu'}
+          {scope === 'friends' ? t.leaderboard.friends : t.leaderboard.global}
         </button>
         <button
           onClick={handlePeriodToggle}
@@ -194,7 +196,7 @@ export const LeaderboardWidget: FC = () => {
               : 'text-ink-400 hover:text-ink-200'
           }`}
         >
-          {period === 'this_week' ? 'Tuần này' : 'Tất cả'}
+          {period === 'this_week' ? t.leaderboard.thisWeek : t.leaderboard.allTime}
         </button>
       </div>
 
@@ -206,7 +208,7 @@ export const LeaderboardWidget: FC = () => {
         <div className="border-t border-ink-700 px-4 py-2.5 flex items-center gap-3">
           <Trophy size={14} className="text-gold shrink-0" />
           <span className="text-xs text-ink-400">
-            Hạng của bạn: <span className="font-bold text-gold">#{myRank}</span>
+            {t.leaderboard.myRank.replace('{rank}', `<span class="font-bold text-gold">#${myRank}</span>`)}
           </span>
         </div>
       )}

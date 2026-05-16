@@ -4,6 +4,7 @@ import { showSuccess, showError } from '../lib/toast';
 import type { FriendUser, FriendRequest } from '../services/friendsApi';
 import { LevelBadge } from '../components/progression/LevelBadge';
 import { UserPlus, UserCheck, UserX, ShieldBan, Search, Clock, Ban } from 'lucide-react';
+import { useTranslation } from '../i18n';
 
 type Tab = 'friends' | 'requests' | 'blocked';
 
@@ -80,6 +81,7 @@ function RequestCard({
   onAccept: () => void;
   onReject: () => void;
 }) {
+  const t = useTranslation();
   const user = request.user;
   const nameToUse = user.displayName || user.username || '?';
   const initial = nameToUse.charAt(0).toUpperCase();
@@ -100,7 +102,7 @@ function RequestCard({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-ink-100 truncate">{nameToUse}</p>
         <p className="text-xs text-ink-500">
-          {isIncoming ? 'Muốn kết bạn với bạn' : 'Đã gửi lời mời'}
+          {isIncoming ? t.friends.wantsToFriend : t.friends.sentRequest}
         </p>
       </div>
       <LevelBadge level={user.level} size="sm" />
@@ -111,7 +113,7 @@ function RequestCard({
             className="flex items-center gap-1 rounded-lg bg-accent-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-500 shadow-sm transition-colors"
           >
             <UserCheck size={14} />
-            Chấp nhận
+            {t.friends.accept}
           </button>
         )}
         <button
@@ -119,7 +121,7 @@ function RequestCard({
           className="flex items-center gap-1 rounded-lg border border-ink-600 px-2.5 py-1.5 text-xs text-ink-400 hover:bg-ink-800 transition-colors"
         >
           <UserX size={14} />
-          {isIncoming ? 'Từ chối' : 'Hủy'}
+          {isIncoming ? t.friends.reject : t.friends.cancel}
         </button>
       </div>
     </div>
@@ -127,6 +129,7 @@ function RequestCard({
 }
 
 export default function FriendsPage() {
+  const t = useTranslation();
   const {
     friends,
     requests,
@@ -173,51 +176,51 @@ export default function FriendsPage() {
   const handleSendRequest = async (username: string) => {
     try {
       await sendRequest(username);
-      showSuccess('Đã gửi lời mời kết bạn!');
+      showSuccess(t.friends.requestSent);
       setSearchQuery('');
     } catch {
-      showError('Không thể gửi lời mời');
+      showError(t.friends.failedToSend);
     }
   };
 
   const handleAccept = async (requestId: string) => {
     try {
       await acceptRequest(requestId);
-      showSuccess('Đã chấp nhận lời mời!');
+      showSuccess(t.friends.requestAccept);
     } catch {
-      showError('Không thể chấp nhận lời mời');
+      showError(t.friends.failedToAccept);
     }
   };
 
   const handleReject = async (requestId: string) => {
     try {
       await rejectRequest(requestId);
-      showSuccess('Đã từ chối lời mời');
+      showSuccess(t.friends.requestReject);
     } catch {
-      showError('Không thể từ chối lời mời');
+      showError(t.friends.failedToReject);
     }
   };
 
   const handleRemoveFriend = async (friendId: string) => {
     try {
       await removeFriend(friendId);
-      showSuccess('Đã hủy kết bạn');
+      showSuccess(t.friends.unfriendSuccess);
     } catch {
-      showError('Không thể hủy kết bạn');
+      showError(t.friends.failedToRemove);
     }
   };
 
   const tabs = [
-    { id: 'friends' as Tab, label: 'Bạn bè', count: friends.length },
-    { id: 'requests' as Tab, label: 'Lời mời kết bạn', count: requests.incoming.length },
-    { id: 'blocked' as Tab, label: 'Đã chặn', icon: ShieldBan },
+    { id: 'friends' as Tab, label: t.friends.title, count: friends.length },
+    { id: 'requests' as Tab, label: t.friends.noRequests, count: requests.incoming.length },
+    { id: 'blocked' as Tab, label: t.friends.blocked, icon: ShieldBan },
   ];
 
   const hasSearchQuery = searchQuery.trim().length > 0;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="text-2xl font-bold text-ink-100 mb-6">Bạn bè</h1>
+      <h1 className="text-2xl font-bold text-ink-100 mb-6">{t.friends.title}</h1>
 
       {/* Search */}
       <div className="relative mb-6">
@@ -227,7 +230,7 @@ export default function FriendsPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm kiếm người chơi..."
+            placeholder={t.friends.searchPlaceholder}
             className="w-full rounded-xl border border-ink-700 bg-ink-900 py-2.5 pl-10 pr-4 text-sm text-ink-100 placeholder:text-ink-500 focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/30 outline-none transition-all"
           />
           {isSearching && (
@@ -242,30 +245,30 @@ export default function FriendsPage() {
         <div>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-bold text-ink-100 uppercase tracking-wider">
-              Kết quả tìm kiếm
+              {t.friends.searchResults}
             </h2>
             <button
               onClick={() => setSearchQuery('')}
               className="text-xs font-medium text-ink-400 hover:text-ink-200"
             >
-              Hủy
+              {t.worldCreate.cancel}
             </button>
           </div>
 
           {isSearching ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent-500 border-t-transparent mb-3" />
-              <p className="text-sm text-ink-400">Đang tìm kiếm...</p>
+              <p className="text-sm text-ink-400">{t.friends.searching}</p>
             </div>
           ) : debouncedQuery.length < 3 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center border border-ink-700 rounded-xl bg-ink-900/50">
               <Search size={40} className="text-ink-600 mb-3" />
-              <p className="text-sm text-ink-400">Nhập ít nhất 3 ký tự để tìm kiếm</p>
+              <p className="text-sm text-ink-400">{t.friends.minChars}</p>
             </div>
           ) : searchResults.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center border border-ink-700 rounded-xl bg-ink-900/50">
               <UserX size={40} className="text-ink-600 mb-3" />
-              <p className="text-sm text-ink-400">Không tìm thấy người chơi nào</p>
+              <p className="text-sm text-ink-400">{t.friends.noPlayers}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -274,7 +277,7 @@ export default function FriendsPage() {
                   key={user._id}
                   user={user}
                   action={() => handleSendRequest(user.username)}
-                  actionLabel="Kết bạn"
+                  actionLabel={t.friends.addFriend}
                   actionIcon={UserPlus}
                   primary
                 />
@@ -320,20 +323,20 @@ export default function FriendsPage() {
                 onClick={fetchFriends}
                 className="rounded-lg bg-ink-800 px-5 py-2 text-sm text-ink-300 hover:bg-ink-700 transition-colors"
               >
-                Thử lại
+                {t.gallery.retry}
               </button>
             </div>
           ) : isLoading ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <UserPlus size={40} className="text-ink-600 mb-3" />
-              <p className="text-sm text-ink-400">Chưa có bạn bè. Tìm kiếm để kết bạn!</p>
+              <p className="text-sm text-ink-400">{t.friends.noFriends}</p>
               <div className="mt-4 h-5 w-5 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
             </div>
           ) : activeTab === 'friends' ? (
             friends.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <UserPlus size={40} className="text-ink-600 mb-3" />
-                <p className="text-sm text-ink-400">Chưa có bạn bè. Tìm kiếm để kết bạn!</p>
+                <p className="text-sm text-ink-400">{t.friends.noFriends}</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -342,7 +345,7 @@ export default function FriendsPage() {
                     key={friend._id}
                     user={friend}
                     action={() => handleRemoveFriend(friend._id)}
-                    actionLabel="Hủy kết bạn"
+                    actionLabel={t.friends.unfriend}
                     actionIcon={UserX}
                     destructive
                   />
@@ -353,14 +356,14 @@ export default function FriendsPage() {
             requests.incoming.length === 0 && requests.outgoing.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <Clock size={40} className="text-ink-600 mb-3" />
-                <p className="text-sm text-ink-400">Chưa có lời mời kết bạn nào</p>
+                <p className="text-sm text-ink-400">{t.friends.noRequests}</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {requests.incoming.length > 0 && (
                   <div>
                     <p className="text-xs font-medium text-ink-400 mb-2 uppercase tracking-wider">
-                      Đến ({requests.incoming.length})
+                      {t.friends.incoming} ({requests.incoming.length})
                     </p>
                     <div className="space-y-2">
                       {requests.incoming.map((req) => (
@@ -378,7 +381,7 @@ export default function FriendsPage() {
                 {requests.outgoing.length > 0 && (
                   <div>
                     <p className="text-xs font-medium text-ink-400 mb-2 uppercase tracking-wider">
-                      Đã gửi ({requests.outgoing.length})
+                      {t.friends.outgoing} ({requests.outgoing.length})
                     </p>
                     <div className="space-y-2">
                       {requests.outgoing.map((req) => (
@@ -398,7 +401,7 @@ export default function FriendsPage() {
           ) : activeTab === 'blocked' ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Ban size={40} className="text-ink-600 mb-3" />
-              <p className="text-sm text-ink-400">Chưa chặn người dùng nào</p>
+              <p className="text-sm text-ink-400">{t.friends.noBlocked}</p>
             </div>
           ) : null}
         </>

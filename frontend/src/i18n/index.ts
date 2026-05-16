@@ -14,8 +14,20 @@ const locales: Record<string, Translations> = { en, vi };
  *   <h1>{t.login.title}</h1>
  */
 export function useTranslation(): Translations {
-  const language = useSettingsStore(s => s.settings?.language) || getStoredLanguage();
-  return locales[language] || locales.en;
+  const language = useLanguage();
+  return (locales[language] as Translations) || locales.en;
+}
+
+/**
+ * Returns the current language code (e.g., 'en', 'vi').
+ */
+export function useLanguage(): string {
+  return useSettingsStore(s => s.settings?.language) || getStoredLanguage();
+}
+
+/** Get the current language code outside of a React component. */
+export function getLanguage(): string {
+  return getStoredLanguage();
 }
 
 /** Read language preference from localStorage (for unauthenticated pages). */

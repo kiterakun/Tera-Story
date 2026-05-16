@@ -502,16 +502,16 @@ export default function WorldCreatePage() {
                   disabled={step === "creating"}
                   className="w-full px-5 py-2.5 font-medium text-ink-200 hover:text-ink-100 transition-colors text-sm rounded-xl hover:bg-ink-800 disabled:opacity-50"
                 >
-                  {(t.worldCreate as unknown as Record<string, string>).skipMap || 'Skip & View World'}
+                  {t.worldCreate.skipMap}
                 </button>
               </div>
 
               {/* World Info */}
               {createdWorld && (
                 <div className="bg-ink-800/30 border border-ink-700/50 rounded-xl p-4">
-                  <p className="text-xs text-ink-200/60 mb-1">{(t.worldCreate as unknown as Record<string, string>).worldCreated || 'World Created'}</p>
+                  <p className="text-xs text-ink-200/60 mb-1">{t.worldCreate.worldCreated}</p>
                   <p className="text-sm font-medium text-ink-100">{createdWorld.name}</p>
-                  <p className="text-xs text-ink-200/40 mt-1">{mapData?.regions?.length || 0} regions</p>
+                  <p className="text-xs text-ink-200/40 mt-1">{t.worldCreate.regionsCount.replace('{count}', String(mapData?.regions?.length || 0))}</p>
                 </div>
               )}
             </div>
@@ -720,7 +720,7 @@ export default function WorldCreatePage() {
                       </option>
                       <option value="text">{t.worldCreate.typeText}</option>
                       <option value="enum">{t.worldCreate.typeEnum}</option>
-                      <option value="pool">Pool (current/max)</option>
+                      <option value="pool">{t.worldCreate.typePool}</option>
                     </select>
                   </div>
 

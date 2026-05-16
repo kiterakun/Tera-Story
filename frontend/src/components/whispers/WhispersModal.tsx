@@ -1,6 +1,7 @@
 import { useEffect, type FC } from 'react';
 import type { WhisperItem } from '../../hooks/useWhispers';
 import { Users, Mail, BookOpen, Newspaper, X } from 'lucide-react';
+import { useTranslation } from '../../i18n';
 
 interface WhispersModalProps {
   isOpen: boolean;
@@ -18,13 +19,6 @@ const whisperIcons: Record<string, typeof Users> = {
   news: Newspaper,
 };
 
-const whisperTitles: Record<string, string> = {
-  rumor: 'Rumor',
-  letter: 'Letter',
-  diary: 'Diary Entry',
-  news: 'World News',
-};
-
 export const WhispersModal: FC<WhispersModalProps> = ({
   isOpen,
   whispers,
@@ -33,6 +27,7 @@ export const WhispersModal: FC<WhispersModalProps> = ({
   onContinue,
   isLoading = false,
 }) => {
+  const t = useTranslation();
   useEffect(() => {
     if (!isOpen) return;
     const handleEsc = (e: KeyboardEvent) => {
@@ -50,8 +45,10 @@ export const WhispersModal: FC<WhispersModalProps> = ({
       <div className="relative bg-ink-900 border border-ink-700 rounded-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto animate-[fadeIn_0.3s_ease-out]">
         <div className="sticky top-0 bg-ink-900 border-b border-ink-800 p-4 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-ink-100">While you were away...</h2>
-            <p className="text-sm text-ink-400">{daysAway} day{daysAway !== 1 ? 's' : ''} passed in the world</p>
+            <h2 className="text-lg font-semibold text-ink-100">{t.whispers.title}</h2>
+            <p className="text-sm text-ink-400">
+              {(daysAway === 1 ? t.whispers.daysPassed : (t.whispers.daysPassed_plural || t.whispers.daysPassed)).replace('{count}', String(daysAway))}
+            </p>
           </div>
           <button onClick={onClose} className="text-ink-500 hover:text-ink-200 transition-colors">
             <X className="w-5 h-5" />
@@ -67,7 +64,7 @@ export const WhispersModal: FC<WhispersModalProps> = ({
               </div>
             ))
           ) : whispers.length === 0 ? (
-            <p className="text-center text-ink-500 py-8">The world rests quietly. Nothing of note happened.</p>
+            <p className="text-center text-ink-500 py-8">{t.whispers.empty}</p>
           ) : (
             whispers.map((w, i) => {
               const Icon = whisperIcons[w.type] ?? BookOpen;
@@ -80,7 +77,7 @@ export const WhispersModal: FC<WhispersModalProps> = ({
                   <div className="flex items-center gap-2 mb-2">
                     <Icon className="w-4 h-4 text-gold shrink-0" />
                     <span className="text-xs font-medium text-gold uppercase tracking-wide">
-                      {whisperTitles[w.type]}
+                      {t.whispers.types[w.type as keyof typeof t.whispers.types]}
                     </span>
                   </div>
                   <p className="text-sm text-ink-200 leading-relaxed">{w.content}</p>
@@ -98,13 +95,13 @@ export const WhispersModal: FC<WhispersModalProps> = ({
             onClick={onClose}
             className="flex-1 px-4 py-2 text-sm text-ink-400 hover:text-ink-200 border border-ink-700 rounded-lg transition-colors"
           >
-            Skip
+            {t.whispers.skip}
           </button>
           <button
             onClick={onContinue}
             className="flex-1 px-4 py-2 text-sm bg-gold text-ink-950 rounded-lg font-semibold hover:bg-amber-400 transition-colors"
           >
-            Continue
+            {t.whispers.continue}
           </button>
         </div>
       </div>

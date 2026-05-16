@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import { Flame } from 'lucide-react';
+import { useTranslation } from '../../i18n';
 
 interface StreakBadgeProps {
   streak: number;
@@ -24,10 +25,11 @@ function streakColor(streak: number): string {
 }
 
 export const StreakBadge: FC<StreakBadgeProps> = ({ streak, size = 'md' }) => {
+  const t = useTranslation();
   return (
     <span
       className={`inline-flex items-center rounded-full font-semibold ${sizeClasses[size]} ${streakColor(streak)}`}
-      title={`Streak: ${streak} ngày`}
+      title={t.daily.streakTitle.replace('{count}', String(streak))}
     >
       <Flame className="shrink-0" size={iconSizes[size]} />
       {streak}

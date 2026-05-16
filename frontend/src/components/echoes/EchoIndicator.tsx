@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import type { EchoItem } from '../../hooks/useEchoes';
 import { Radio, Zap, Clock } from 'lucide-react';
+import { useTranslation } from '../../i18n';
 
 interface EchoIndicatorProps {
   echoes: EchoItem[];
@@ -22,6 +23,7 @@ const statusColors: Record<string, string> = {
 };
 
 export const EchoIndicator: FC<EchoIndicatorProps> = ({ echoes, currentChapterIndex }) => {
+  const t = useTranslation();
   const relevantEchoes = echoes.filter(
     (e) => e.targetChapterIndex <= currentChapterIndex + 5 && e.status !== 'resolved'
   );
@@ -30,7 +32,7 @@ export const EchoIndicator: FC<EchoIndicatorProps> = ({ echoes, currentChapterIn
 
   return (
     <div className="bg-ink-800/50 border border-ink-700 rounded-lg p-3 space-y-2">
-      <p className="text-xs font-medium text-ink-400 uppercase tracking-wide">Echoes</p>
+      <p className="text-xs font-medium text-ink-400 uppercase tracking-wide">{t.echoes.indicatorTitle}</p>
       {relevantEchoes.slice(0, 3).map((echo) => {
         const Icon = echoTypeIcons[echo.type] ?? Clock;
         const chaptersUntil = echo.targetChapterIndex - currentChapterIndex;
@@ -40,7 +42,9 @@ export const EchoIndicator: FC<EchoIndicatorProps> = ({ echoes, currentChapterIn
             <span className="flex-1 truncate">{echo.description}</span>
             {echo.status !== 'active' && (
               <span className="text-ink-500 shrink-0">
-                {chaptersUntil > 0 ? `in ${chaptersUntil} ch` : 'now'}
+                {chaptersUntil > 0 
+                  ? t.echoes.inChapters.replace('{count}', String(chaptersUntil)) 
+                  : t.echoes.now}
               </span>
             )}
           </div>

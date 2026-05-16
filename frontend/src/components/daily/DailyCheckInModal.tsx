@@ -1,6 +1,7 @@
 import { useState, type FC } from 'react';
 import { Check, Gift, Star, X, Flame } from 'lucide-react';
 import type { DailyStatus, ClaimDailyResponse } from '../../services/dailyApi';
+import { useTranslation } from '../../i18n';
 import { StreakBadge } from './StreakBadge';
 
 interface DailyCheckInModalProps {
@@ -12,7 +13,6 @@ interface DailyCheckInModalProps {
   onClose: () => void;
 }
 
-const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
 export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
   isOpen,
@@ -22,6 +22,7 @@ export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
   onClaim,
   onClose,
 }) => {
+  const t = useTranslation();
   const [claiming, setClaiming] = useState(false);
   const [claimedResult, setClaimedResult] = useState<ClaimDailyResponse | null>(null);
   const [xpFly, setXpFly] = useState(false);
@@ -52,7 +53,7 @@ export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
         <div className="flex items-center justify-between p-4 border-b border-ink-800">
           <div className="flex items-center gap-2">
             <Star className="w-5 h-5 text-gold shrink-0" />
-            <h2 className="text-lg font-semibold text-ink-100">Điểm danh hằng ngày</h2>
+            <h2 className="text-lg font-semibold text-ink-100">{t.daily.checkInTitle}</h2>
           </div>
           <button
             onClick={onClose}
@@ -82,7 +83,7 @@ export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
                 onClick={onClose}
                 className="mt-3 px-4 py-2 text-sm text-ink-400 hover:text-ink-200 border border-ink-700 rounded-lg transition-colors"
               >
-                Đóng
+                {t.common.close}
               </button>
             </div>
           ) : (
@@ -91,18 +92,18 @@ export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
               <div className="flex items-center justify-center gap-3 mb-4">
                 <StreakBadge streak={status.currentStreak} size="md" />
                 <span className="text-xs text-ink-400">
-                  Kỷ lục: {status.longestStreak} ngày
+                  {t.daily.streakRecord.replace('{count}', String(status.longestStreak))}
                 </span>
                 {status.streakFreezesAvailable > 0 && (
                   <span className="text-xs text-blue-400">
-                    ({status.streakFreezesAvailable} lần đóng băng)
+                    {t.daily.streakFreezes.replace('{count}', String(status.streakFreezesAvailable))}
                   </span>
                 )}
               </div>
 
               {/* 7-day grid */}
               <div className="grid grid-cols-7 gap-2 mb-5">
-                {DAY_LABELS.map((label, i) => {
+                {t.daily.dayLabels.map((label, i) => {
                   const isPast = status.weekProgress[i];
                   const isToday = i === todayDay;
 
@@ -136,12 +137,12 @@ export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
                 <div className="text-center space-y-2 animate-[fadeIn_0.5s_ease-out]">
                   <div className="flex items-center justify-center gap-2">
                     <Check className="w-6 h-6 text-emerald-400" />
-                    <span className="text-emerald-400 font-semibold">Đã nhận!</span>
+                    <span className="text-emerald-400 font-semibold">{t.daily.claimed}</span>
                   </div>
                   <p className="text-sm text-ink-300">
                     +{claimedResult.xpEarned} XP
                     {claimedResult.bonus > 0 && (
-                      <span className="text-gold ml-1">(+{claimedResult.bonus} thưởng)</span>
+                      <span className="text-gold ml-1">{t.daily.bonus.replace('{count}', String(claimedResult.bonus))}</span>
                     )}
                   </p>
                   {xpFly && (
@@ -153,7 +154,7 @@ export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
                     onClick={onClose}
                     className="mt-3 px-6 py-2 text-sm bg-ink-800 text-ink-300 rounded-lg hover:bg-ink-700 transition-colors"
                   >
-                    Đóng
+                    {t.common.close}
                   </button>
                 </div>
               ) : todayDay >= 0 ? (
@@ -166,12 +167,12 @@ export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
                     {claiming ? (
                       <>
                         <span className="w-4 h-4 border-2 border-ink-950 border-t-transparent rounded-full animate-spin" />
-                        Đang nhận...
+                        {t.daily.claiming}
                       </>
                     ) : (
                       <>
                         <Flame className="w-4 h-4" />
-                        Nhận ngay
+                        {t.daily.claimNow}
                       </>
                     )}
                   </button>
@@ -179,7 +180,7 @@ export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
               ) : (
                 <div className="text-center py-3">
                   <p className="text-sm text-ink-400">
-                    Tất cả các ngày trong tuần đã được điểm danh!
+                    {t.daily.allClaimed}
                   </p>
                 </div>
               )}

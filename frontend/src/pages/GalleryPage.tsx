@@ -3,6 +3,7 @@ import { useGallery } from '../hooks/useGallery';
 import { shareCard } from '../services/galleryApi';
 import type { StoryCard } from '../services/galleryApi';
 import { Image, Filter, Share2, Download, X, Grid3x3 } from 'lucide-react';
+import { useTranslation, useLanguage } from '../i18n';
 
 const RARITY_COLORS: Record<string, string> = {
   common: 'border-ink-600 bg-ink-800/50',
@@ -11,15 +12,17 @@ const RARITY_COLORS: Record<string, string> = {
   epic: 'border-purple-500 bg-purple-500/10 ring-2 ring-purple-400/30',
 };
 
-const RARITY_LABELS: Record<string, string> = {
-  common: 'Thường',
-  uncommon: 'Cao cấp',
-  rare: 'Hiếm',
-  epic: 'Sử thi',
-};
-
 function CardDetailModal({ card, onClose }: { card: StoryCard | null; onClose: () => void }) {
+  const t = useTranslation();
+  const lang = useLanguage();
   if (!card) return null;
+
+  const rarityLabels: Record<string, string> = {
+    common: t.rarity.common,
+    uncommon: t.rarity.uncommon,
+    rare: t.rarity.rare,
+    epic: t.rarity.epic,
+  };
 
   const handleShare = async () => {
     try {
@@ -70,12 +73,12 @@ function CardDetailModal({ card, onClose }: { card: StoryCard | null; onClose: (
             <span
               className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${RARITY_COLORS[card.rarity]}`}
             >
-              {RARITY_LABELS[card.rarity]}
+              {rarityLabels[card.rarity]}
             </span>
             <h2 className="mt-2 text-xl font-bold text-accent-400">{card.title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-narration">{card.description}</p>
             <p className="mt-3 text-xs text-ink-500">
-              {new Date(card.unlockedAt).toLocaleDateString('vi-VN')}
+              {new Date(card.unlockedAt).toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-US')}
             </p>
           </div>
           <div className="mt-4 flex gap-2">
@@ -83,7 +86,7 @@ function CardDetailModal({ card, onClose }: { card: StoryCard | null; onClose: (
               onClick={handleShare}
               className="flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-sm font-medium text-white hover:bg-accent-500 shadow-sm transition-colors"
             >
-              <Share2 size={16} /> Chia sẻ
+              <Share2 size={16} /> {t.gallery.share}
             </button>
             {card.imageUrl && (
               <a
@@ -91,7 +94,7 @@ function CardDetailModal({ card, onClose }: { card: StoryCard | null; onClose: (
                 download
                 className="flex items-center gap-2 rounded-lg border border-ink-700 px-4 py-2 text-sm text-ink-300 hover:bg-ink-800 transition-colors"
               >
-                <Download size={16} /> Tải
+                <Download size={16} /> {t.gallery.download}
               </a>
             )}
           </div>
@@ -102,6 +105,15 @@ function CardDetailModal({ card, onClose }: { card: StoryCard | null; onClose: (
 }
 
 function StoryCardItem({ card, onClick }: { card: StoryCard; onClick: () => void }) {
+  const t = useTranslation();
+  
+  const rarityLabels: Record<string, string> = {
+    common: t.rarity.common,
+    uncommon: t.rarity.uncommon,
+    rare: t.rarity.rare,
+    epic: t.rarity.epic,
+  };
+
   return (
     <button
       onClick={onClick}
@@ -122,7 +134,7 @@ function StoryCardItem({ card, onClick }: { card: StoryCard; onClick: () => void
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink-950/90 to-transparent p-3 pt-8">
         <p className="text-sm font-medium text-ink-100 line-clamp-2">{card.title}</p>
         <span className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${RARITY_COLORS[card.rarity]}`}>
-          {RARITY_LABELS[card.rarity]}
+          {rarityLabels[card.rarity]}
         </span>
       </div>
       <div className="absolute inset-0 bg-ink-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4">
@@ -133,12 +145,20 @@ function StoryCardItem({ card, onClick }: { card: StoryCard; onClick: () => void
 }
 
 export default function GalleryPage() {
+  const t = useTranslation();
   const [selectedCard, setSelectedCard] = useState<StoryCard | null>(null);
   const [filters, setFilters] = useState<{
     rarity?: string;
     category?: string;
     sort?: string;
   }>({});
+
+  const rarityLabels: Record<string, string> = {
+    common: t.rarity.common,
+    uncommon: t.rarity.uncommon,
+    rare: t.rarity.rare,
+    epic: t.rarity.epic,
+  };
 
   const { cards, total, stats, isLoading, error, refetch } = useGallery(filters);
 
@@ -147,7 +167,7 @@ export default function GalleryPage() {
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <p className="text-red-400">{error}</p>
         <button onClick={refetch} className="mt-4 rounded-lg bg-accent-600 px-4 py-2 text-sm text-white hover:bg-accent-500 shadow-sm transition-all">
-          Thử lại
+          {t.gallery.retry}
         </button>
       </div>
     );
@@ -157,8 +177,8 @@ export default function GalleryPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <Grid3x3 size={48} className="text-ink-600" />
-        <p className="mt-4 text-lg text-narration">Bạn chưa có thẻ bài nào.</p>
-        <p className="mt-1 text-sm text-ink-500">Hãy bắt đầu một cuộc phiêu lưu để thu thập thẻ!</p>
+        <p className="mt-4 text-lg text-narration">{t.gallery.empty}</p>
+        <p className="mt-1 text-sm text-ink-500">{t.gallery.emptyHint}</p>
         {isLoading && (
           <div className="mt-4 h-5 w-5 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
         )}
@@ -170,11 +190,16 @@ export default function GalleryPage() {
     <div className="p-4 md:p-6">
       {/* Stats header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-accent-400">Bộ Sưu Tập Thẻ Bài</h1>
+        <h1 className="text-2xl font-bold text-accent-400">{t.gallery.title}</h1>
         <p className="mt-1 text-sm text-narration">
           {stats
-            ? `${stats.totalCards} thẻ (${stats.byRarity?.common || 0} Thường, ${stats.byRarity?.uncommon || 0} Cao cấp, ${stats.byRarity?.rare || 0} Hiếm, ${stats.byRarity?.epic || 0} Sử thi)`
-            : `${total} thẻ`}
+            ? t.gallery.stats
+                .replace('{total}', String(stats.totalCards))
+                .replace('{common}', String(stats.byRarity?.common || 0))
+                .replace('{uncommon}', String(stats.byRarity?.uncommon || 0))
+                .replace('{rare}', String(stats.byRarity?.rare || 0))
+                .replace('{epic}', String(stats.byRarity?.epic || 0))
+            : `${total} ${t.gallery.cards}`}
         </p>
       </div>
 
@@ -196,7 +221,7 @@ export default function GalleryPage() {
                 : 'bg-ink-800 text-ink-400 hover:bg-ink-700'
             }`}
           >
-            {r === 'all' ? 'Tất cả' : RARITY_LABELS[r]}
+            {r === 'all' ? t.gallery.all : rarityLabels[r]}
           </button>
         ))}
         <select
@@ -204,8 +229,8 @@ export default function GalleryPage() {
           onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value }))}
           className="ml-auto rounded-lg border border-ink-700 bg-ink-900 px-3 py-1.5 text-sm text-ink-300"
         >
-          <option value="newest">Mới nhất</option>
-          <option value="rarity">Độ hiếm</option>
+          <option value="newest">{t.gallery.newest}</option>
+          <option value="rarity">{t.gallery.rarity}</option>
         </select>
       </div>
 

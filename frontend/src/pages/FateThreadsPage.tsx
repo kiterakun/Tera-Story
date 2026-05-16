@@ -20,6 +20,7 @@ import {
 import { useFateThreads } from '../hooks/useFateThreads';
 import { PeekModal } from '../components/fate/PeekModal';
 import { ChapterDetailPanel } from '../components/fate/ChapterDetailPanel';
+import { useTranslation } from '../i18n';
 import type { ThreadNode, ThreadEdge } from '../services/fateThreadsApi';
 
 // ── Layout constants ──
@@ -137,6 +138,7 @@ function buildLayout(
 // ── Main component ──
 
 export default function FateThreadsPage() {
+  const t = useTranslation();
   const { playthroughId } = useParams<{ playthroughId: string }>();
   const navigate = useNavigate();
   const {
@@ -367,13 +369,11 @@ export default function FateThreadsPage() {
   // ── Peek close ──
   const handlePeekClose = useCallback(() => {
     setPeekModalOpen(false);
-    setSelectedEdge(null);
     clearPeek();
   }, [clearPeek]);
 
   const handlePeekContinue = useCallback(() => {
     setPeekModalOpen(false);
-    setSelectedEdge(null);
     clearPeek();
   }, [clearPeek]);
 
@@ -385,7 +385,7 @@ export default function FateThreadsPage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-4">
           <Loader2 size={40} className="animate-spin text-gold" />
-          <p className="text-sm text-ink-400">Đang tải Bản Đồ Định Mệnh...</p>
+          <p className="text-sm text-ink-400">{t.fateThreads.loading}</p>
         </div>
       </div>
     );
@@ -402,7 +402,7 @@ export default function FateThreadsPage() {
             onClick={refetch}
             className="px-4 py-2 rounded-lg border border-ink-600 text-ink-300 hover:bg-ink-800 transition-colors text-sm"
           >
-            Thử lại
+            {t.common.retry}
           </button>
         </div>
       </div>
@@ -416,10 +416,10 @@ export default function FateThreadsPage() {
         <div className="flex flex-col items-center gap-3 text-center">
           <GitBranch size={40} className="text-ink-600" />
           <p className="text-sm text-ink-400">
-            Chưa có chapter nào trong Bản Đồ Định Mệnh.
+            {t.fateThreads.emptyTitle}
           </p>
           <p className="text-xs text-ink-500">
-            Hãy bắt đầu hành trình để khám phá các nhánh định mệnh.
+            {t.fateThreads.emptySubtitle}
           </p>
         </div>
       </div>
@@ -434,18 +434,19 @@ export default function FateThreadsPage() {
           <button
             onClick={() => navigate(-1)}
             className="p-1.5 rounded-lg hover:bg-ink-800 text-ink-400 hover:text-ink-200 transition-colors"
-            aria-label="Quay lại"
+            aria-label={t.fateThreads.back}
           >
             <ArrowLeft size={20} />
           </button>
           <h1 className="text-lg font-bold text-gold flex items-center gap-2">
             <GitBranch size={20} />
-            Bản Đồ Định Mệnh
+            {t.fateThreads.title}
           </h1>
           {graph.metadata && (
             <span className="text-xs text-ink-500">
-              {graph.metadata.totalChapters} chapters &middot;{' '}
-              {graph.metadata.totalGhostBranches} nhánh
+              {t.fateThreads.metadata
+                .replace('{chapters}', String(graph.metadata.totalChapters))
+                .replace('{branches}', String(graph.metadata.totalGhostBranches))}
             </span>
           )}
         </div>
@@ -460,11 +461,14 @@ export default function FateThreadsPage() {
               <Layers size={14} />
               <span>
                 {selectedArcId
-                  ? `Arc ${
-                      (allArcs.find((a) => a.arcId === selectedArcId)
-                        ?.arcIndex ?? 0) + 1
-                    }`
-                  : 'Tất cả Arc'}
+                  ? t.fateThreads.arcLabel.replace(
+                      '{index}',
+                      String(
+                        (allArcs.find((a) => a.arcId === selectedArcId)
+                          ?.arcIndex ?? 0) + 1,
+                      ),
+                    )
+                  : t.fateThreads.allArcs}
               </span>
               <ChevronDown
                 size={14}
@@ -489,7 +493,7 @@ export default function FateThreadsPage() {
                       !selectedArcId ? 'text-gold' : 'text-ink-300'
                     }`}
                   >
-                    Tất cả Arc
+                    {t.fateThreads.allArcs}
                   </button>
                   {allArcs.map((arc) => (
                     <button
@@ -504,7 +508,7 @@ export default function FateThreadsPage() {
                           : 'text-ink-300'
                       }`}
                     >
-                      Arc {arc.arcIndex + 1}
+                      {t.fateThreads.arcLabel.replace('{index}', String(arc.arcIndex + 1))}
                     </button>
                   ))}
                 </div>
@@ -516,11 +520,11 @@ export default function FateThreadsPage() {
           <div className="hidden sm:flex items-center gap-4 text-xs text-ink-400">
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded bg-gold" />
-              Đường hiện tại
+              {t.fateThreads.currentPath}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded bg-gray-500" />
-              Nhánh chưa chọn
+              {t.fateThreads.unselectedBranch}
             </span>
           </div>
         </div>
@@ -561,7 +565,7 @@ export default function FateThreadsPage() {
                   fill="currentColor"
                   className="text-ink-500 text-xs font-semibold"
                 >
-                  {arc.label}
+                  {t.fateThreads.arcLabel.replace('{index}', String(arc.arcIndex + 1))}
                 </text>
               </g>
             ))}
@@ -700,21 +704,21 @@ export default function FateThreadsPage() {
           <button
             onClick={zoomIn}
             className="p-2 rounded-lg bg-ink-900/90 border border-ink-700 text-ink-400 hover:text-ink-200 hover:bg-ink-800 transition-colors"
-            aria-label="Phóng to"
+            aria-label={t.fateThreads.zoomIn}
           >
             <ZoomIn size={18} />
           </button>
           <button
             onClick={zoomOut}
             className="p-2 rounded-lg bg-ink-900/90 border border-ink-700 text-ink-400 hover:text-ink-200 hover:bg-ink-800 transition-colors"
-            aria-label="Thu nhỏ"
+            aria-label={t.fateThreads.zoomOut}
           >
             <ZoomOut size={18} />
           </button>
           <button
             onClick={fitToView}
             className="p-2 rounded-lg bg-ink-900/90 border border-ink-700 text-ink-400 hover:text-ink-200 hover:bg-ink-800 transition-colors"
-            aria-label="Vừa màn hình"
+            aria-label={t.fateThreads.fitToView}
           >
             <Maximize2 size={18} />
           </button>
@@ -777,11 +781,11 @@ export default function FateThreadsPage() {
         <div className="absolute top-3 left-3 sm:hidden flex gap-3 text-[10px] text-ink-400 bg-ink-950/80 rounded-lg px-3 py-1.5">
           <span className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-gold" />
-            Hiện tại
+            {t.fateThreads.currentPath}
           </span>
           <span className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-gray-500" />
-            Nhánh
+            {t.fateThreads.unselectedBranch}
           </span>
         </div>
       </div>

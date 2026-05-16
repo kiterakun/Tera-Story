@@ -17,6 +17,7 @@ import {
   Shield,
   Crosshair,
 } from 'lucide-react';
+import { useTranslation } from '../i18n';
 import type { Location } from '../services/mapApi';
 
 // ── Constants ──────────────────────────────────────────────────────────
@@ -48,20 +49,11 @@ const LOCATION_TYPE_BG: Record<string, string> = {
   crossroad: 'bg-yellow-900/30 border-yellow-700/50',
 };
 
-const STATUS_BADGES: Record<string, { label: string; className: string }> = {
-  undiscovered: { label: 'Unknown', className: 'bg-stone-700 text-stone-400' },
-  known: { label: 'Known', className: 'bg-blue-900/50 text-blue-300' },
-  visited: { label: 'Visited', className: 'bg-green-900/50 text-green-300' },
-  cleared: { label: 'Cleared', className: 'bg-amber-900/50 text-amber-300' },
-};
-
-const LOCATION_TYPE_LABELS: Record<string, string> = {
-  town: 'Town',
-  dungeon: 'Dungeon',
-  wilderness: 'Wilderness',
-  ruin: 'Ruin',
-  sanctuary: 'Sanctuary',
-  crossroad: 'Crossroad',
+const STATUS_BADGES: Record<string, { labelKey: string; className: string }> = {
+  undiscovered: { labelKey: 'undiscovered', className: 'bg-stone-700 text-stone-400' },
+  known: { labelKey: 'known', className: 'bg-blue-900/50 text-blue-300' },
+  visited: { labelKey: 'visited', className: 'bg-green-900/50 text-green-300' },
+  cleared: { labelKey: 'cleared', className: 'bg-amber-900/50 text-amber-300' },
 };
 
 // ── Sub-components ────────────────────────────────────────────────────
@@ -77,10 +69,12 @@ function LocationCard({
   isExpanded?: boolean;
   onToggle?: () => void;
 }) {
+  const t = useTranslation();
   const Icon = LOCATION_TYPE_ICONS[location.type] || MapPin;
   const colorClass = LOCATION_TYPE_COLORS[location.type] || 'text-stone-400';
   const bgClass = LOCATION_TYPE_BG[location.type] || 'bg-stone-800/50 border-stone-600/50';
-  const status = STATUS_BADGES[location.status] || { label: 'Unknown', className: 'bg-stone-700 text-stone-400' };
+  const statusInfo = STATUS_BADGES[location.status] || STATUS_BADGES.undiscovered!;
+  const statusLabel = t.map.status[statusInfo.labelKey as keyof typeof t.map.status];
 
   return (
     <div
@@ -100,16 +94,16 @@ function LocationCard({
             <h3 className="font-display text-ink-100 text-base">{location.name}</h3>
             {isCurrent && (
               <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-accent-600/30 text-accent-300 border border-accent-500/40">
-                Current
+                {t.map.currentBadge}
               </span>
             )}
           </div>
           <div className="flex items-center gap-2 mt-1">
             <span className={`text-xs ${colorClass}`}>
-              {LOCATION_TYPE_LABELS[location.type] || location.type}
+              {t.map.types[location.type as keyof typeof t.map.types] || location.type}
             </span>
-            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${status.className}`}>
-              {status.label}
+            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusInfo.className}`}>
+              {statusLabel}
             </span>
           </div>
           {isExpanded && (
@@ -164,6 +158,7 @@ function RegionGroup({
   expandedId: string | null;
   onToggleLocation: (id: string) => void;
 }) {
+  const t = useTranslation();
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 px-1">
@@ -172,7 +167,9 @@ function RegionGroup({
         {continentName && (
           <span className="text-xs text-ink-400">({continentName})</span>
         )}
-        <span className="text-xs text-ink-500 ml-auto">{locations.length} locations</span>
+        <span className="text-xs text-ink-500 ml-auto">
+          {t.map.locationsCount.replace('{count}', String(locations.length))}
+        </span>
       </div>
       <div className="space-y-2 pl-4 border-l-2 border-ink-800">
         {locations.map((loc) => (
@@ -192,6 +189,7 @@ function RegionGroup({
 // ── Main Page ─────────────────────────────────────────────────────────
 
 export default function MapPage() {
+  const t = useTranslation();
   const { playthroughId } = useParams<{ playthroughId: string }>();
   const {
     currentContext,
@@ -223,7 +221,7 @@ export default function MapPage() {
         existing.locations.push(loc);
       } else {
         grouped.set(regionId, {
-          regionName: loc.region?.name || 'Unknown Region',
+          regionName: loc.region?.name || t.map.unknownRegion,
           continentName: undefined, // Would need continent data
           locations: [loc],
         });
@@ -243,7 +241,7 @@ export default function MapPage() {
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-ink-400">
           <Loader2 size={40} className="animate-spin" />
-          <p className="text-sm">Loading location data...</p>
+          <p className="text-sm">{t.map.loading}</p>
         </div>
       </div>
     );
@@ -264,7 +262,7 @@ export default function MapPage() {
           }}
           className="rounded-lg bg-accent-600 px-4 py-2 text-sm text-white hover:bg-accent-500 transition-colors"
         >
-          Retry
+          {t.map.retry}
         </button>
       </div>
     );
@@ -276,9 +274,9 @@ export default function MapPage() {
       <div className="flex h-[calc(100vh-4rem)] flex-col items-center justify-center gap-4 text-ink-400">
         <Compass size={48} className="text-ink-500" />
         <div className="text-center">
-          <h2 className="font-display text-ink-300 text-lg mb-2">No Locations Discovered</h2>
+          <h2 className="font-display text-ink-300 text-lg mb-2">{t.map.emptyTitle}</h2>
           <p className="text-sm text-ink-500 max-w-md">
-            Your journey has not yet begun. Start a playthrough to begin exploring the world.
+            {t.map.emptySubtitle}
           </p>
         </div>
       </div>
@@ -291,10 +289,10 @@ export default function MapPage() {
       <div className="mb-8">
         <div className="flex items-center gap-3">
           <Compass size={28} className="text-accent-400" />
-          <h1 className="text-2xl sm:text-3xl font-display text-ink-100">Location Journal</h1>
+          <h1 className="text-2xl sm:text-3xl font-display text-ink-100">{t.map.title}</h1>
         </div>
         <p className="text-ink-200/60 mt-2 text-sm">
-          Track your journey through the world
+          {t.map.subtitle}
         </p>
         <div className="mt-3 h-px bg-gradient-to-r from-accent-400/60 via-accent-600/30 to-transparent" />
       </div>
@@ -304,7 +302,7 @@ export default function MapPage() {
         <div className="mb-8">
           <h2 className="font-display text-ink-200 text-sm mb-3 flex items-center gap-2">
             <Navigation size={14} className="text-accent-400" />
-            Current Location
+            {t.map.currentLocation}
           </h2>
           <LocationCard
             location={currentContext.location}
@@ -317,7 +315,7 @@ export default function MapPage() {
             <div className="mt-4">
               <h3 className="font-display text-ink-300 text-xs mb-2 flex items-center gap-2">
                 <Globe size={12} className="text-ink-400" />
-                Connected Destinations
+                {t.map.connectedDestinations}
               </h3>
               <div className="grid gap-2 sm:grid-cols-2">
                 {currentContext.connectedLocations.map((loc) => (
@@ -339,7 +337,7 @@ export default function MapPage() {
         <div>
           <h2 className="font-display text-ink-200 text-sm mb-4 flex items-center gap-2">
             <MapPin size={14} className="text-ink-400" />
-            Discovered Locations
+            {t.map.discoveredLocations}
             <span className="text-xs text-ink-500 ml-1">({playthroughLocations.length})</span>
           </h2>
           <div className="space-y-6">

@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import { BookOpen, Swords, Target, Star, CreditCard, Gift } from 'lucide-react';
 import type { DailyQuest } from '../../services/dailyApi';
+import { useTranslation } from '../../i18n';
 
 interface DailyQuestsWidgetProps {
   quests: DailyQuest[];
@@ -19,13 +20,6 @@ const questIcons: Record<string, typeof BookOpen> = {
 
 
 
-const questDescriptions: Record<string, (target: number) => string> = {
-  read_scenes: (n) => `Đọc ${n} cảnh truyện`,
-  make_choices: (n) => `Đưa ra ${n} lựa chọn`,
-  win_combat: (n) => `Thắng ${n} trận chiến`,
-  unlock_achievement: (n) => `Mở khóa ${n} thành tựu`,
-  collect_card: (n) => `Sưu tầm ${n} thẻ bài`,
-};
 
 export const DailyQuestsWidget: FC<DailyQuestsWidgetProps> = ({
   quests,
@@ -33,12 +27,13 @@ export const DailyQuestsWidget: FC<DailyQuestsWidgetProps> = ({
   error = null,
   onClaim,
 }) => {
+  const t = useTranslation();
   return (
     <div className="bg-ink-900 border border-ink-700 rounded-2xl p-4 space-y-3">
       {/* Header */}
       <div className="flex items-center gap-2">
         <Gift className="w-5 h-5 text-gold shrink-0" />
-        <h3 className="text-sm font-semibold text-ink-100">Nhiệm vụ hôm nay</h3>
+        <h3 className="text-sm font-semibold text-ink-100">{t.daily.todayQuests}</h3>
       </div>
 
       {/* Loading state */}
@@ -67,10 +62,10 @@ export const DailyQuestsWidget: FC<DailyQuestsWidgetProps> = ({
             <Star className="w-5 h-5 text-gold" />
           </div>
           <p className="text-sm text-ink-300 font-medium">
-            Tuyệt vời! Hoàn thành hết nhiệm vụ hôm nay
+            {t.daily.allQuestsDone}
           </p>
           <p className="text-xs text-ink-500 mt-1">
-            Quay lại vào ngày mai để nhận nhiệm vụ mới
+            {t.daily.backTomorrow}
           </p>
         </div>
       ) : (
@@ -96,7 +91,7 @@ export const DailyQuestsWidget: FC<DailyQuestsWidgetProps> = ({
                 {/* Info + Progress */}
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-ink-300 truncate">
-                    {questDescriptions[quest.questType]?.(quest.targetProgress) ?? quest.title}
+                    {t.daily.questDesc[quest.questType as keyof typeof t.daily.questDesc]?.replace('{count}', String(quest.targetProgress)) ?? quest.title}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="flex-1 h-1.5 bg-ink-700 rounded-full overflow-hidden">
@@ -125,7 +120,7 @@ export const DailyQuestsWidget: FC<DailyQuestsWidgetProps> = ({
                       +{quest.xpReward} XP
                     </button>
                   ) : quest.claimed ? (
-                    <span className="text-xs text-emerald-400 font-medium">Đã nhận</span>
+                    <span className="text-xs text-emerald-400 font-medium">{t.daily.claimed}</span>
                   ) : null}
                 </div>
               </div>
