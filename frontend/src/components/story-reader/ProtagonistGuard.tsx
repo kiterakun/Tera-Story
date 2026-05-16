@@ -19,7 +19,7 @@ export function ProtagonistGuard({ worldId, playthroughId, onNavigate }: Protago
         <h2 className="font-display text-2xl text-ink-100 mb-3">{t.playthrough.createProtagonist}</h2>
         <p className="text-ink-200/60 text-sm mb-8">{t.playthrough.createProtagonistRequired}</p>
         <button
-          onClick={() => onNavigate(`/worlds/${worldId}/playthroughs/${playthroughId}/characters/new?role=protagonist`)}
+          onClick={() => onNavigate(`/worlds/${worldId}/playthroughs/${playthroughId}/characters/create?role=protagonist`)}
           className="inline-flex items-center gap-2 bg-accent-600 hover:bg-accent-500 text-white px-8 py-3.5 rounded-2xl font-display text-base transition-all duration-200 shadow-lg hover:shadow-accent-600/30"
         >
           {t.playthrough.createProtagonist}

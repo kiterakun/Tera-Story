@@ -112,7 +112,7 @@ export default function WorldCreatePage() {
       });
 
       showSuccess(t.toast.playthroughCreated);
-      navigate(`/playthroughs/${data.playthrough._id}`);
+      navigate(`/worlds/${createdWorld._id}/playthroughs/${data.playthrough._id}`);
     } catch (error) {
       console.error("Failed to create playthrough:", error);
       showError(t.toast.playthroughCreateFailed);
