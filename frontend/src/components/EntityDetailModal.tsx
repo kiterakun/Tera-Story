@@ -5,6 +5,7 @@ import type { Organization } from '../types/entities';
 import { getImageUrl } from '../utils/url';
 import { RetryImageButton } from './RetryImageButton';
 import { DynamicStatList } from './DynamicStatDisplay';
+import { useStoryStore } from '../stores/storyStore';
 
 type EntityData =
   | { type: 'character'; data: Character }
@@ -48,6 +49,7 @@ const SPECIAL_STATUS_CONFIG: Record<SpecialItemStatus, { text: string; bg: strin
 
 export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
   const t = useTranslation();
+  const { world, specialItemTemplates } = useStoryStore();
   const entityStatusLabels: Record<string, string> = t.entityStatus;
   if (!entity) return null;
 
@@ -159,7 +161,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
         {char.dynamicStats.length > 0 && (
           <div>
             <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-3 font-medium">{t.storyReader.statsTab}</h4>
-            <DynamicStatList stats={char.dynamicStats} />
+            <DynamicStatList stats={char.dynamicStats} templates={world?.resourceTemplates} />
           </div>
         )}
       </div>
@@ -253,13 +255,21 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
         {Object.keys(si.customFields || {}).length > 0 && (
           <div>
             <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-3 font-medium">{t.itemDetail.properties}</h4>
-            <div className="space-y-1.5">
-              {Object.entries(si.customFields).map(([key, val]) => (
-                <div key={key} className="flex justify-between text-sm">
-                  <span className="text-ink-200/70">{key}</span>
-                  <span className="text-ink-100 font-mono">{String(val)}</span>
-                </div>
-              ))}
+            <div className="space-y-2">
+              {Object.entries(si.customFields).map(([key, val]) => {
+                // Find field definition in template
+                const template = specialItemTemplates.find(t => t.category === si.category);
+                const fieldDef = template?.fields.find(f => f.name === key || (f as any).key === key);
+                
+                return (
+                  <div key={key} className="bg-ink-950/40 rounded-lg p-2 border border-ink-700/30">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-ink-200/60">{fieldDef?.name || key}</span>
+                      <span className="text-sm text-ink-100 font-medium">{String(val)}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -306,74 +316,74 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
       </div>
     </div>
   );
-}
 
-function renderOrganization(org: Organization) {
-  const statusColors: Record<string, string> = {
-    active: 'text-green-400 bg-green-500/10',
-    disbanded: 'text-red-400 bg-red-500/10',
-    hidden: 'text-amber-400 bg-amber-500/10',
-  };
+  function renderOrganization(org: Organization) {
+    const statusColors: Record<string, string> = {
+      active: 'text-green-400 bg-green-500/10',
+      disbanded: 'text-red-400 bg-red-500/10',
+      hidden: 'text-amber-400 bg-amber-500/10',
+    };
 
-  return (
-    <>
-      <div className="flex items-start gap-3 mb-4">
-        <div className="w-12 h-12 rounded-xl bg-accent-600/20 flex items-center justify-center shrink-0">
-          <Landmark size={24} className="text-accent-400" />
-        </div>
-        <div className="min-w-0">
-          <h3 className="text-lg font-semibold text-ink-100">{org.name}</h3>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-ink-200/60 capitalize">{org.type}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[org.status] || 'text-ink-200/50 bg-ink-800'}`}>
-              {org.status}
-            </span>
+    return (
+      <>
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-12 h-12 rounded-xl bg-accent-600/20 flex items-center justify-center shrink-0">
+            <Landmark size={24} className="text-accent-400" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold text-ink-100">{org.name}</h3>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs text-ink-200/60 capitalize">{org.type}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[org.status] || 'text-ink-200/50 bg-ink-800'}`}>
+                {org.status}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {org.description && (
-        <p className="text-sm text-ink-200/80 mb-4">{org.description}</p>
-      )}
+        {org.description && (
+          <p className="text-sm text-ink-200/80 mb-4">{org.description}</p>
+        )}
 
-      {org.goals && (
-        <div className="mb-3">
-          <h4 className="text-xs font-medium text-ink-200/60 uppercase tracking-wider mb-1">Goals</h4>
-          <p className="text-sm text-ink-200/80">{org.goals}</p>
-        </div>
-      )}
-
-      {org.structure && (
-        <div className="mb-3">
-          <h4 className="text-xs font-medium text-ink-200/60 uppercase tracking-wider mb-1">Structure</h4>
-          <p className="text-sm text-ink-200/80">{org.structure}</p>
-        </div>
-      )}
-
-      {org.dynamicStats.length > 0 && (
-        <div className="mb-3">
-          <h4 className="text-xs font-medium text-ink-200/60 uppercase tracking-wider mb-2">Stats</h4>
-          <DynamicStatList stats={org.dynamicStats} />
-        </div>
-      )}
-
-      {Array.isArray(org.memberIds) && org.memberIds.length > 0 && (
-        <div>
-          <h4 className="text-xs font-medium text-ink-200/60 uppercase tracking-wider mb-2">Members</h4>
-          <div className="flex flex-wrap gap-2">
-            {org.memberIds.map((member) => {
-              const name = typeof member === 'string' ? member : member.name;
-              return (
-                <span key={name} className="text-xs px-2 py-1 bg-ink-800 rounded-lg text-ink-200/80">
-                  {name}
-                </span>
-              );
-            })}
+        {org.goals && (
+          <div className="mb-3">
+            <h4 className="text-xs font-medium text-ink-200/60 uppercase tracking-wider mb-1">Goals</h4>
+            <p className="text-sm text-ink-200/80">{org.goals}</p>
           </div>
-        </div>
-      )}
-    </>
-  );
+        )}
+
+        {org.structure && (
+          <div className="mb-3">
+            <h4 className="text-xs font-medium text-ink-200/60 uppercase tracking-wider mb-1">Structure</h4>
+            <p className="text-sm text-ink-200/80">{org.structure}</p>
+          </div>
+        )}
+
+        {org.dynamicStats.length > 0 && (
+          <div className="mb-3">
+            <h4 className="text-xs font-medium text-ink-200/60 uppercase tracking-wider mb-2">Stats</h4>
+            <DynamicStatList stats={org.dynamicStats} templates={world?.resourceTemplates} />
+          </div>
+        )}
+
+        {Array.isArray(org.memberIds) && org.memberIds.length > 0 && (
+          <div>
+            <h4 className="text-xs font-medium text-ink-200/60 uppercase tracking-wider mb-2">Members</h4>
+            <div className="flex flex-wrap gap-2">
+              {org.memberIds.map((member) => {
+                const name = typeof member === 'string' ? member : (member as any).name;
+                return (
+                  <span key={name} className="text-xs px-2 py-1 bg-ink-800 rounded-lg text-ink-200/80">
+                    {name}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
 }
 
 export type { EntityData };

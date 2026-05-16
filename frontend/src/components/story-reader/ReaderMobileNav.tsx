@@ -5,6 +5,7 @@ import ChapterNav from '../ChapterNav';
 import RPGPanel from '../RPGPanel';
 import type { Chapter } from '../../types/story';
 import { useTranslation } from '../../i18n';
+import { useStoryStore } from '../../stores/storyStore';
 import type { EntityData } from '../EntityDetailModal';
 import type { Relationship, Character, Item, SpecialItem } from '../../types';
 
@@ -79,6 +80,7 @@ export function ReaderMobileNav({
   isRelationshipModalOpen
 }: ReaderMobileNavProps) {
   const t = useTranslation();
+  const world = useStoryStore((state) => state.world);
 
   return (
     <>
@@ -103,6 +105,7 @@ export function ReaderMobileNav({
           setIsRelationshipModalOpen={setIsRelationshipModalOpen}
           isRelationshipModalOpen={isRelationshipModalOpen}
           t={t}
+          resourceTemplates={world?.resourceTemplates}
         />
       </MobileDrawer>
 

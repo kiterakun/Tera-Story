@@ -1,11 +1,14 @@
 import type { Character } from '../services/playthroughApi';
+import type { ResourceTemplate } from '@/types/entities';
 import { useTranslation } from '../i18n';
 import { getImageUrl } from '../utils/url';
 import { RetryImageButton } from './RetryImageButton';
 import { DynamicStatDisplay } from './DynamicStatDisplay';
+import { useStoryStore } from '../stores/storyStore';
 
 export default function CharacterCard({ character }: { character: Character }) {
   const t = useTranslation();
+  const world = useStoryStore((state) => state.world);
   const isProtagonist = character.role === 'protagonist';
   const initials = character.name.substring(0, 2).toUpperCase();
 
@@ -62,7 +65,11 @@ export default function CharacterCard({ character }: { character: Character }) {
         <div className="grid grid-cols-2 gap-1.5">
           {character.dynamicStats.map((stat, idx) => (
             <div key={idx} className="bg-ink-950/50 rounded-lg px-2.5 py-1.5">
-              <DynamicStatDisplay stat={stat} compact />
+              <DynamicStatDisplay 
+                stat={stat} 
+                template={world?.resourceTemplates?.find((tmpl: ResourceTemplate) => tmpl.key === stat.k)} 
+                compact 
+              />
             </div>
           ))}
         </div>

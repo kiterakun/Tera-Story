@@ -139,6 +139,7 @@ export default function WorldCreatePage() {
           min: rt.min,
           max: rt.max,
           defaultValue: rt.defaultValue,
+          displayFormat: rt.displayFormat,
           ...(rt.options?.length ? { options: rt.options } : {}),
         })));
       }
@@ -149,6 +150,7 @@ export default function WorldCreatePage() {
           min: rt.min,
           max: rt.max,
           defaultValue: rt.defaultValue,
+          displayFormat: rt.displayFormat,
           ...(rt.options?.length ? { options: rt.options } : {}),
         })));
       }
@@ -173,6 +175,7 @@ export default function WorldCreatePage() {
             min: rt.min,
             max: rt.max,
             defaultValue: rt.defaultValue,
+            displayFormat: rt.displayFormat,
             ...(rt.options?.length ? { options: rt.options } : {}),
           })),
         })));

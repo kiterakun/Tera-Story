@@ -20,6 +20,7 @@ import {
 import { useTranslation } from '../i18n';
 import type { Location } from '../services/mapApi';
 import { DynamicStatList } from '../components/DynamicStatDisplay';
+import { useStoryStore } from '../stores/storyStore';
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -64,11 +65,13 @@ function LocationCard({
   isCurrent,
   isExpanded,
   onToggle,
+  templates,
 }: {
   location: Location;
   isCurrent?: boolean;
   isExpanded?: boolean;
   onToggle?: () => void;
+  templates?: any[];
 }) {
   const t = useTranslation();
   const Icon = LOCATION_TYPE_ICONS[location.type] || MapPin;
@@ -116,7 +119,7 @@ function LocationCard({
                 <div className="grid grid-cols-2 gap-1.5">
                   {location.dynamicStats.map((stat, idx) => (
                     <div key={idx} className="bg-ink-950/50 rounded-lg px-2 py-1">
-                      <DynamicStatList stats={[stat]} compact />
+                      <DynamicStatList stats={[stat]} templates={templates} compact />
                     </div>
                   ))}
                 </div>
@@ -146,6 +149,7 @@ function RegionGroup({
   currentLocationId,
   expandedId,
   onToggleLocation,
+  templates,
 }: {
   regionName: string;
   continentName?: string;
@@ -153,6 +157,7 @@ function RegionGroup({
   currentLocationId?: string;
   expandedId: string | null;
   onToggleLocation: (id: string) => void;
+  templates?: any[];
 }) {
   const t = useTranslation();
   return (
@@ -175,6 +180,7 @@ function RegionGroup({
             isCurrent={loc._id === currentLocationId}
             isExpanded={expandedId === loc._id}
             onToggle={() => onToggleLocation(loc._id)}
+            templates={templates}
           />
         ))}
       </div>
@@ -195,6 +201,7 @@ export default function MapPage() {
     fetchCurrentLocation,
     fetchAllLocations,
   } = useMap();
+  const world = useStoryStore((state) => state.world);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -304,6 +311,7 @@ export default function MapPage() {
             location={currentContext.location}
             isCurrent
             isExpanded
+            templates={world?.locationResourceTemplates}
           />
 
           {/* Connected Locations */}
@@ -320,6 +328,7 @@ export default function MapPage() {
                     location={loc}
                     isExpanded={expandedId === loc._id}
                     onToggle={() => handleToggleLocation(loc._id)}
+                    templates={world?.locationResourceTemplates}
                   />
                 ))}
               </div>
@@ -346,6 +355,7 @@ export default function MapPage() {
                 currentLocationId={currentContext?.location?._id}
                 expandedId={expandedId}
                 onToggleLocation={handleToggleLocation}
+                templates={world?.locationResourceTemplates}
               />
             ))}
           </div>

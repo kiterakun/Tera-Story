@@ -75,6 +75,7 @@ export default function GamePanel({
   setIsRelationshipModalOpen,
   t,
 }: GamePanelProps) {
+  const world = useStoryStore((state) => state.world);
   const [activeTab, setActiveTab] = useState<GameTab>('character');
 
   const { archived, isLoading: archiveLoading, fetchArchived, restoreEntity } = useArchive(playthroughId);
@@ -212,7 +213,7 @@ export default function GamePanel({
                       <div className="grid grid-cols-2 gap-1.5 mt-3">
                         {currentContext.location.dynamicStats.map((stat, idx) => (
                           <div key={idx} className="bg-ink-900/50 rounded px-2 py-1">
-                            <DynamicStatList stats={[stat]} compact />
+                            <DynamicStatList stats={[stat]} templates={world?.locationResourceTemplates} compact />
                           </div>
                         ))}
                       </div>
@@ -237,7 +238,7 @@ export default function GamePanel({
                             <div className="grid grid-cols-2 gap-1 mt-2">
                               {loc.dynamicStats.map((stat, idx) => (
                                 <div key={idx} className="bg-ink-900/50 rounded px-1.5 py-0.5">
-                                  <DynamicStatList stats={[stat]} compact />
+                                  <DynamicStatList stats={[stat]} templates={world?.locationResourceTemplates} compact />
                                 </div>
                               ))}
                             </div>

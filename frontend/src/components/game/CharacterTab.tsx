@@ -5,6 +5,7 @@ import type { Character } from '../../services/playthroughApi';
 import { useTranslation } from '../../i18n';
 import { getImageUrl } from '../../utils/url';
 import { DynamicStatList } from '../DynamicStatDisplay';
+import { useStoryStore } from '../../stores/storyStore';
 
 const STATUS_COLORS: Record<string, string> = {
   active: 'text-green-400 bg-green-500/10',
@@ -27,6 +28,7 @@ interface CharacterTabProps {
 }
 
 export function CharacterTab({ protagonist, setDetailEntity, t }: CharacterTabProps) {
+  const world = useStoryStore((state) => state.world);
   if (!protagonist) {
     return (
       <div className="flex items-center justify-center h-48 text-ink-200/40">
@@ -104,7 +106,7 @@ export function CharacterTab({ protagonist, setDetailEntity, t }: CharacterTabPr
           <div className="grid grid-cols-2 gap-2">
             {protagonist.dynamicStats.map((stat, idx) => (
               <div key={idx} className="bg-ink-950/50 rounded-xl p-3 border border-ink-700/50">
-                <DynamicStatList stats={[stat]} compact />
+                <DynamicStatList stats={[stat]} templates={world?.resourceTemplates} compact />
               </div>
             ))}
           </div>

@@ -304,6 +304,8 @@ function ObjectChildrenEditor({ children, onChange, depth }: ObjectChildrenEdito
       } else {
         delete item.children;
       }
+    } else if (field === 'displayFormat') {
+      item.displayFormat = value as string;
     } else if (field === 'children') {
       item.children = value as ResourceTemplate[];
     }
@@ -320,29 +322,41 @@ function ObjectChildrenEditor({ children, onChange, depth }: ObjectChildrenEdito
         {children.map((child, childIdx) => (
           <div key={childIdx} className="bg-ink-800/50 rounded-lg p-3 space-y-2">
             <div className="flex gap-2">
-              <input
-                className={`flex-1 bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 ${depth > 0 ? 'text-xs' : 'text-sm'} text-ink-100 placeholder:text-ink-500 focus:border-accent-400 outline-none`}
-                placeholder={t.worldCreate.statKey ?? 'Key'}
-                value={child.key}
-                onChange={(e) => handleChange(childIdx, 'key', e.target.value)}
-              />
-              <select
-                className={`bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 ${depth > 0 ? 'text-xs' : 'text-sm'} text-ink-100 focus:border-accent-400 outline-none`}
-                value={child.type}
-                onChange={(e) => handleChange(childIdx, 'type', e.target.value)}
-              >
-                <option value="number">{depth > 0 ? '#' : t.worldCreate.typeNumber}</option>
-                <option value="text">{depth > 0 ? 'T' : t.worldCreate.typeText}</option>
-                <option value="enum">{depth > 0 ? 'E' : t.worldCreate.typeEnum}</option>
-                <option value="pool">{depth > 0 ? 'P' : t.worldCreate.typePool}</option>
-                {depth < maxDepth && (
-                  <option value="object">{depth > 0 ? 'O' : t.worldCreate.typeObject ?? 'Object'}</option>
+              <div className="flex-1 space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    className={`flex-1 bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 ${depth > 0 ? 'text-xs' : 'text-sm'} text-ink-100 placeholder:text-ink-500 focus:border-accent-400 outline-none`}
+                    placeholder={t.worldCreate.statKey ?? 'Key'}
+                    value={child.key}
+                    onChange={(e) => handleChange(childIdx, 'key', e.target.value)}
+                  />
+                  <select
+                    className={`bg-ink-800 border border-ink-700 rounded-lg px-3 py-2 ${depth > 0 ? 'text-xs' : 'text-sm'} text-ink-100 focus:border-accent-400 outline-none`}
+                    value={child.type}
+                    onChange={(e) => handleChange(childIdx, 'type', e.target.value)}
+                  >
+                    <option value="number">{depth > 0 ? '#' : t.worldCreate.typeNumber}</option>
+                    <option value="text">{depth > 0 ? 'T' : t.worldCreate.typeText}</option>
+                    <option value="enum">{depth > 0 ? 'E' : t.worldCreate.typeEnum}</option>
+                    <option value="pool">{depth > 0 ? 'P' : t.worldCreate.typePool}</option>
+                    {depth < maxDepth && (
+                      <option value="object">{depth > 0 ? 'O' : t.worldCreate.typeObject ?? 'Object'}</option>
+                    )}
+                  </select>
+                </div>
+                {child.type !== 'object' && (
+                  <input
+                    className={`w-full bg-ink-800 border border-ink-700 rounded-lg px-3 py-1.5 text-[10px] text-ink-100 placeholder:text-ink-500/50 focus:border-accent-400 outline-none`}
+                    placeholder={t.worldCreate.displayFormatPlaceholder ?? 'Display Format (e.g. "{v} HP")'}
+                    value={child.displayFormat ?? ''}
+                    onChange={(e) => handleChange(childIdx, 'displayFormat', e.target.value)}
+                  />
                 )}
-              </select>
+              </div>
               <button
                 type="button"
                 onClick={() => handleRemove(childIdx)}
-                className="text-ink-200/40 hover:text-red-400 p-1 rounded-lg hover:bg-red-400/10 transition-all shrink-0"
+                className="text-ink-200/40 hover:text-red-400 p-1 rounded-lg hover:bg-red-400/10 transition-all shrink-0 self-start mt-1"
               >
                 <svg className={`${depth > 0 ? 'w-3 h-3' : 'w-4 h-4'}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path d="M6 18L18 6M6 6l12 12" />

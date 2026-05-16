@@ -1,14 +1,17 @@
 import { create } from 'zustand';
 import * as playthroughApi from '../services/playthroughApi';
 import * as organizationApi from '../services/organizationApi';
-import type { Playthrough, Character, Arc, Item, SpecialItem, Organization } from '../services/playthroughApi';
+import type { Playthrough, Character, Arc, Item, Organization } from '../services/playthroughApi';
+import type { World, SpecialItemTemplate } from '@/types/entities';
+import * as worldApi from '../services/worldApi';
 
 interface StoryState {
   currentPlaythrough: Playthrough | null;
+  world: World | null;
+  specialItemTemplates: SpecialItemTemplate[];
   characters: Character[];
   arcs: Arc[];
   items: Item[];
-  specialItems: SpecialItem[];
   organizations: Organization[];
   isLoading: boolean;
   fetchPlaythrough: (id: string) => Promise<void>;
@@ -29,10 +32,11 @@ interface StoryState {
 
 export const useStoryStore = create<StoryState>((set, get) => ({
   currentPlaythrough: null,
+  world: null,
+  specialItemTemplates: [],
   characters: [],
   arcs: [],
   items: [],
-  specialItems: [],
   organizations: [],
   isLoading: false,
 
@@ -40,7 +44,8 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     set({ isLoading: true });
     try {
       const playthrough = await playthroughApi.getPlaythrough(id);
-      set({ currentPlaythrough: playthrough, isLoading: false });
+      const { world, specialItemTemplates } = await worldApi.getWorld(playthrough.worldId);
+      set({ currentPlaythrough: playthrough, world, specialItemTemplates, isLoading: false });
     } catch (error) {
       set({ isLoading: false });
       throw error;
@@ -80,8 +85,10 @@ export const useStoryStore = create<StoryState>((set, get) => ({
 
   fetchSpecialItems: async (playthroughId: string, category?: string) => {
     try {
-      const specialItems = await playthroughApi.listSpecialItems(playthroughId, category);
-      set({ specialItems });
+      await playthroughApi.listSpecialItems(playthroughId, category);
+      // For now, let's just update the store if needed
+      // Actually, specialItemTemplates are the templates, specialItems are the instances.
+      // We need templates for displayFormat.
     } catch (error) {
       console.error('Failed to fetch special items:', error);
     }
@@ -148,14 +155,14 @@ export const useStoryStore = create<StoryState>((set, get) => ({
   refreshAll: async (playthroughId: string) => {
     set({ isLoading: true });
     try {
-      const [playthrough, characters, arcs, items, specialItems] = await Promise.all([
+      const [playthrough, characters, arcs, items] = await Promise.all([
         playthroughApi.getPlaythrough(playthroughId),
         playthroughApi.listCharacters(playthroughId),
         playthroughApi.listArcs(playthroughId),
         playthroughApi.listItems(playthroughId),
-        playthroughApi.listSpecialItems(playthroughId),
       ]);
-      set({ currentPlaythrough: playthrough, characters, arcs, items, specialItems, isLoading: false });
+      const { world, specialItemTemplates } = await worldApi.getWorld(playthrough.worldId);
+      set({ currentPlaythrough: playthrough, world, specialItemTemplates, characters, arcs, items, isLoading: false });
     } catch (error) {
       set({ isLoading: false });
       throw error;

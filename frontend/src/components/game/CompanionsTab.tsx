@@ -6,6 +6,7 @@ import type { Character } from '../../services/playthroughApi';
 import { useTranslation } from '../../i18n';
 import { getImageUrl } from '../../utils/url';
 import { DynamicStatList } from '../DynamicStatDisplay';
+import { useStoryStore } from '../../stores/storyStore';
 
 const STATUS_COLORS: Record<string, string> = {
   active: 'text-green-400 bg-green-500/10',
@@ -28,6 +29,7 @@ interface CompanionsTabProps {
 }
 
 export function CompanionsTab({ sortedNpcs, setDetailEntity, t }: CompanionsTabProps) {
+  const world = useStoryStore((state) => state.world);
   const [expandedNpcId, setExpandedNpcId] = useState<string | null>(null);
 
   if (sortedNpcs.length === 0) {
@@ -113,7 +115,7 @@ export function CompanionsTab({ sortedNpcs, setDetailEntity, t }: CompanionsTabP
                   <div className="grid grid-cols-2 gap-1.5">
                     {npc.dynamicStats.map((stat, idx) => (
                       <div key={idx} className="bg-ink-900/50 rounded px-2 py-1">
-                        <DynamicStatList stats={[stat]} compact />
+                        <DynamicStatList stats={[stat]} templates={world?.resourceTemplates} compact />
                       </div>
                     ))}
                   </div>

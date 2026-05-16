@@ -58,7 +58,9 @@ export function DynamicStatDisplay({ stat, template, compact = false }: DynamicS
         <div className="flex items-center justify-between">
           <span className={`${compact ? 'text-xs' : 'text-sm'} text-ink-200/60`}>{stat.k}</span>
           <span className={`${compact ? 'text-xs' : 'text-sm'} font-medium text-ink-100`}>
-            {current}/{max}
+            {template?.displayFormat
+              ? template.displayFormat.replace('{v}', `${current}/${max}`)
+              : `${current}/${max}`}
           </span>
         </div>
         <div className="w-full bg-ink-800 rounded-full h-1.5">
@@ -81,7 +83,11 @@ export function DynamicStatDisplay({ stat, template, compact = false }: DynamicS
       <div className={compact ? 'space-y-0.5' : 'space-y-1'}>
         <div className="flex items-center justify-between">
           <span className={`${compact ? 'text-xs' : 'text-sm'} text-ink-200/60`}>{stat.k}</span>
-          <span className={`${compact ? 'text-xs' : 'text-sm'} font-medium text-ink-100`}>{val}</span>
+          <span className={`${compact ? 'text-xs' : 'text-sm'} font-medium text-ink-100`}>
+            {template?.displayFormat
+              ? template.displayFormat.replace('{v}', String(val))
+              : String(val)}
+          </span>
         </div>
         <div className="w-full bg-ink-800 rounded-full h-1.5">
           <div
@@ -102,7 +108,9 @@ export function DynamicStatDisplay({ stat, template, compact = false }: DynamicS
         <span className={`${compact ? 'text-xs' : 'text-sm'} text-ink-200/60`}>{stat.k}</span>
         <div className="flex items-center gap-1.5">
           <span className={`${compact ? 'text-xs' : 'text-sm'} font-medium ${isValid ? 'text-ink-100' : 'text-red-400'}`}>
-            {String(stat.v)}
+            {template?.displayFormat
+              ? template.displayFormat.replace('{v}', String(stat.v))
+              : String(stat.v)}
           </span>
           {!isValid && (
             <AlertTriangle size={12} className="text-red-400" />
