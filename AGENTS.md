@@ -35,14 +35,15 @@ Tera-Story/
 │   └── src/
 │       ├── components/ # Reusable UI components
 │       │   ├── game/         # GamePanel + tab components (CharacterTab, CompanionsTab, ArchiveTab)
-│       │   ├── world-create/ # World creation components (ResourceTemplateEditor, SpecialItemTemplateEditor)
+│       │   ├── story-reader/ # Modularized reader (ReaderHeader, ReaderContent, ReaderMobileNav, ProtagonistGuard)
+│       │   ├── world-create/ # World creation components (ResourceTemplateEditor, SpecialItemTemplateEditor, AiWorldGenerator, WorldBasicInfoForm, MapSelectionStep, CreationOverlay)
 │       │   ├── echoes/       # Echo indicator + list
 │       │   ├── progression/  # Level badge, XP bar, panel, modal
 │       │   ├── daily/        # Daily check-in, quests, streak
 │       │   ├── social/       # Leaderboard, share, privacy
 │       │   ├── fate/         # Peek modal, chapter detail
 │       │   ├── whispers/     # Whispers modal
-│       │   ├── DynamicStatDisplay.tsx  # Shared stat renderer (all types)
+│       │   ├── DynamicStatDisplay.tsx  # Shared stat renderer (supports displayFormat)
 │       │   ├── ChapterStatusOverlay.tsx # Chapter status UI states
 │       │   └── MobileDrawer.tsx        # Reusable mobile drawer
 │       ├── pages/     # Route pages (lazy-loaded)
@@ -75,6 +76,7 @@ Tera-Story/
 Characters, Items, SpecialItems, Locations, and Organizations have `dynamicStats: IDynamicStat[]` where each stat is `{ k, v, t, maxV?, children? }`. Stats are initialized from World `resourceTemplates` (for characters), `locationResourceTemplates` (for locations), or `organizationTemplates` (for organizations).
 
 **Stat types:** `number` | `text` | `progress` | `enum` | `pool` | `object`
+- **displayFormat**: Template string (e.g. `"{v} HP"`, `"{v} gold"`) used in `ResourceTemplate` to format numeric stats. Supports `{v}` placeholder.
 - **pool**: Has `v` (current) + `maxV` (current maximum). Example: HP 80/100. Agent can update both. If `maxV` decreases, `v` auto-clamps.
 - **progress**: Like number but rendered as a progress bar (0-100 scale).
 - **enum**: Must pick from `resourceTemplate.options[]`.
@@ -159,7 +161,12 @@ World > Continent > Region > Location. Top 3 levels are world-level (shared). Lo
 | `ChapterStatusOverlay` | Component | `frontend/src/components/ChapterStatusOverlay.tsx` | Chapter status UI states |
 | `MobileDrawer` | Component | `frontend/src/components/MobileDrawer.tsx` | Reusable mobile drawer |
 | `ResourceTemplateEditor` | Component | `frontend/src/components/world-create/ResourceTemplateEditor.tsx` | Resource template editor |
+| `AiWorldGenerator` | Component | `frontend/src/components/world-create/AiWorldGenerator.tsx` | AI-assisted world generator |
 | `SpecialItemTemplateEditor` | Component | `frontend/src/components/world-create/SpecialItemTemplateEditor.tsx` | Special item template editor |
+| `ReaderHeader` | Component | `frontend/src/components/story-reader/ReaderHeader.tsx` | Chapter navigation header |
+| `ReaderContent` | Component | `frontend/src/components/story-reader/ReaderContent.tsx` | Main story text, combat, and choices |
+| `ReaderMobileNav` | Component | `frontend/src/components/story-reader/ReaderMobileNav.tsx` | Mobile drawers for navigation/RPG state |
+| `ProtagonistGuard` | Component | `frontend/src/components/story-reader/ProtagonistGuard.tsx` | Prevents play without a character |
 | `CharacterTab` | Component | `frontend/src/components/game/CharacterTab.tsx` | GamePanel character tab |
 | `CompanionsTab` | Component | `frontend/src/components/game/CompanionsTab.tsx` | GamePanel companions tab |
 | `ArchiveTab` | Component | `frontend/src/components/game/ArchiveTab.tsx` | GamePanel archive tab |

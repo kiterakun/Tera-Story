@@ -17,7 +17,7 @@
 
 ## ✨ Features
 
-- **🌍 World Building**: Create and manage intricate fictional worlds with rich lore.
+- **🌍 World Building**: Create and manage intricate fictional worlds with rich lore. Supports **displayFormat** for custom stat presentation (e.g., "{v} HP", "{v} gold").
 - **👤 Character Creation**: Design diverse characters with unique traits and backgrounds.
 - **📖 AI Story Generation**: Experience dynamically generated stories tailored to your choices.
 - **🛤️ Playthrough System**: Embark on interactive journeys, track your inventory, and make branching choices.
@@ -79,7 +79,7 @@ Tera-Story/
 ├── frontend/               # React Application
 │   ├── src/
 │   │   ├── assets/         # Static assets & images
-│   │   ├── components/     # Reusable UI components (Cards, Modals)
+│   │   ├── components/     # Reusable UI components (story-reader, world-create, game, etc.)
 │   │   ├── hooks/          # Custom React hooks
 │   │   ├── i18n/           # Translation files (en, vi)
 │   │   ├── lib/            # Utility libraries

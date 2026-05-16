@@ -26,7 +26,15 @@ Respond with ONLY a JSON object (no markdown fences, no explanation):
       "type": "pool",
       "min": 0,
       "max": 100,
-      "defaultValue": 100
+      "defaultValue": 100,
+      "displayFormat": "{v} HP"
+    },
+    {
+      "key": "Gold",
+      "type": "number",
+      "min": 0,
+      "defaultValue": 10,
+      "displayFormat": "{v} gold"
     }
   ],
   "locationResourceTemplates": [
@@ -35,7 +43,8 @@ Respond with ONLY a JSON object (no markdown fences, no explanation):
       "type": "number",
       "min": 0,
       "max": 10,
-      "defaultValue": 1
+      "defaultValue": 1,
+      "displayFormat": "Danger: {v}"
     }
   ],
   "specialItemTemplates": [
@@ -53,7 +62,7 @@ Respond with ONLY a JSON object (no markdown fences, no explanation):
       "type": "guild",
       "description": "Professional guilds and trade organizations",
       "defaultStats": [
-        { "key": "influence", "type": "number", "min": 0, "max": 100, "defaultValue": 10 },
+        { "key": "influence", "type": "number", "min": 0, "max": 100, "defaultValue": 10, "displayFormat": "{v}% Influence" },
         { "key": "reputation", "type": "progress", "min": 0, "max": 100, "defaultValue": 50 }
       ]
     }
@@ -71,9 +80,11 @@ These define the stats/attributes that CHARACTERS will have. Choose stats that f
 - Use 'text' type for descriptive attributes
 - Use 'enum' type for stats with a fixed set of options
 - Use 'object' type for complex nested attributes (e.g., equipment with sub-properties)
+- **displayFormat**: Use this to define how the value is presented. Use `{v}` as a placeholder for the value (e.g., `"{v} gold"`, `"{v}%"`, `"Level {v}"`). This is highly recommended for numeric stats to provide context.
 
 ### locationResourceTemplates (2-4 templates)
 These define stats that LOCATIONS will have. Think about what properties matter for locations in this world.
+- Use **displayFormat** to provide context (e.g., `"Danger: {v}"`, `"{v} Population"`).
 
 ### specialItemTemplates (2-4 categories)
 Each category represents a type of special ability/technique/artifact. Define 2-4 fields per category.
@@ -85,3 +96,4 @@ These define types of organizations (factions, guilds, kingdoms, cults, etc.) th
 - Each type should have a clear description and relevant default stats
 - Stats can include things like influence, reputation, military power, wealth, etc.
 - Use 'object' type for complex nested properties (e.g., territory with sub-stats)
+- Use **displayFormat** for numeric stats.
