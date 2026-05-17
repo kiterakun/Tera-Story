@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { ItemRarity } from '../services/playthroughApi';
+import { useTranslation } from '../i18n';
 
 interface EntityRef {
   type: 'char' | 'item' | 'special';
@@ -76,6 +77,7 @@ function parseContent(text: string): Segment[] {
 }
 
 export function StoryContent({ text, onEntityClick, className = '' }: StoryContentProps) {
+  const t = useTranslation();
   const paragraphs = useMemo(() => {
     return text.split('\n\n').map((para, i) => ({
       key: i,
@@ -101,7 +103,7 @@ export function StoryContent({ text, onEntityClick, className = '' }: StoryConte
                 key={i}
                 onClick={() => onEntityClick?.(entity)}
                 className={`inline cursor-pointer font-medium px-0.5 rounded transition-all duration-200 hover:brightness-125 ${style.text} ${style.bg} ${style.glow}`}
-                title={`${entity.type === 'char' ? 'Character' : entity.type === 'item' ? 'Item' : 'Special Item'}: ${entity.name}`}
+                title={`${entity.type === 'char' ? t.entityTypes.character : entity.type === 'item' ? t.entityTypes.item : t.entityTypes.specialItem}: ${entity.name}`}
               >
                 {entity.name}
               </button>

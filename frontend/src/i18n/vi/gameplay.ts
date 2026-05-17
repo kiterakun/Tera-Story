@@ -22,6 +22,8 @@ export default {
     critical: 'Nghiêm trọng',
     pending: 'Chờ xử lý',
     activated: 'Đã kích hoạt',
+    butterflyEffect: 'Hiệu ứng Bươm bướm',
+    impact: 'Mức độ: {type}',
   },
   combat: {
     title: 'Chiến đấu',
@@ -33,6 +35,7 @@ export default {
     defeat: 'Thất bại...',
     fled: 'Đã chạy trốn!',
     round: 'Hiệp',
+    actionFailed: 'Hành động thất bại',
   },
   echoes: {
     indicatorTitle: 'Echoes',

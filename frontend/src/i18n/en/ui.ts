@@ -71,4 +71,14 @@ export default {
     retryingTools: 'Retrying game state update...',
     toolsFailedButContentOk: 'Chapter content was saved, but game state update failed. You can retry the update.',
   },
+  errors: {
+    somethingWentWrong: 'Something went wrong',
+    unexpectedError: 'An unexpected error occurred',
+    reloadPage: 'Reload page',
+  },
+  entityTypes: {
+    character: 'Character',
+    item: 'Item',
+    specialItem: 'Special Item',
+  },
 };

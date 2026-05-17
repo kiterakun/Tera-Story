@@ -17,6 +17,7 @@ export default {
     personality: 'Tính Cách',
     goals: 'Mục Tiêu',
     appearance: 'Ngoại Hình',
+    details: 'Chi tiết',
   },
   characterCard: {
     protagonist: 'Nhân vật chính',

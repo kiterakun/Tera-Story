@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Swords, Shield, Heart, Skull } from 'lucide-react';
 import type { CombatEncounter, CombatActionResponse } from '../services/playthroughApi';
 import { performCombatAction } from '../services/playthroughApi';
+import { useTranslation } from '../i18n';
 
 interface CombatPanelProps {
   combat: CombatEncounter;
@@ -10,6 +11,7 @@ interface CombatPanelProps {
 }
 
 export function CombatPanel({ combat, onCombatUpdate, onCombatEnd }: CombatPanelProps) {
+  const t = useTranslation();
   const [isResolving, setIsResolving] = useState(false);
   const [roundNarrative, setRoundNarrative] = useState('');
   const [error, setError] = useState('');
@@ -31,8 +33,8 @@ export function CombatPanel({ combat, onCombatUpdate, onCombatEnd }: CombatPanel
       }
     } catch (err: unknown) {
       const message = err && typeof err === 'object' && 'response' in err
-        ? (err as { response?: { data?: { error?: string } } }).response?.data?.error || 'Action failed'
-        : err instanceof Error ? err.message : 'Action failed';
+        ? (err as { response?: { data?: { error?: string } } }).response?.data?.error || t.combat.actionFailed
+        : err instanceof Error ? err.message : t.combat.actionFailed;
       setError(message);
     } finally {
       setIsResolving(false);
@@ -47,9 +49,9 @@ export function CombatPanel({ combat, onCombatUpdate, onCombatEnd }: CombatPanel
   };
 
   const getStatusIcon = () => {
-    if (combat.status === 'victory') return <span className="text-emerald-400 font-bold text-lg">⚔️ Victory!</span>;
-    if (combat.status === 'defeat') return <span className="text-red-400 font-bold text-lg">💀 Defeat...</span>;
-    if (combat.status === 'fled') return <span className="text-amber-400 font-bold text-lg">🏃 Fled!</span>;
+    if (combat.status === 'victory') return <span className="text-emerald-400 font-bold text-lg">⚔️ {t.combat.victory}</span>;
+    if (combat.status === 'defeat') return <span className="text-red-400 font-bold text-lg">💀 {t.combat.defeat}</span>;
+    if (combat.status === 'fled') return <span className="text-amber-400 font-bold text-lg">🏃 {t.combat.fled}</span>;
     return null;
   };
 
@@ -58,9 +60,9 @@ export function CombatPanel({ combat, onCombatUpdate, onCombatEnd }: CombatPanel
       {/* Header */}
       <div className="flex items-center gap-2 text-red-300">
         <Swords size={20} className="text-red-400" />
-        <h3 className="font-bold text-lg">Combat</h3>
+        <h3 className="font-bold text-lg">{t.combat.title}</h3>
         {combat.rounds.length > 0 && (
-          <span className="text-xs text-red-400/60 ml-auto">Round {combat.rounds.length}</span>
+          <span className="text-xs text-red-400/60 ml-auto">{t.combat.round} {combat.rounds.length}</span>
         )}
       </div>
 
@@ -72,7 +74,7 @@ export function CombatPanel({ combat, onCombatUpdate, onCombatEnd }: CombatPanel
         {/* Player side */}
         <div className="space-y-2">
           <div className="text-xs font-semibold text-emerald-400 uppercase flex items-center gap-1">
-            <Shield size={12} /> Player
+            <Shield size={12} /> {t.combat.player}
           </div>
           {playerCombatants.map((c) => (
             <div key={c.name} className={`p-2 rounded-lg bg-emerald-950/30 border border-emerald-800/30 ${c.defeated ? 'opacity-40' : ''}`}>
@@ -96,7 +98,7 @@ export function CombatPanel({ combat, onCombatUpdate, onCombatEnd }: CombatPanel
         {/* Enemy side */}
         <div className="space-y-2">
           <div className="text-xs font-semibold text-red-400 uppercase flex items-center gap-1">
-            <Skull size={12} /> Enemy
+            <Skull size={12} /> {t.combat.enemy}
           </div>
           {enemyCombatants.map((c) => (
             <div key={c.name} className={`p-2 rounded-lg bg-red-950/30 border border-red-800/30 ${c.defeated ? 'opacity-40' : ''}`}>
@@ -135,7 +137,7 @@ export function CombatPanel({ combat, onCombatUpdate, onCombatEnd }: CombatPanel
       {/* Action buttons */}
       {combat.status === 'active' && (
         <div className="space-y-2">
-          <p className="text-xs text-ink-400 font-medium">Choose your action:</p>
+          <p className="text-xs text-ink-400 font-medium">{t.combat.chooseAction}</p>
           <div className="grid grid-cols-2 gap-2">
             {combat.availableActions.map((action) => (
               <button
@@ -150,7 +152,7 @@ export function CombatPanel({ combat, onCombatUpdate, onCombatEnd }: CombatPanel
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Resolving...
+                    {t.combat.resolving}
                   </span>
                 ) : (
                   action

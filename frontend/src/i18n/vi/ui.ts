@@ -68,7 +68,17 @@ export default {
     generatingChapter: 'Đang tạo chương...',
     updatingGameState: 'Đang cập nhật trạng thái trò chơi...',
     retryingChapter: 'Đang thử lại tạo chương...',
-    retryingTools: 'Đang thử lại cập nhật trạng thái...',
-    toolsFailedButContentOk: 'Nội dung chương đã được lưu, nhưng cập nhật trạng thái trò chơi thất bại. Bạn có thể thử lại.',
+    retryingTools: 'Đang thử lại cập nhật trạng thái game...',
+    toolsFailedButContentOk: 'Nội dung chương đã được lưu, nhưng cập nhật trạng thái game thất bại. Bạn có thể thử lại cập nhật.',
+  },
+  errors: {
+    somethingWentWrong: 'Đã xảy ra lỗi',
+    unexpectedError: 'Đã xảy ra lỗi không xác định',
+    reloadPage: 'Tải lại trang',
+  },
+  entityTypes: {
+    character: 'Nhân vật',
+    item: 'Vật phẩm',
+    specialItem: 'Vật phẩm đặc biệt',
   },
 };

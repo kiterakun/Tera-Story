@@ -301,7 +301,7 @@ export default function MapPage() {
       const continentInfo = continentMap.get(continentId);
       return {
         continentId,
-        continentName: continentInfo?.name || t.map.unknownRegion || 'Lục địa chưa biết',
+        continentName: continentInfo?.name || t.map.unknownContinent,
         continentDescription: continentInfo?.description || '',
         climate: continentInfo?.climate || '',
         terrainType: continentInfo?.terrainType || '',
@@ -369,7 +369,7 @@ export default function MapPage() {
             className="inline-flex items-center gap-1.5 text-ink-200/50 hover:text-accent-400 transition-colors text-sm font-medium"
           >
             <ChevronLeft size={16} />
-            {t.worldDetail?.backToWorlds ? 'Quay lại chi tiết thế giới' : 'Back to World Detail'}
+            {t.map.backToWorldDetail}
           </button>
         </div>
 
@@ -378,11 +378,11 @@ export default function MapPage() {
           <div className="flex items-center gap-3">
             <Compass size={28} className="text-accent-400" />
             <h1 className="text-2xl sm:text-3xl font-display text-ink-100 font-bold">
-              Sườn Địa Lý Thế Giới
+              {t.map.geographicalOutline}
             </h1>
           </div>
           <p className="text-ink-200/60 mt-2 text-sm">
-            Khám phá cấu trúc lục địa và các khu vực địa lý chi tiết của thế giới.
+            {t.map.geographicalOutlineDesc}
           </p>
           <div className="mt-3 h-px bg-gradient-to-r from-accent-400/60 via-accent-600/30 to-transparent" />
         </div>
@@ -391,7 +391,7 @@ export default function MapPage() {
         {!mapData || !mapData.continents || mapData.continents.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-ink-400 bg-ink-800/30 border border-dashed border-ink-700 rounded-2xl">
             <Globe size={48} className="text-ink-500 mb-3" />
-            <p className="text-sm font-medium">Không tìm thấy dữ liệu địa lý lục địa.</p>
+            <p className="text-sm font-medium">{t.map.noContinentData}</p>
           </div>
         ) : (
           <div className="space-y-8">
@@ -416,7 +416,7 @@ export default function MapPage() {
                     </p>
                   </div>
                   <span className="self-start sm:self-auto shrink-0 bg-accent-600/10 border border-accent-400/20 text-accent-400 text-xs px-3 py-1 rounded-full font-medium shadow-sm">
-                    {continent.regions?.length || 0} {t.worldCreate?.regionsCount ? t.worldCreate.regionsCount.replace('{count}', String(continent.regions?.length || 0)) : 'Vùng / Regions'}
+                    {t.worldCreate.regionsCount.replace('{count}', String(continent.regions?.length || 0))}
                   </span>
                 </div>
 
@@ -431,7 +431,7 @@ export default function MapPage() {
                     <div className="space-y-4 mt-6">
                       <h3 className="text-xs uppercase tracking-widest text-accent-400/80 font-bold flex items-center gap-2">
                         <Mountain size={14} />
-                        Danh Sách Khu Vực (Regions List)
+                        {t.map.regionListLabel}
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {continent.regions.map((region) => (
@@ -449,7 +449,7 @@ export default function MapPage() {
                                     ? 'bg-amber-400/10 text-amber-400 border-amber-400/20' 
                                     : 'bg-green-400/10 text-green-400 border-green-400/20'
                                 }`}>
-                                  Danger: {region.dangerLevel}
+                                  {t.map.dangerLabel.replace('{level}', String(region.dangerLevel))}
                                 </span>
                               </div>
                               <p className="text-ink-200/70 text-xs leading-relaxed mb-4 whitespace-pre-wrap">
@@ -477,7 +477,7 @@ export default function MapPage() {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs text-ink-200/40 italic">Chưa có khu vực nào được định nghĩa cho lục địa này.</p>
+                    <p className="text-xs text-ink-200/40 italic">{t.map.noRegionsDefined}</p>
                   )}
                 </div>
               </div>
@@ -546,7 +546,7 @@ export default function MapPage() {
             className="inline-flex items-center gap-1.5 text-ink-200/50 hover:text-accent-400 transition-colors text-sm font-medium cursor-pointer"
           >
             <ChevronLeft size={16} />
-            {t.storyReader?.mobileBack || 'Quay lại màn hình chơi'}
+            {t.map.backToPlayScreen}
           </button>
         </div>
       )}
@@ -574,7 +574,7 @@ export default function MapPage() {
             }`}
           >
             <Compass size={14} />
-            {t.worldCreate?.selectSpawn ? 'Bản Đồ Chuẩn' : 'Standard View'}
+            {t.map.standardView}
           </button>
           <button
             onClick={() => setViewMode('3level')}
@@ -585,7 +585,7 @@ export default function MapPage() {
             }`}
           >
             <Globe size={14} />
-            {t.worldCreate?.noRegions ? 'Bản Đồ 3 Cấp' : '3-Level Map'}
+            {t.map.threeLevelMap}
           </button>
         </div>
       </div>
@@ -597,7 +597,7 @@ export default function MapPage() {
           {hierarchicalPlaythroughMap.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-ink-400 bg-ink-800/30 border border-dashed border-ink-700 rounded-2xl">
               <Globe size={48} className="text-ink-500 mb-3" />
-              <p className="text-sm font-medium">Chưa phát hiện vùng đất nào trong lượt chơi này.</p>
+              <p className="text-sm font-medium">{t.map.noDiscoveredLands}</p>
             </div>
           ) : (
             hierarchicalPlaythroughMap.map((continent) => (
@@ -638,7 +638,7 @@ export default function MapPage() {
                             ? 'bg-amber-400/10 text-amber-400 border-amber-400/20' 
                             : 'bg-green-400/10 text-green-400 border-green-400/20'
                         }`}>
-                          Danger: {region.dangerLevel}
+                          {t.map.dangerLabel.replace('{level}', String(region.dangerLevel))}
                         </span>
                       </div>
 
@@ -675,7 +675,7 @@ export default function MapPage() {
                                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-400 opacity-75"></span>
                                       <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent-500"></span>
                                     </span>
-                                    Bạn đang ở đây
+                                    {t.map.youAreHere}
                                   </span>
                                 )}
                               </div>

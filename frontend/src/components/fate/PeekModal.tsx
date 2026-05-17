@@ -1,5 +1,6 @@
 import { X, Loader2 } from 'lucide-react';
 import type { PeekResponse } from '../../services/fateThreadsApi';
+import { useTranslation } from '../../i18n';
 
 interface PeekModalProps {
   isOpen: boolean;
@@ -18,6 +19,8 @@ export function PeekModal({
   isLoading,
   error,
 }: PeekModalProps) {
+  const t = useTranslation();
+
   if (!isOpen) return null;
 
   return (
@@ -38,14 +41,14 @@ export function PeekModal({
 
         <div className="p-6">
           <h2 className="text-xl font-bold text-gold mb-4">
-            Nếu bạn chọn khác...
+            {t.fateThreads.peekTitle}
           </h2>
 
           {isLoading && (
             <div className="flex flex-col items-center gap-3 py-8">
               <Loader2 size={32} className="animate-spin text-gold" />
               <p className="text-sm text-ink-400">
-                Đang khám phá nhánh thời gian...
+                {t.fateThreads.peekLoading}
               </p>
             </div>
           )}
@@ -63,7 +66,7 @@ export function PeekModal({
               </p>
               {peekResult.choiceText && (
                 <p className="mt-3 text-xs text-ink-500 italic">
-                  Lựa chọn: {peekResult.choiceText}
+                  {t.fateThreads.peekChoicePrefix.replace('{text}', peekResult.choiceText)}
                 </p>
               )}
             </div>
@@ -74,13 +77,13 @@ export function PeekModal({
               onClick={onClose}
               className="px-4 py-2 rounded-lg border border-ink-600 text-ink-300 hover:bg-ink-800 transition-colors text-sm"
             >
-              Đóng
+              {t.fateThreads.close}
             </button>
             <button
               onClick={onContinue}
               className="px-4 py-2 rounded-lg bg-gold text-ink-950 font-semibold hover:bg-gold/80 transition-colors text-sm"
             >
-              Tiếp tục đọc
+              {t.fateThreads.continueReading}
             </button>
           </div>
         </div>

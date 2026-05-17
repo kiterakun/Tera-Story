@@ -79,7 +79,7 @@ export default function CharacterCard({ character }: { character: Character }) {
       {(character.background || character.personality || character.goals || character.appearance) && (
         <details className="group">
           <summary className="text-xs text-ink-200/50 cursor-pointer hover:text-ink-200/80 transition-colors">
-            {t.characterPanel.protagonist === 'Protagonist' ? 'Details' : 'Chi tiết'}
+            {t.characterPanel.details}
           </summary>
           <div className="mt-2 space-y-2 text-xs text-ink-200/70">
             {character.background && (

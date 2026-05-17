@@ -1,4 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 import React from 'react';
+import { useTranslation } from '../i18n';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -7,6 +9,28 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+}
+
+function ErrorFallback({ error, onReset }: { error: Error | null; onReset: () => void }) {
+  const t = useTranslation();
+  return (
+    <div className="flex items-center justify-center min-h-screen p-8 bg-ink-950 text-ink-100">
+      <div className="text-center max-w-md bg-ink-900 border border-ink-700/60 p-8 rounded-2xl shadow-xl">
+        <h2 className="text-2xl font-bold font-display text-red-400 mb-4">
+          {t.errors.somethingWentWrong}
+        </h2>
+        <p className="text-ink-300 mb-6 text-sm">
+          {error?.message || t.errors.unexpectedError}
+        </p>
+        <button
+          onClick={onReset}
+          className="px-5 py-2.5 bg-accent-600 text-white font-semibold rounded-xl hover:bg-accent-500 transition-colors shadow-lg shadow-accent-600/20"
+        >
+          {t.errors.reloadPage}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -26,23 +50,13 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   render(): React.ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center min-h-screen p-8">
-          <div className="text-center max-w-md">
-            <h2 className="text-2xl font-bold mb-4">Something went wrong</h2>
-            <p className="text-gray-400 mb-6">
-              {this.state.error?.message || 'An unexpected error occurred'}
-            </p>
-            <button
-              onClick={() => {
-                this.setState({ hasError: false, error: null });
-                window.location.reload();
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-            >
-              Reload page
-            </button>
-          </div>
-        </div>
+        <ErrorFallback
+          error={this.state.error}
+          onReset={() => {
+            this.setState({ hasError: false, error: null });
+            window.location.reload();
+          }}
+        />
       );
     }
 

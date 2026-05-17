@@ -17,6 +17,7 @@ export default {
     personality: 'Personality',
     goals: 'Goals',
     appearance: 'Appearance',
+    details: 'Details',
   },
   characterCard: {
     protagonist: 'Protagonist',

@@ -234,7 +234,7 @@ export default function GamePanel({
                   className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-accent-600 hover:bg-accent-500 text-white font-semibold text-sm transition-all duration-200 shadow-md shadow-accent-600/20 cursor-pointer"
                 >
                   <Compass size={16} />
-                  {t.map?.title || 'Xem Bản Đồ Chi Tiết'}
+                  {t.map.viewDetailedMap}
                 </button>
 
                 {currentContext?.location ? (
@@ -253,7 +253,7 @@ export default function GamePanel({
                           <span className="text-accent-500/30">|</span>
                           <span className="flex items-center gap-1">
                             <Globe size={10} className="text-accent-400" />
-                            {currentContext.continent?.name || 'Lục địa'}
+                            {currentContext.continent?.name || t.map.continent}
                           </span>
                         </div>
                       )}
@@ -295,7 +295,7 @@ export default function GamePanel({
                                 <span>/</span>
                                 <span className="flex items-center gap-0.5">
                                   <Globe size={9} />
-                                  {continentMap.get(loc.region.continentId) || 'Lục địa'}
+                                  {continentMap.get(loc.region.continentId) || t.map.continent}
                                 </span>
                               </div>
                             )}

@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Sparkles, X } from 'lucide-react';
 import type { ConsequenceSeed } from '../services/playthroughApi';
+import { useTranslation } from '../i18n';
 
 interface ConsequenceFlashbackProps {
   consequences: ConsequenceSeed[];
 }
 
 export function ConsequenceFlashback({ consequences }: ConsequenceFlashbackProps) {
+  const t = useTranslation();
   const [activeNotification, setActiveNotification] = useState<ConsequenceSeed | null>(null);
   const [queue, setQueue] = useState<ConsequenceSeed[]>([]);
   const [isVisible, setIsVisible] = useState(false);
@@ -71,14 +73,14 @@ export function ConsequenceFlashback({ consequences }: ConsequenceFlashbackProps
           
           <div className="flex-1 pr-6">
             <h4 className="text-xs font-display font-semibold text-accent-300 uppercase tracking-widest mb-1">
-              Butterfly Effect
+              {t.consequence.butterflyEffect}
             </h4>
             <p className="text-sm text-ink-100 leading-relaxed font-serif">
               {activeNotification.description}
             </p>
             <div className="mt-2 text-[10px] text-ink-400">
               <span className="inline-block px-1.5 py-0.5 rounded bg-ink-950/50 border border-ink-800">
-                Impact: {activeNotification.impact}
+                {t.consequence.impact.replace('{type}', t.consequence[activeNotification.impact as keyof typeof t.consequence] || activeNotification.impact)}
               </span>
             </div>
           </div>

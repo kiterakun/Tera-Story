@@ -22,6 +22,8 @@ export default {
     critical: 'Critical',
     pending: 'Pending',
     activated: 'Activated',
+    butterflyEffect: 'Butterfly Effect',
+    impact: 'Impact: {type}',
   },
   combat: {
     title: 'Combat',
@@ -33,6 +35,7 @@ export default {
     defeat: 'Defeat...',
     fled: 'Fled!',
     round: 'Round',
+    actionFailed: 'Action failed',
   },
   echoes: {
     indicatorTitle: 'Echoes',

@@ -165,7 +165,7 @@ export function ReaderMobileNav({
             className="flex-1 flex flex-col items-center justify-center gap-0.5 text-ink-200/60 hover:text-ink-100 active:bg-ink-800/50 transition-colors"
           >
             <Compass size={20} />
-            <span className="text-[10px] font-medium">{t.map?.title || 'Bản Đồ'}</span>
+            <span className="text-[10px] font-medium">{t.map.title}</span>
           </button>
           <button
             onClick={() => { setRpgOpen(!rpgOpen); setNavOpen(false); }}
