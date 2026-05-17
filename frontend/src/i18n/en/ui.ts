@@ -37,6 +37,8 @@ export default {
     lost: 'Lost',
     consumed: 'Consumed',
     sealed: 'Sealed',
+    disbanded: 'Disbanded',
+    hidden: 'Hidden',
   },
   toast: {
     worldCreated: 'World created successfully',

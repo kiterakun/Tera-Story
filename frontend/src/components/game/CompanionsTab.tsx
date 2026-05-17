@@ -73,7 +73,7 @@ export function CompanionsTab({ sortedNpcs, setDetailEntity, t }: CompanionsTabP
                   <span className="text-sm font-medium text-ink-100 truncate">{npc.name}</span>
                   <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${STATUS_COLORS[npc.status] || STATUS_COLORS.active}`}>
                     <StatusIcon size={10} />
-                    {npc.status}
+                    {t.entityStatus[npc.status as keyof typeof t.entityStatus] || npc.status}
                   </div>
                 </div>
                 <p className="text-xs text-ink-200/50 truncate mt-0.5">{npc.description}</p>

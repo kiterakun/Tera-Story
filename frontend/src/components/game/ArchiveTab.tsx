@@ -23,7 +23,7 @@ export function ArchiveTab({ archived, isLoading, restoreEntity, t }: ArchiveTab
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48 text-ink-200/40">
-        <p className="text-sm font-sans">Loading...</p>
+        <p className="text-sm font-sans">{t.playthrough.loading}</p>
       </div>
     );
   }
@@ -48,7 +48,7 @@ export function ArchiveTab({ archived, isLoading, restoreEntity, t }: ArchiveTab
         {/* Characters */}
         {archived.characters.length > 0 && (
           <div>
-            <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">Characters</h4>
+            <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">{t.characterPanel.characters}</h4>
             <div className="space-y-2">
               {archived.characters.map(char => (
                 <div key={char._id} className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-3 flex items-center justify-between">
@@ -56,7 +56,7 @@ export function ArchiveTab({ archived, isLoading, restoreEntity, t }: ArchiveTab
                     <span className="text-sm text-ink-100">{char.name}</span>
                     <span className="text-xs text-ink-200/40 ml-2">{char.role}</span>
                     {char.status !== 'active' && (
-                      <span className="text-xs text-ink-200/40 ml-1">({char.status})</span>
+                      <span className="text-xs text-ink-200/40 ml-1">({t.entityStatus[char.status as keyof typeof t.entityStatus] || char.status})</span>
                     )}
                   </div>
                   <button
@@ -75,13 +75,13 @@ export function ArchiveTab({ archived, isLoading, restoreEntity, t }: ArchiveTab
         {/* Items */}
         {archived.items.length > 0 && (
           <div>
-            <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">Items</h4>
+            <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">{t.characterPanel.items}</h4>
             <div className="space-y-2">
               {archived.items.map(item => (
                 <div key={item._id} className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-3 flex items-center justify-between">
                   <div>
                     <span className="text-sm text-ink-100">{item.name}</span>
-                    <span className="text-xs text-ink-200/40 ml-2">{item.rarity}</span>
+                    <span className="text-xs text-ink-200/40 ml-2">{t.rarity[item.rarity as keyof typeof t.rarity] || item.rarity}</span>
                   </div>
                   <button
                     onClick={() => restoreEntity('item', item._id)}
@@ -99,14 +99,14 @@ export function ArchiveTab({ archived, isLoading, restoreEntity, t }: ArchiveTab
         {/* Special Items */}
         {archived.specialItems.length > 0 && (
           <div>
-            <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">Special Items</h4>
+            <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">{t.characterPanel.specialItems}</h4>
             <div className="space-y-2">
               {archived.specialItems.map(si => (
                 <div key={si._id} className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-3 flex items-center justify-between">
                   <div>
                     <span className="text-sm text-ink-100">{si.name}</span>
                     <span className="text-xs text-ink-200/40 ml-2">{si.category}</span>
-                    <span className="text-xs text-ink-200/40 ml-1">({si.rarity})</span>
+                    <span className="text-xs text-ink-200/40 ml-1">({t.rarity[si.rarity as keyof typeof t.rarity] || si.rarity})</span>
                   </div>
                   <button
                     onClick={() => restoreEntity('special-item', si._id)}
@@ -124,13 +124,13 @@ export function ArchiveTab({ archived, isLoading, restoreEntity, t }: ArchiveTab
         {/* Locations */}
         {archived.locations.length > 0 && (
           <div>
-            <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">Locations</h4>
+            <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">{t.characterPanel.locations}</h4>
             <div className="space-y-2">
               {archived.locations.map(loc => (
                 <div key={loc._id} className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-3 flex items-center justify-between">
                   <div>
                     <span className="text-sm text-ink-100">{loc.name}</span>
-                    <span className="text-xs text-ink-200/40 ml-2">{loc.type}</span>
+                    <span className="text-xs text-ink-200/40 ml-2">{t.map.types[loc.type as keyof typeof t.map.types] || loc.type}</span>
                   </div>
                   <button
                     onClick={() => restoreEntity('location', loc._id)}
@@ -148,7 +148,7 @@ export function ArchiveTab({ archived, isLoading, restoreEntity, t }: ArchiveTab
         {/* Organizations */}
         {archived.organizations.length > 0 && (
           <div>
-            <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">Organizations</h4>
+            <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">{t.characterPanel.organizations}</h4>
             <div className="space-y-2">
               {archived.organizations.map(org => (
                 <div key={org._id} className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-3 flex items-center justify-between">

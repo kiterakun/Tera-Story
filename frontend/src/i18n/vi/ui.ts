@@ -37,6 +37,8 @@ export default {
     lost: 'Đã mất',
     consumed: 'Đã tiêu thụ',
     sealed: 'Bị phong ấn',
+    disbanded: 'Giải tán',
+    hidden: 'Ẩn',
   },
   toast: {
     worldCreated: 'Tạo thế giới thành công',

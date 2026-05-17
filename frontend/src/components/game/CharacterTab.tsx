@@ -64,7 +64,7 @@ export function CharacterTab({ protagonist, setDetailEntity, t }: CharacterTabPr
           <p className="text-xs text-ink-200/50 mt-0.5 line-clamp-2">{protagonist.description}</p>
           <div className={`inline-flex items-center gap-1.5 mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[protagonist.status] || STATUS_COLORS.active}`}>
             <StatusIcon size={12} />
-            {protagonist.status}
+            {t.entityStatus[protagonist.status as keyof typeof t.entityStatus] || protagonist.status}
           </div>
         </div>
       </div>
@@ -102,7 +102,7 @@ export function CharacterTab({ protagonist, setDetailEntity, t }: CharacterTabPr
       {/* Stats */}
       {protagonist.dynamicStats.length > 0 && (
         <div>
-          <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-3 font-medium">Stats</h4>
+          <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-3 font-medium">{t.storyReader.statsTab}</h4>
           <div className="grid grid-cols-2 gap-2">
             {protagonist.dynamicStats.map((stat, idx) => (
               <div key={idx} className="bg-ink-950/50 rounded-xl p-3 border border-ink-700/50">

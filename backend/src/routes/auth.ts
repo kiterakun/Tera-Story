@@ -37,7 +37,7 @@ function signToken(user: { _id: unknown; email: string; username: string }): str
   return jwt.sign(
     { id: String(user._id), email: user.email, username: user.username },
     env.JWT_SECRET,
-    { expiresIn: '15m' }
+    { expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'] }
   );
 }
 

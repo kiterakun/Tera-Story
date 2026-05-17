@@ -178,7 +178,7 @@ export default function GamePanel({
             {activeTab === 'relationships' && (
               <div className="space-y-3">
                 {relationships.length === 0 ? (
-                  <p className="text-sm text-ink-200/50 text-center py-8">No relationships yet.</p>
+                  <p className="text-sm text-ink-200/50 text-center py-8">{t.storyReader.noRelationships}</p>
                 ) : (
                   <>
                     <button
@@ -186,7 +186,7 @@ export default function GamePanel({
                       className="w-full bg-ink-950/50 border border-ink-700/50 rounded-xl p-3 text-sm text-accent-400 hover:text-accent-300 hover:border-accent-600/30 transition-colors flex items-center justify-center gap-2"
                     >
                       <Network size={16} />
-                      View Relationship Web
+                      {t.characterPanel.viewRelationshipWeb}
                     </button>
                     {relationships.map(rel => {
                       const charA = characters.find(c => c._id === rel.characterA._id) || rel.characterA;
@@ -242,7 +242,7 @@ export default function GamePanel({
                     <div className="flex justify-between items-start gap-2 mb-2">
                       <div className="flex items-center gap-2">
                         <MapPin size={16} className="text-accent-400" />
-                        <h4 className="font-display text-accent-300">Current Location</h4>
+                        <h4 className="font-display text-accent-300">{t.map.currentLocation}</h4>
                       </div>
                       {currentContext.region && (
                         <div className="flex flex-wrap items-center gap-x-2 text-[10px] text-accent-300">
@@ -271,12 +271,12 @@ export default function GamePanel({
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-ink-200/50 text-center py-4">No current location set.</p>
+                  <p className="text-sm text-ink-200/50 text-center py-4">{t.map.noLocation}</p>
                 )}
 
                 {playthroughLocations.length > 0 && (
                   <div>
-                    <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">Discovered Locations</h4>
+                    <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">{t.map.discoveredLocations}</h4>
                     <div className="space-y-2">
                       {playthroughLocations.map(loc => (
                         <div key={loc._id} className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-3">
@@ -452,15 +452,15 @@ function OrganizationsTab({ setDetailEntity, t }: OrganizationsTabProps) {
               <p className="text-xs text-ink-200/50 mt-0.5 capitalize">{org.type}</p>
             </div>
             <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${statusColors[org.status] || 'text-ink-200/50 bg-ink-800'}`}>
-              {org.status}
+              {t.entityStatus[org.status as keyof typeof t.entityStatus] || org.status}
             </span>
           </div>
           {org.description && (
             <p className="text-xs text-ink-200/60 mt-2 line-clamp-2">{org.description}</p>
           )}
           <div className="flex items-center gap-3 mt-2 text-xs text-ink-200/40">
-            <span>{Array.isArray(org.memberIds) ? org.memberIds.length : 0} members</span>
-            {org.dynamicStats.length > 0 && <span>{org.dynamicStats.length} stats</span>}
+            <span>{t.characterPanel.membersCount.replace('{count}', String(Array.isArray(org.memberIds) ? org.memberIds.length : 0))}</span>
+            {org.dynamicStats.length > 0 && <span>{t.characterPanel.statsCount.replace('{count}', String(org.dynamicStats.length))}</span>}
           </div>
         </div>
       ))}
