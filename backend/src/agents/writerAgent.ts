@@ -177,6 +177,26 @@ export async function runWriterAgent(
       }).join('\n')
     : '';
 
+  // --- First Chapter & Clean Content Checks ---
+  const { Chapter } = await import('../models/Chapter');
+  const currentChapterDoc = await Chapter.findById(chapterId).lean();
+  const isFirstChapter = currentChapterDoc ? currentChapterDoc.chapterIndex === 0 : false;
+
+  let firstChapterInstruction = '';
+  if (isFirstChapter) {
+    firstChapterInstruction = `
+=== SPECIAL BEGINNING INSTRUCTIONS (CHAPTER 1) ===
+- This is the very first chapter of the story. The reader knows absolutely nothing about your world, characters, lore, or premise. Your primary goal is to introduce them to the world in a highly compelling and accessible way.
+- Avoid raw exposition or info-dumping. Weave details about the world's rules, magic systems, history, and geography organically through the protagonist's actions, sensory observations, and internal monologue.
+- Establish a strong, memorable voice for the protagonist. Use either first-person ("I") or third-person narration to immediately draw the reader into their mindset, social status, and personal stakes.
+- Craft a cinematic hook: start with a sensory-rich, evocative scene (a quiet morning before a storm, an awakening in a strange land, or a small but telling personal routine) that establishes the tone of the genre.
+- Make the introduction of secondary characters or factions feel natural and interesting, setting up potential conflicts or allies.
+- Ensure the reader feels fully immersed, eager, and capable of understanding the story's baseline without feeling overwhelmed by terminology.
+`;
+  }
+
+  const cleanProseInstruction = `CRITICAL INSTRUCTION: You must ONLY write the narrative prose of the chapter. Absolutely do NOT output any chapter titles, headings, headers, subtitles, or Markdown headers (e.g., #, ##, ###, "Chapter X: ...", "Chapter 1"). Start directly with the very first sentence of the story.`;
+
   const writePrompt = `
 Write the next chapter in ${language}.
 
@@ -209,11 +229,14 @@ ${organizationsBlock ? `=== ORGANIZATIONS (use [[org:Name]] markup) ===\n${organ
 ${consequencesBlock}
 
 ${combatBlock ? `=== ACTIVE COMBAT ===\n${combatBlock}\n` : ''}
-Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]], [[org:Name]] markup for all entities.`.trim();
+${firstChapterInstruction}
+
+Write the complete chapter now. Use [[char:Name]], [[item:Name:rarity]], [[special:Name:rarity]], [[org:Name]] markup for all entities.
+
+${cleanProseInstruction}`.trim();
 
   let chapterContent: string;
   let pass1Usage: { promptTokens?: number; inputTokens?: number; completionTokens?: number; outputTokens?: number } | null = null;
-  const { Chapter } = await import('../models/Chapter');
 
   if (skipPass1) {
     // Pass 1 skipped — read existing content from DB

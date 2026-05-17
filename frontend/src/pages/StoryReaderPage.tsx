@@ -8,7 +8,7 @@ import * as playthroughApi from '../services/playthroughApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
-import { Swords, Gamepad2 } from 'lucide-react';
+import { Swords, Gamepad2, Compass } from 'lucide-react';
 import GamePanel from '../components/game/GamePanel';
 import type { CombatEncounter, Relationship, ConsequenceSeed } from '../services/playthroughApi';
 import RPGPanel from '../components/RPGPanel';
@@ -414,6 +414,16 @@ export default function StoryReaderPage() {
       {/* Desktop Left sidebar — Chapter Navigation */}
       <div className="hidden lg:flex flex-col w-64 border-r border-ink-700 bg-ink-900/50 p-5 shrink-0">
         <h3 className="font-display text-sm text-ink-100 mb-4 border-b border-ink-700 pb-3 uppercase tracking-wider">{t.storyReader.storyNavigation}</h3>
+        
+        {/* Detailed World Map Button */}
+        <button
+          onClick={() => navigate(`/playthroughs/${playthroughId}/map`)}
+          className="mb-4 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-accent-600/10 hover:bg-accent-600/20 border border-accent-600/30 text-accent-400 hover:text-accent-300 font-semibold text-sm transition-all duration-200 shadow-md shadow-accent-600/5 cursor-pointer shrink-0"
+        >
+          <Compass size={16} />
+          {t.map?.title || 'Xem Bản Đồ'}
+        </button>
+
         <ChapterNav
           chapters={chapters}
           goToChapter={goToChapter}
@@ -542,6 +552,15 @@ export default function StoryReaderPage() {
       />
 
       {/* Global Modals and Buttons */}
+      {/* Floating Map Button */}
+      <button
+        onClick={() => navigate(`/playthroughs/${playthroughId}/map`)}
+        className="fixed bottom-36 lg:bottom-22 right-4 z-30 bg-ink-800 border border-ink-700 hover:border-accent-400/50 text-accent-400 hover:text-accent-300 rounded-full p-3.5 shadow-lg hover:shadow-accent-600/10 transition-all duration-200 flex items-center justify-center cursor-pointer"
+        title={t.map?.title || 'Xem Bản Đồ'}
+      >
+        <Compass size={22} />
+      </button>
+
       <button
         onClick={() => setGamePanelOpen(true)}
         className="fixed bottom-20 lg:bottom-6 right-4 z-30 bg-accent-600 hover:bg-accent-500 text-white rounded-full p-3.5 shadow-lg hover:shadow-accent-600/30 transition-all duration-200"

@@ -9,6 +9,8 @@ import type { Playthrough } from '../services/playthroughApi';
 import { RetryImageButton } from '../components/RetryImageButton';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { getImageUrl } from '../utils/url';
+import { getWorldMap } from '../services/mapApi';
+import type { Region } from '../services/mapApi';
 
 const statusColor: Record<string, string> = {
   active: 'bg-green-400/10 text-green-400 border-green-400/20',
@@ -27,13 +29,40 @@ export default function WorldDetailPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newName, setNewName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [selectedRegionId, setSelectedRegionId] = useState<string>('');
+  const [premise, setPremise] = useState('');
 
   useEffect(() => {
     if (id) {
       fetchWorld(id).catch(console.error);
       loadPlaythroughs(id);
+      loadRegions(id);
     }
   }, [id, fetchWorld]);
+
+  const loadRegions = async (worldId: string) => {
+    try {
+      const map = await getWorldMap(worldId);
+      const allRegions: Region[] = [];
+      if (map.regions) {
+        allRegions.push(...map.regions);
+      } else if (map.continents) {
+        for (const cont of map.continents) {
+          if (cont.regions) {
+            allRegions.push(...cont.regions);
+          }
+        }
+      }
+      setRegions(allRegions);
+      const firstRegion = allRegions[0];
+      if (firstRegion) {
+        setSelectedRegionId(firstRegion._id);
+      }
+    } catch (error) {
+      console.error('Failed to load regions:', error);
+    }
+  };
 
   const loadPlaythroughs = async (worldId: string) => {
     setIsLoadingPlaythroughs(true);
@@ -53,9 +82,15 @@ export default function WorldDetailPage() {
 
     setIsCreating(true);
     try {
-      const created = await playthroughApi.createPlaythrough(id, newName.trim());
+      const created = await playthroughApi.createPlaythrough(
+        id,
+        newName.trim(),
+        selectedRegionId || undefined,
+        premise.trim() || undefined
+      );
       setShowCreateModal(false);
       setNewName('');
+      setPremise('');
       showSuccess(t.toast.playthroughCreated);
       navigate(`/worlds/${id}/playthroughs/${created._id}`);
     } catch (error) {
@@ -350,8 +385,8 @@ export default function WorldDetailPage() {
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/60" onClick={() => setShowCreateModal(false)} />
-          <div className="relative bg-ink-800 border border-ink-700 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl animate-fade-in">
-            <div className="flex justify-between items-center mb-5">
+          <div className="relative bg-ink-800 border border-ink-700 rounded-2xl p-6 w-full max-w-lg mx-4 shadow-2xl animate-fade-in max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center mb-5 shrink-0">
               <h3 className="text-lg font-display text-ink-100">{t.worldDetail.startJourney}</h3>
               <button
                 onClick={() => setShowCreateModal(false)}
@@ -360,8 +395,9 @@ export default function WorldDetailPage() {
                 <X size={16} />
               </button>
             </div>
-            <form onSubmit={handleCreatePlaythrough}>
-              <div className="mb-5">
+            
+            <form onSubmit={handleCreatePlaythrough} className="space-y-5 overflow-y-auto pr-1 flex-1">
+              <div>
                 <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
                   {t.worldDetail.newPlaythroughName} <span className="text-red-400">*</span>
                 </label>
@@ -374,7 +410,53 @@ export default function WorldDetailPage() {
                   onChange={(e) => setNewName(e.target.value)}
                 />
               </div>
-              <div className="flex gap-3 justify-end">
+
+              {/* Spawn Region Selection */}
+              {regions.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-ink-200/80 mb-2">
+                    {t.worldCreate.selectSpawn} <span className="text-red-400">*</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
+                    {regions.map((reg) => (
+                      <button
+                        key={reg._id}
+                        type="button"
+                        onClick={() => setSelectedRegionId(reg._id)}
+                        className={`flex flex-col items-start p-3 rounded-xl border text-left transition-all duration-200 ${
+                          selectedRegionId === reg._id
+                            ? 'bg-accent-600/10 border-accent-400 shadow-lg shadow-accent-500/5'
+                            : 'bg-ink-950/40 border-ink-700 hover:border-ink-600 hover:bg-ink-950/60'
+                        }`}
+                      >
+                        <span className="text-sm font-medium text-ink-100">{reg.name}</span>
+                        <div className="flex items-center gap-2 mt-1.5 text-[10px] text-ink-200/50">
+                          <span className="capitalize px-1.5 py-0.5 bg-ink-800 rounded border border-ink-700/50">
+                            {reg.terrainType}
+                          </span>
+                          <span>Danger: {reg.dangerLevel}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Story Premise */}
+              <div>
+                <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
+                  {t.worldCreate.premiseLabel}
+                </label>
+                <textarea
+                  rows={3}
+                  className="w-full bg-ink-950 border border-ink-700 rounded-xl px-4 py-3 text-ink-100 placeholder:text-ink-500 focus:border-accent-400 focus:ring-2 focus:ring-accent-400/20 outline-none transition-all text-sm resize-none"
+                  placeholder={t.worldCreate.premisePlaceholder}
+                  value={premise}
+                  onChange={(e) => setPremise(e.target.value)}
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end pt-2 border-t border-ink-700 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
@@ -386,7 +468,7 @@ export default function WorldDetailPage() {
                 <button
                   type="submit"
                   className="px-5 py-2.5 bg-accent-600 hover:bg-accent-500 text-white rounded-xl transition-all duration-200 font-medium text-sm shadow-sm disabled:opacity-50"
-                  disabled={isCreating || !newName.trim()}
+                  disabled={isCreating || !newName.trim() || (regions.length > 0 && !selectedRegionId)}
                 >
                   {isCreating ? (
                     <span className="flex items-center gap-2">

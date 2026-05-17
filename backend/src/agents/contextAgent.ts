@@ -274,6 +274,18 @@ export async function runContextAgent(
     ? `The player has described their desired story direction: "${playthrough.premise}"`
     : '';
 
+  // --- First Chapter Outline Instructions ---
+  let firstChapterContextInstruction = '';
+  if (isColdStart) {
+    firstChapterContextInstruction = `
+=== SPECIAL: OUTLINE INSTRUCTIONS FOR THE STARTING CHAPTER (CHAPTER 1) ===
+- This is the very first chapter of the story. You must plan the outline ("outline") and design the scene ("currentScene", "filteredContext") with a primary focus on INTRODUCTION and organic world-building.
+- The outline ("outline") must plan for a slow, immersive start: focus on character personality, daily routine/starting status, personal motivations, and introducing the fantastic lore or world setting organically. Avoid high-action encounters, heavy combat, or fast-paced travel immediately.
+- Plan to weave in initial descriptions of the world's geography, special factions, or the protagonist's starting skills naturally within a normal activity or a minor compelling incident (inciting incident).
+- Design a sensory-rich, atmospheric "currentScene" that draws the reader in through vivid imagery and clear emotional registers right away.
+`;
+  }
+
   const userPrompt = `
 Language: ${language}
 Player's choice: "${playerChoice}"
@@ -305,6 +317,8 @@ ${arcSummaries}
 === RECENT CHAPTERS ===
 ${isColdStart ? 'This is the very beginning of the story. No chapters have been written yet.' : chapterTexts}
 
+${firstChapterContextInstruction}
+
 Based on the player's choice and the FULL story state above (including all items, special items, character stats, relationships, organizations, consequences, and world templates), produce the JSON context for the next chapter writer.
 `.trim();
 
@@ -333,29 +347,11 @@ Based on the player's choice and the FULL story state above (including all items
     currentScene: z.string(),
     relevantPlotPoints: z.array(z.string()),
     geography: z.object({
-      currentContinent: z.object({
-        name: z.string(),
-        description: z.string(),
-        terrainType: z.string(),
-      }).optional(),
-      currentRegion: z.object({
-        name: z.string(),
-        description: z.string(),
-        terrainType: z.string(),
-        dangerLevel: z.number(),
-      }).optional().nullable(),
-      currentLocation: z.object({
-        name: z.string(),
-        type: z.string(),
-        description: z.string(),
-        status: z.string(),
-      }).optional().nullable(),
-      nearbyLocations: z.array(z.object({
-        name: z.string(),
-        type: z.string(),
-        description: z.string(),
-        status: z.string(),
-      })).optional(),
+      currentContinent: z.string().optional().nullable(),
+      currentRegion: z.string().optional().nullable(),
+      currentLocation: z.string().optional().nullable(),
+      nearbyLocations: z.array(z.string()).optional(),
+      travelOptions: z.array(z.string()).optional(),
     }).optional(),
   });
 

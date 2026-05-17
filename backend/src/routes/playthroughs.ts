@@ -8,6 +8,11 @@ import { World } from '../models/World';
 import { generateChronicleCache } from '../services/chronicleService';
 import { checkAchievements } from '../services/achievementService';
 import { addLocation } from '../agents/mapAgent';
+import { Region } from '../models/Region';
+import { UserSettings } from '../models/UserSettings';
+import { createUserProviderRegistry } from '../providers/registry';
+import { extractJson } from '../utils/jsonExtractor';
+import { streamText } from 'ai';
 
 const router = Router({ mergeParams: true });
 
@@ -90,13 +95,74 @@ router.post('/', validate(createPlaythroughSchema), async (req: AuthRequest, res
     let spawnLocation: Awaited<ReturnType<typeof addLocation>> | undefined;
 
     if (req.body.spawnRegionId) {
+      let name = 'Starting Point';
+      let description = 'Where the journey begins.';
+      let type: 'town' | 'dungeon' | 'wilderness' | 'ruin' | 'sanctuary' | 'crossroad' = 'crossroad';
+
+      const region = await Region.findById(req.body.spawnRegionId).lean();
+      const world = await World.findById(worldId).lean();
+      const premise = req.body.premise || '';
+
+      if (region && world) {
+        try {
+          const settings = await UserSettings.findOne({ userId }).lean();
+          if (settings) {
+            const registry = createUserProviderRegistry(settings.aiSettings);
+            const model = registry.getSupportModel();
+            const userLanguage = settings.language === 'vi' ? 'Vietnamese' : 'English';
+
+            const systemPrompt = `You are a world-building map agent for an interactive storytelling game.
+Your task is to generate a starting location within a specific region of a world.
+The location must fit the world's description, genre, the specific region's theme/terrain, and optionally align with the playthrough's premise/starting hooks.
+
+CRITICAL: You must generate all text (name, description) in the requested user language: ${userLanguage}.
+
+Respond ONLY with a JSON object in this format:
+{
+  "name": "A beautiful, evocative name for the starting location (in ${userLanguage})",
+  "description": "An atmospheric, detailed 1-2 sentence description of the location, where the protagonist starts their journey (in ${userLanguage}).",
+  "type": "Must be exactly one of: 'town', 'dungeon', 'wilderness', 'ruin', 'sanctuary', 'crossroad'"
+}`;
+
+            const userPrompt = `World Genre: ${world.genre}
+World Description: ${world.description}
+Region Name: ${region.name}
+Region Theme/Terrain: ${region.terrainType || ''} - ${region.description || ''}
+Playthrough Premise: ${premise}
+
+Generate the starting location JSON.`;
+
+            const result = streamText({
+              model,
+              system: systemPrompt,
+              prompt: userPrompt,
+              temperature: 0.7,
+            });
+
+            const text = await result.text;
+            const generated = extractJson<{ name: string; description: string; type: string }>(text);
+
+            if (generated && generated.name && generated.description) {
+              name = generated.name;
+              description = generated.description;
+              if (['town', 'dungeon', 'wilderness', 'ruin', 'sanctuary', 'crossroad'].includes(generated.type)) {
+                type = generated.type as typeof type;
+              }
+            }
+          }
+        } catch (err) {
+          console.error('[StartingLocation] Generation failed, using default:', err);
+        }
+      }
+
       spawnLocation = await addLocation({
         regionId: req.body.spawnRegionId,
         playthroughId: playthrough._id.toString(),
-        name: 'Starting Point',
-        description: 'Where the journey begins.',
-        type: 'crossroad',
+        name,
+        description,
+        type,
       });
+
       const updatedPlaythrough = await Playthrough.findByIdAndUpdate(
         playthrough._id,
         { $set: { currentLocationId: spawnLocation._id } },

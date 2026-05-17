@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { ChevronLeft, List, Swords } from 'lucide-react';
+import { ChevronLeft, List, Swords, Compass } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { MobileDrawer } from '../MobileDrawer';
 import ChapterNav from '../ChapterNav';
 import RPGPanel from '../RPGPanel';
@@ -81,6 +82,8 @@ export function ReaderMobileNav({
 }: ReaderMobileNavProps) {
   const t = useTranslation();
   const world = useStoryStore((state) => state.world);
+  const navigate = useNavigate();
+  const { playthroughId } = useParams<{ playthroughId: string }>();
 
   return (
     <>
@@ -156,6 +159,13 @@ export function ReaderMobileNav({
               )}
             </div>
             <span className="text-[10px] font-medium">{t.storyReader.mobileChapters}</span>
+          </button>
+          <button
+            onClick={() => navigate(`/playthroughs/${playthroughId}/map`)}
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 text-ink-200/60 hover:text-ink-100 active:bg-ink-800/50 transition-colors"
+          >
+            <Compass size={20} />
+            <span className="text-[10px] font-medium">{t.map?.title || 'Bản Đồ'}</span>
           </button>
           <button
             onClick={() => { setRpgOpen(!rpgOpen); setNavOpen(false); }}

@@ -24,8 +24,17 @@ export async function getPlaythrough(id: string): Promise<Playthrough> {
   return data.playthrough;
 }
 
-export async function createPlaythrough(worldId: string, name: string, premise?: string): Promise<Playthrough> {
-  const { data } = await api.post<{ playthrough: Playthrough }>(`/worlds/${worldId}/playthroughs`, { name, premise });
+export async function createPlaythrough(
+  worldId: string,
+  name: string,
+  spawnRegionId?: string,
+  premise?: string
+): Promise<Playthrough> {
+  const { data } = await api.post<{ playthrough: Playthrough }>(`/worlds/${worldId}/playthroughs`, {
+    name,
+    spawnRegionId,
+    premise,
+  });
   return data.playthrough;
 }
 
