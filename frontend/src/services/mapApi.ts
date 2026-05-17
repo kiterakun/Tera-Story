@@ -11,7 +11,7 @@ export interface Continent {
   terrainType: string;
   climate: string;
   dominantCulture: string;
-  position: MapPosition;
+  position?: MapPosition;
   regions: Region[];
   imageUrl?: string;
 }
@@ -22,7 +22,7 @@ export interface Region {
   name: string;
   description: string;
   terrainType: string;
-  position: MapPosition;
+  position?: MapPosition;
   neighborRegions: string[];
   locations: Location[];
   dangerLevel: number;
@@ -36,7 +36,7 @@ export interface Location {
   name: string;
   description: string;
   type: 'town' | 'dungeon' | 'wilderness' | 'ruin' | 'sanctuary' | 'crossroad';
-  position: MapPosition;
+  position?: MapPosition;
   discoveredAt: number;
   status: string;
   connectedLocations: string[];

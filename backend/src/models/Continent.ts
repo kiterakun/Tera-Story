@@ -1,21 +1,12 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-const PositionSchema = new Schema(
-  {
-    x: { type: Number, required: true },
-    y: { type: Number, required: true },
-  },
-  { _id: false }
-);
-
 export interface IContinentDocument extends Document {
   worldId: mongoose.Types.ObjectId;
   name: string;
   description: string;
-  terrainType: 'plains' | 'forest' | 'mountain' | 'desert' | 'coastal' | 'tundra' | 'volcanic';
+  terrainType: string;
   climate: string;
   dominantCulture: string;
-  position: { x: number; y: number };
   regions: mongoose.Types.ObjectId[];
   imageUrl?: string;
   createdAt: Date;
@@ -41,17 +32,12 @@ const ContinentSchema = new Schema<IContinentDocument>(
     },
     terrainType: {
       type: String,
-      enum: ['plains', 'forest', 'mountain', 'desert', 'coastal', 'tundra', 'volcanic'],
     },
     climate: {
       type: String,
     },
     dominantCulture: {
       type: String,
-    },
-    position: {
-      type: PositionSchema,
-      required: true,
     },
     regions: [
       {

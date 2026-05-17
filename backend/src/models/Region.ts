@@ -1,19 +1,10 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-const PositionSchema = new Schema(
-  {
-    x: { type: Number, required: true },
-    y: { type: Number, required: true },
-  },
-  { _id: false }
-);
-
 export interface IRegionDocument extends Document {
   continentId: mongoose.Types.ObjectId;
   name: string;
   description: string;
-  terrainType: 'plains' | 'forest' | 'mountain' | 'desert' | 'coastal' | 'tundra' | 'volcanic';
-  position: { x: number; y: number };
+  terrainType: string;
   neighborRegions: mongoose.Types.ObjectId[];
   locations: mongoose.Types.ObjectId[];
   dangerLevel: number;
@@ -41,11 +32,6 @@ const RegionSchema = new Schema<IRegionDocument>(
     },
     terrainType: {
       type: String,
-      enum: ['plains', 'forest', 'mountain', 'desert', 'coastal', 'tundra', 'volcanic'],
-    },
-    position: {
-      type: PositionSchema,
-      required: true,
     },
     neighborRegions: [
       {

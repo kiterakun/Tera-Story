@@ -1,14 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { IDynamicStat } from '../types/character.types';
 
-const PositionSchema = new Schema(
-  {
-    x: { type: Number, required: true },
-    y: { type: Number, required: true },
-  },
-  { _id: false }
-);
-
 const DynamicStatSchema = new Schema(
   {
     k: { type: String, required: true },
@@ -26,7 +18,6 @@ export interface ILocationDocument extends Document {
   name: string;
   description: string;
   type: 'town' | 'dungeon' | 'wilderness' | 'ruin' | 'sanctuary' | 'crossroad';
-  position: { x: number; y: number };
   discoveredAt: number;
   status: 'undiscovered' | 'known' | 'visited' | 'cleared';
   connectedLocations: mongoose.Types.ObjectId[];
@@ -61,10 +52,6 @@ const LocationSchema = new Schema<ILocationDocument>(
     type: {
       type: String,
       enum: ['town', 'dungeon', 'wilderness', 'ruin', 'sanctuary', 'crossroad'],
-    },
-    position: {
-      type: PositionSchema,
-      required: true,
     },
     discoveredAt: {
       type: Number,

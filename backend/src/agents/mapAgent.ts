@@ -18,7 +18,7 @@ interface LLMRegionOutput {
   name: string;
   description: string;
   terrainType: string;
-  position: { x: number; y: number };
+  dangerLevel: number;
 }
 
 interface LLMContinentOutput {
@@ -27,7 +27,6 @@ interface LLMContinentOutput {
   terrainType: string;
   climate: string;
   dominantCulture: string;
-  position: { x: number; y: number };
   regions: LLMRegionOutput[];
 }
 
@@ -67,7 +66,6 @@ export async function generateWorldMap(
       terrainType: contData.terrainType,
       climate: contData.climate,
       dominantCulture: contData.dominantCulture,
-      position: contData.position,
     });
 
     createdContinents.push(continent);
@@ -81,7 +79,7 @@ export async function generateWorldMap(
           name: regData.name,
           description: regData.description,
           terrainType: regData.terrainType,
-          position: regData.position,
+          dangerLevel: regData.dangerLevel,
         });
 
         createdRegions.push(region);
@@ -119,16 +117,6 @@ export async function addLocation(
     throw new Error(`Region not found: ${regionId}`);
   }
 
-  const centerX = region.position?.x ?? 500;
-  const centerY = region.position?.y ?? 500;
-  const offsetX = Math.floor(Math.random() * 100) - 50;
-  const offsetY = Math.floor(Math.random() * 100) - 50;
-
-  const position = {
-    x: Math.max(0, Math.min(1000, centerX + offsetX)),
-    y: Math.max(0, Math.min(1000, centerY + offsetY)),
-  };
-
   const connectedLocations: string[] = [];
   if (connectedTo) {
     connectedLocations.push(connectedTo);
@@ -140,7 +128,6 @@ export async function addLocation(
     name,
     description,
     type,
-    position,
     discoveredAt: Date.now(),
     status: 'known',
     connectedLocations,
