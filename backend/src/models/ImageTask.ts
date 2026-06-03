@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { ImageJobDetails } from '../agents/imageAgent';
 
-export type ImageEntityType = 'character' | 'item' | 'special-item' | 'world';
+export type ImageEntityType = 'character' | 'item' | 'special-item' | 'world' | 'organization';
 export type ImageTaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface IImageTaskDocument extends Document {
@@ -25,7 +25,7 @@ const ImageTaskSchema = new Schema<IImageTaskDocument>(
     entityType: {
       type: String,
       required: true,
-      enum: ['character', 'item', 'special-item', 'world'],
+      enum: ['character', 'item', 'special-item', 'world', 'organization'],
     },
     entityId: { type: String, required: true },
     worldId: { type: String, required: true },

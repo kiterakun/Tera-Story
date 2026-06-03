@@ -1,3 +1,4 @@
+import { emitToUser } from "./sseManager";
 import {
   generateImage,
   ImageJobDetails,
@@ -66,7 +67,14 @@ async function processQueue(): Promise<void> {
       $unset: { error: "" },
     });
   } catch (error) {
-    await handleJobFailure(job._id, job.retryCount, getErrorMessage(error));
+    await handleJobFailure(
+      job._id,
+      job.retryCount,
+      getErrorMessage(error),
+      String(job.userId),
+      job.entityType,
+      job.entityId,
+    );
   }
 
   await processQueue();
@@ -118,8 +126,28 @@ async function handleJobFailure(
   jobId: unknown,
   currentRetryCount: number,
   errorMessage: string,
+  userId: string,
+  entityType: string,
+  entityId: string,
 ): Promise<void> {
   const nextRetryCount = currentRetryCount + 1;
+  const timestamp = new Date().toISOString();
+
+  // Idempotent guard: skip if another process already advanced this job
+  const snapshot = await ImageTask.findById(jobId)
+    .select("retryCount status")
+    .lean();
+  if (!snapshot || snapshot.retryCount > currentRetryCount) {
+    return;
+  }
+
+  const basePayload = {
+    entityType,
+    entityId,
+    error: errorMessage,
+    retryCount: nextRetryCount,
+    timestamp,
+  };
 
   if (nextRetryCount < MAX_RETRIES) {
     const delayMs = Math.pow(2, currentRetryCount) * 1000;
@@ -132,6 +160,11 @@ async function handleJobFailure(
         retryCount: nextRetryCount,
         nextRetryAt,
       },
+    });
+
+    emitToUser(userId, "image:retry", {
+      ...basePayload,
+      nextRetryAt: nextRetryAt.toISOString(),
     });
 
     setTimeout(() => {
@@ -150,6 +183,8 @@ async function handleJobFailure(
       retryCount: nextRetryCount,
     },
   });
+
+  emitToUser(userId, "image:failed", basePayload);
 }
 
 function getErrorMessage(error: unknown): string {

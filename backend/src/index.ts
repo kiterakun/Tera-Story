@@ -61,7 +61,7 @@ app.use(express.json({ limit: '1mb' }));
 // Rate Limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: env.NODE_ENV === 'production' ? 100 : 10000,
+  max: env.NODE_ENV === 'production' ? 1000 : 10000,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -69,7 +69,7 @@ app.use('/api/', apiLimiter);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: env.NODE_ENV === 'production' ? 20 : 1000,
+  max: env.NODE_ENV === 'production' ? 150 : 1500,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -78,7 +78,7 @@ app.use('/api/auth/', authLimiter);
 // Story generation rate limit (stricter — costs LLM tokens)
 const storyLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: env.NODE_ENV === 'production' ? 10 : 100,
+  max: env.NODE_ENV === 'production' ? 50 : 500,
   standardHeaders: true,
   legacyHeaders: false,
 });

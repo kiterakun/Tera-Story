@@ -20,6 +20,7 @@ export interface IOrganizationDocument extends Document {
   structure: string; // organizational structure description
   dynamicStats: IDynamicStat[];
   memberIds: mongoose.Types.ObjectId[]; // character references
+  imageUrl?: string;
   createdInChapterId?: string;
   archivedAt: Date | null;
   createdAt: Date;

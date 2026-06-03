@@ -4,6 +4,15 @@ import { decrypt } from "../services/encryption";
 import { IAgentConfig } from "../types/user.types";
 import { emit } from "../services/sseManager";
 
+export interface ImageErrorPayload {
+  entityType: string;
+  entityId: string;
+  error: string;
+  retryCount: number;
+  nextRetryAt?: string;
+  timestamp: string;
+}
+
 const UPLOADS_BASE = path.join(__dirname, "../../uploads/images");
 
 // Ensure upload directories exist
@@ -11,8 +20,9 @@ fs.mkdirSync(path.join(UPLOADS_BASE, "character"), { recursive: true });
 fs.mkdirSync(path.join(UPLOADS_BASE, "item"), { recursive: true });
 fs.mkdirSync(path.join(UPLOADS_BASE, "special-item"), { recursive: true });
 fs.mkdirSync(path.join(UPLOADS_BASE, "world"), { recursive: true });
+fs.mkdirSync(path.join(UPLOADS_BASE, "organization"), { recursive: true });
 
-type EntityType = "character" | "item" | "special-item" | "world";
+type EntityType = "character" | "item" | "special-item" | "world" | "organization";
 
 export interface ImageJobDetails {
   name: string;
@@ -116,6 +126,15 @@ function buildImagePrompt(
         `Art direction: ${genreStyle}. Epic scale, sweeping scenery, atmospheric lighting, concept art, cinematic composition.`,
         "No text, no watermark, no UI elements, no characters.",
       ].join(" ");
+
+    case "organization":
+      return [
+        `Organization emblem, crest, or headquarters illustration: ${entityDetails.name}.`,
+        entityDetails.description,
+        worldHint,
+        `Art direction: ${genreStyle}. Professional RPG banner or crest design, detailed rendering.`,
+        "No text, no watermark, no UI elements.",
+      ].join(" ");
   }
 }
 
@@ -136,6 +155,12 @@ async function derivePlaythroughId(entityType: EntityType, entityId: string): Pr
     const { SpecialItem } = await import("../models/SpecialItem");
     const specialItem = await SpecialItem.findById(entityId).select("playthroughId").lean();
     return specialItem?.playthroughId?.toString();
+  }
+
+  if (entityType === "organization") {
+    const { Organization } = await import("../models/Organization");
+    const organization = await Organization.findById(entityId).select("playthroughId").lean();
+    return organization?.playthroughId?.toString();
   }
 
   return undefined;
@@ -163,7 +188,7 @@ export async function generateImage(
     const size = getImageSize(entityType, model);
 
     console.log(
-      `[Image] Generating ${entityType}/${entityId}: size=${size}, model=${model}`,
+      `[Image] Generating entity=${entityType}/${entityId} size=${size} model=${model}`,
     );
 
     const response = await fetch(endpoint, {
@@ -184,11 +209,9 @@ export async function generateImage(
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error(
-        `Image generation API error (${response.status}):`,
-        errorBody,
-      );
-      return;
+      const errorMsg = `Image API error (${response.status}): ${errorBody.slice(0, 200)}`;
+      console.error(`[Image] ${errorMsg}`);
+      throw new Error(errorMsg);
     }
 
     const result = (await response.json()) as {
@@ -217,8 +240,9 @@ export async function generateImage(
       }
 
       if (!imageResponse.ok) {
-        console.error(`Failed to download image: ${imageResponse.status}`);
-        return;
+        const errorMsg = `Failed to download image: HTTP ${imageResponse.status}`;
+        console.error(`[Image] ${errorMsg}`);
+        throw new Error(errorMsg);
       }
 
       buffer = Buffer.from(await imageResponse.arrayBuffer());
@@ -227,8 +251,9 @@ export async function generateImage(
       const base64Data = b64Json.replace(/^data:image\/\w+;base64,/, "");
       buffer = Buffer.from(base64Data, "base64");
     } else {
-      console.error("Image generation returned no URL and no b64_json");
-      return;
+      const errorMsg = "Image generation returned no URL and no b64_json";
+      console.error(`[Image] ${errorMsg}`);
+      throw new Error(errorMsg);
     }
 
     const filePath = path.join(UPLOADS_BASE, entityType, `${entityId}.png`);
@@ -249,11 +274,12 @@ export async function generateImage(
     } else if (entityType === "world") {
       const { World } = await import("../models/World");
       await World.findByIdAndUpdate(entityId, { imageUrl: relativeUrl });
+    } else if (entityType === "organization") {
+      const { Organization } = await import("../models/Organization");
+      await Organization.findByIdAndUpdate(entityId, { imageUrl: relativeUrl });
     }
 
-    console.log(
-      `[Image] Generated ${entityType}/${entityId}: ${relativeUrl} (${size})`,
-    );
+    console.log(`[Image] Generated entity=${entityType}/${entityId} url=${relativeUrl} size=${size}`);
 
     // Derive playthroughId from entity lookup for SSE
     const derivedPlaythroughId = await derivePlaythroughId(entityType, entityId);
@@ -261,10 +287,26 @@ export async function generateImage(
       emit(derivedPlaythroughId, 'image:completed', { entityType, entityId, imageUrl: relativeUrl });
     }
   } catch (error) {
-    console.error(
-      `Image generation failed for ${entityType}/${entityId}:`,
-      error,
-    );
-    // Don't rethrow — fire-and-forget
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error(`[Image] Generation failed for ${entityType}/${entityId}: ${errorMsg}`);
+
+    const payload: ImageErrorPayload = {
+      entityType,
+      entityId,
+      error: errorMsg,
+      retryCount: 0,
+      timestamp: new Date().toISOString(),
+    };
+
+    try {
+      const derivedPlaythroughId = await derivePlaythroughId(entityType, entityId);
+      if (derivedPlaythroughId) {
+        emit(derivedPlaythroughId, 'image:failed', payload);
+      }
+    } catch {
+      // Entity not found or invalid ID — skip SSE notification
+    }
+
+    throw error;
   }
 }

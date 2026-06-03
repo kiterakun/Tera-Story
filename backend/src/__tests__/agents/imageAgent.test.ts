@@ -11,6 +11,10 @@ vi.mock('../../services/encryption', () => ({
   decrypt: vi.fn((s: string) => s),
 }));
 
+vi.mock('../../services/sseManager', () => ({
+  emit: vi.fn(),
+}));
+
 const mockFetch = vi.fn();
 global.fetch = mockFetch as unknown as typeof fetch;
 
@@ -23,10 +27,28 @@ function fakeImageConfig(overrides?: Partial<IAgentConfig>): IAgentConfig {
   };
 }
 
+function mockSuccessResponse(prompt: string) {
+  mockFetch.mockResolvedValue({
+    ok: true,
+    json: () => Promise.resolve({ data: [{ url: `https://example.com/image?prompt=${encodeURIComponent(prompt)}` }] }),
+  });
+}
+
+function mockSuccessResponseWithBytes(prompt: string) {
+  mockFetch
+    .mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ data: [{ url: `https://example.com/generated.png?prompt=${encodeURIComponent(prompt)}` }] }),
+    })
+    .mockResolvedValueOnce({
+      ok: true,
+      arrayBuffer: () => Promise.resolve(Buffer.from('fake-png-bytes')),
+    });
+}
+
 describe('generateImage — prompt building via fetch spy', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetch.mockRejectedValue(new Error('stop'));
   });
 
   function extractPrompt(): string | undefined {
@@ -48,13 +70,15 @@ describe('generateImage — prompt building via fetch spy', () => {
   };
 
   it('generates character prompt with fantasy genre style keywords', async () => {
-    await generateImage(
+    mockSuccessResponseWithBytes('Aria portrait');
+
+    await expect(generateImage(
       { ...baseDetails, name: 'Aria' },
       'character',
-      'char-1',
+      '507f1f77bcf86cd799439011',
       baseWorld,
       fakeImageConfig(),
-    );
+    )).resolves.toBeUndefined();
 
     const prompt = extractPrompt();
     expect(prompt).toBeDefined();
@@ -66,13 +90,15 @@ describe('generateImage — prompt building via fetch spy', () => {
   });
 
   it('includes rarity in item prompt when provided', async () => {
-    await generateImage(
+    mockSuccessResponseWithBytes('Excalibur item');
+
+    await expect(generateImage(
       { name: 'Excalibur', description: 'Legendary sword', rarity: 'legendary' },
       'item',
-      'item-1',
+      '507f1f77bcf86cd799439012',
       baseWorld,
       fakeImageConfig(),
-    );
+    )).resolves.toBeUndefined();
 
     const prompt = extractPrompt();
     expect(prompt).toContain('Single item illustration');
@@ -82,13 +108,15 @@ describe('generateImage — prompt building via fetch spy', () => {
   });
 
   it('omits rarity phrase when rarity is absent in item prompt', async () => {
-    await generateImage(
+    mockSuccessResponseWithBytes('Potion item');
+
+    await expect(generateImage(
       { name: 'Potion', description: 'A healing potion' },
       'item',
-      'item-2',
+      '507f1f77bcf86cd799439013',
       baseWorld,
       fakeImageConfig(),
-    );
+    )).resolves.toBeUndefined();
 
     const prompt = extractPrompt();
     expect(prompt).not.toContain('tier quality glow');
@@ -96,7 +124,9 @@ describe('generateImage — prompt building via fetch spy', () => {
   });
 
   it('generates special-item prompt with category and rarity', async () => {
-    await generateImage(
+    mockSuccessResponseWithBytes('Fireball special');
+
+    await expect(generateImage(
       {
         name: 'Fireball',
         description: 'Launch a fireball',
@@ -104,10 +134,10 @@ describe('generateImage — prompt building via fetch spy', () => {
         rarity: 'epic',
       },
       'special-item',
-      'si-1',
+      '507f1f77bcf86cd799439014',
       baseWorld,
       fakeImageConfig(),
-    );
+    )).resolves.toBeUndefined();
 
     const prompt = extractPrompt();
     expect(prompt).toContain('Magical ability icon');
@@ -118,13 +148,15 @@ describe('generateImage — prompt building via fetch spy', () => {
   });
 
   it('generates world prompt with genre in the prompt', async () => {
-    await generateImage(
+    mockSuccessResponseWithBytes('Avalon world');
+
+    await expect(generateImage(
       { name: 'Avalon', description: 'Mystic island' },
       'world',
-      'w-1',
+      '507f1f77bcf86cd799439015',
       baseWorld,
       fakeImageConfig(),
-    );
+    )).resolves.toBeUndefined();
 
     const prompt = extractPrompt();
     expect(prompt).toContain('Panoramic landscape vista');
@@ -141,13 +173,15 @@ describe('generateImage — prompt building via fetch spy', () => {
       description: 'A neon-lit metropolis.',
       genre: 'sci-fi',
     };
-    await generateImage(
+    mockSuccessResponseWithBytes('Cyborg sci-fi');
+
+    await expect(generateImage(
       { name: 'Cyborg', description: 'Half machine' },
       'character',
-      'char-sf',
+      '507f1f77bcf86cd799439016',
       sciFiWorld,
       fakeImageConfig(),
-    );
+    )).resolves.toBeUndefined();
 
     const prompt = extractPrompt();
     expect(prompt).toContain('science fiction concept art');
@@ -160,13 +194,15 @@ describe('generateImage — prompt building via fetch spy', () => {
       description: 'Martial world',
       genre: 'wuxia',
     };
-    await generateImage(
+    mockSuccessResponseWithBytes('Sword Saint wuxia');
+
+    await expect(generateImage(
       { name: 'Sword Saint', description: 'Master of the blade' },
       'character',
-      'char-wx',
+      '507f1f77bcf86cd799439017',
       wuxiaWorld,
       fakeImageConfig(),
-    );
+    )).resolves.toBeUndefined();
 
     const prompt = extractPrompt();
     expect(prompt).toContain('Chinese martial arts painting style');
@@ -179,13 +215,15 @@ describe('generateImage — prompt building via fetch spy', () => {
       description: 'Urban sprawl.',
       genre: 'modern',
     };
-    await generateImage(
+    mockSuccessResponseWithBytes('Officer modern');
+
+    await expect(generateImage(
       { name: 'Officer', description: 'City cop' },
       'character',
-      'char-md',
+      '507f1f77bcf86cd799439018',
       modernWorld,
       fakeImageConfig(),
-    );
+    )).resolves.toBeUndefined();
 
     const prompt = extractPrompt();
     expect(prompt).toContain('contemporary realistic style');
@@ -197,15 +235,53 @@ describe('generateImage — prompt building via fetch spy', () => {
       description: '',
       genre: 'custom',
     };
-    await generateImage(
+    mockSuccessResponseWithBytes('Mystery custom');
+
+    await expect(generateImage(
       { name: 'Mystery', description: 'Unknown entity' },
       'character',
-      'char-unk',
+      '507f1f77bcf86cd799439019',
       unknownWorld,
       fakeImageConfig(),
-    );
+    )).resolves.toBeUndefined();
 
     const prompt = extractPrompt();
     expect(prompt).toContain('detailed digital art');
+  });
+
+  it('throws error when API returns non-ok response', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      text: () => Promise.resolve('Rate limit exceeded'),
+    });
+
+    await expect(generateImage(
+      baseDetails,
+      'character',
+      '507f1f77bcf86cd79943901a',
+      baseWorld,
+      fakeImageConfig(),
+    )).rejects.toThrow('Image API error (429): Rate limit exceeded');
+  });
+
+  it('throws error when download fails', async () => {
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ data: [{ url: 'https://example.com/image.png' }] }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      });
+
+    await expect(generateImage(
+      baseDetails,
+      'character',
+      '507f1f77bcf86cd79943901b',
+      baseWorld,
+      fakeImageConfig(),
+    )).rejects.toThrow('Failed to download image: HTTP 404');
   });
 });

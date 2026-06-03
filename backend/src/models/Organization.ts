@@ -64,6 +64,9 @@ const OrganizationSchema = new Schema<IOrganizationDocument>(
       type: Schema.Types.ObjectId,
       ref: 'Character',
     }],
+    imageUrl: {
+      type: String,
+    },
     createdInChapterId: {
       type: String,
     },
