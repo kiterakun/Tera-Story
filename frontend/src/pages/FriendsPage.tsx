@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useFriends } from '../hooks/useFriends';
+import { Spinner } from '../design-system/Spinner';
 import { showSuccess, showError } from '../lib/toast';
 import type { FriendUser, FriendRequest } from '../services/friendsApi';
 import { LevelBadge } from '../components/progression/LevelBadge';
@@ -235,7 +236,7 @@ export default function FriendsPage() {
           />
           {isSearching && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
+              <Spinner size="sm" className="h-4 w-4 border-2 border-accent-500 border-t-transparent rounded-full" />
             </div>
           )}
         </div>
@@ -257,7 +258,7 @@ export default function FriendsPage() {
 
           {isSearching ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent-500 border-t-transparent mb-3" />
+              <Spinner size="md" className="h-6 w-6 border-2 border-accent-500 border-t-transparent rounded-full mb-3" />
               <p className="text-sm text-ink-400">{t.friends.searching}</p>
             </div>
           ) : debouncedQuery.length < 3 ? (
@@ -330,7 +331,7 @@ export default function FriendsPage() {
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <UserPlus size={40} className="text-ink-600 mb-3" />
               <p className="text-sm text-ink-400">{t.friends.noFriends}</p>
-              <div className="mt-4 h-5 w-5 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
+              <Spinner size="sm" className="mt-4 h-5 w-5 border-2 border-accent-500 border-t-transparent rounded-full" />
             </div>
           ) : activeTab === 'friends' ? (
             friends.length === 0 ? (

@@ -9,3 +9,5 @@ Thumbs.db
 uploads/
 .vscode/
 kite/
+.worktrees/
+.kite-docs/.cache/

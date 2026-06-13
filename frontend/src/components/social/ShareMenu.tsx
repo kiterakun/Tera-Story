@@ -78,22 +78,40 @@ export const ShareMenu: FC<ShareMenuProps> = ({ shareType, shareId, imageUrl }) 
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 rounded-lg bg-ink-800 border border-ink-700 px-4 py-2 text-sm font-medium text-ink-200 hover:bg-ink-700 transition-colors"
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        className="flex items-center gap-2 rounded-lg bg-ink-800 border border-ink-700 px-4 py-2 text-sm font-medium text-ink-200 hover:bg-ink-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
       >
-        <Share2 size={16} />
+        <Share2 size={16} aria-hidden="true" />
         {t.share.title}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-ink-700 bg-ink-900 shadow-2xl z-50 overflow-hidden">
+        <div
+          role="dialog"
+          aria-label={t.share.title}
+          className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-ink-700 bg-ink-900 shadow-2xl z-50 overflow-hidden"
+        >
           <div className="flex items-center justify-between px-4 py-3 border-b border-ink-700">
             <span className="text-sm font-semibold text-ink-200">{t.share.title}</span>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-ink-500 hover:text-ink-300 transition-colors"
+              aria-label="Close share menu"
+              className="text-ink-500 hover:text-ink-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 rounded-md p-0.5"
             >
-              <X size={16} />
+              <X size={16} aria-hidden="true" />
             </button>
+          </div>
+          <div className="px-4 py-2 border-b border-ink-700/60">
+            <p className="text-[10px] uppercase tracking-wider text-ink-200/40 mb-1">Live preview</p>
+            <input
+              type="text"
+              readOnly
+              value={shareUrl}
+              aria-label="Share URL preview"
+              onFocus={(e) => e.target.select()}
+              className="w-full min-h-[32px] bg-ink-950 border border-ink-700 rounded-md px-2 py-1 text-[11px] font-mono text-ink-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+            />
           </div>
           <div className="p-1">
             <button

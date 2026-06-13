@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '../../design-system/Spinner';
 import { useTranslation } from '../../i18n';
 
 interface CreationOverlayProps {
@@ -14,7 +14,7 @@ export function CreationOverlay({ label }: CreationOverlayProps) {
       <div className="max-w-sm w-full space-y-6 animate-in fade-in zoom-in duration-300">
         <div className="relative">
           <div className="absolute inset-0 bg-accent-500/20 blur-3xl rounded-full" />
-          <Loader2 size={64} className="animate-spin text-accent-400 mx-auto relative z-10" />
+          <Spinner size="lg" className="w-16 h-16 text-accent-400 mx-auto relative z-10" />
         </div>
         <div className="space-y-2">
           <h3 className="text-2xl font-display text-ink-100">{label}</h3>

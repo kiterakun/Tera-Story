@@ -1,8 +1,15 @@
-import { useEffect, useRef, useMemo } from 'react';
-import { X, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import ForceGraph2D from 'react-force-graph-2d';
 import type { Relationship, Character } from '../services/playthroughApi';
 import { useTranslation } from '../i18n';
+import { Modal, ModalHeader, ModalBody } from '../design-system';
+import { RELATIONSHIP_TYPE_COLORS, getRelationshipTypeColor, NODE_GRAPH_COLORS } from '../design-system/colors';
+import { cn } from '../design-system/cn';
+
+const PROTAGONIST_COLOR = NODE_GRAPH_COLORS.protagonist;
+const NPC_COLOR = NODE_GRAPH_COLORS.npc;
+const LABEL_TEXT_COLOR = NODE_GRAPH_COLORS.label;
 
 interface RelationshipWebModalProps {
   isOpen: boolean;
@@ -11,98 +18,119 @@ interface RelationshipWebModalProps {
   characters: Character[];
 }
 
-
-
 interface ForceGraphRef {
   zoomToFit: (duration?: number, padding?: number) => void;
   centerAt: (x?: number, y?: number, duration?: number) => void;
   zoom: (scale: number, duration?: number) => void;
 }
 
-
+interface GraphNode {
+  id: string;
+  name: string;
+  val: number;
+  color: string;
+  x?: number;
+  y?: number;
+}
 
 export function RelationshipWebModal({ isOpen, onClose, relationships, characters }: RelationshipWebModalProps) {
   const t = useTranslation();
   const fgRef = useRef<ForceGraphRef | null>(null);
+  const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const [focusedIndex, setFocusedIndex] = useState(0);
 
-  const graphData = useMemo(() => {
-    if (!isOpen) return { nodes: [], links: [] };
-
-    // Build nodes from characters that have relationships
+  const { nodes, links } = useMemo(() => {
+    if (!isOpen) return { nodes: [] as GraphNode[], links: [] as Array<{ source: string; target: string; type: string; intensity: number; color: string }> };
     const charIdsInRels = new Set<string>();
     relationships.forEach((r) => {
       charIdsInRels.add(r.characterA._id);
       charIdsInRels.add(r.characterB._id);
     });
 
-    const nodes = characters
+    const graphNodes: GraphNode[] = characters
       .filter((c) => charIdsInRels.has(c._id) || c.role === 'protagonist')
       .map((c) => ({
         id: c._id,
         name: c.name,
         val: c.role === 'protagonist' ? 30 : 15,
-        color: c.role === 'protagonist' ? '#f59e0b' : '#3b82f6', // Amber for protag, blue for npc
+        color: c.role === 'protagonist' ? PROTAGONIST_COLOR : NPC_COLOR,
       }));
-
-    // Build links
-    const links = relationships.map((r) => {
-      let color = '#6b7280'; // gray
-      if (r.type === 'enemy' || r.type === 'rival') color = '#ef4444'; // red
-      if (r.type === 'ally') color = '#10b981'; // emerald
-      if (r.type === 'romantic') color = '#ec4899'; // pink
-      if (r.type === 'mentor') color = '#8b5cf6'; // violet
-      if (r.type === 'family') color = '#3b82f6'; // blue
-
-      return {
-        source: r.characterA._id,
-        target: r.characterB._id,
-        type: r.type,
-        intensity: r.intensity,
-        color,
-      };
-    });
-
-    return { nodes, links };
+    const graphLinks = relationships.map((r) => ({
+      source: r.characterA._id,
+      target: r.characterB._id,
+      type: r.type,
+      intensity: r.intensity,
+      color: getRelationshipTypeColor(r.type).color,
+    }));
+    return { nodes: graphNodes, links: graphLinks };
   }, [isOpen, relationships, characters]);
 
   useEffect(() => {
     if (!isOpen) return;
-    // Zoom to fit after a short delay
     const timer = setTimeout(() => {
       fgRef.current?.zoomToFit(400, 50);
     }, 500);
     return () => clearTimeout(timer);
-  }, [isOpen, graphData]);
+  }, [isOpen, nodes, links]);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setFocusedIndex(0);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [isOpen]);
+
+  const focusNode = (index: number) => {
+    const length = Math.max(nodes.length, 1);
+    const bounded = ((index % length) + length) % length;
+    setFocusedIndex(bounded);
+    const node = nodes[bounded];
+    if (node && typeof node.x === 'number' && typeof node.y === 'number') {
+      fgRef.current?.centerAt(node.x, node.y, 600);
+      fgRef.current?.zoom(3, 600);
+    }
+  };
+
+  const handleListKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      focusNode(focusedIndex + 1);
+    } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+      event.preventDefault();
+      focusNode(focusedIndex - 1);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      focusNode(0);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      focusNode(nodes.length - 1);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-ink-950/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-ink-900 border border-ink-700 rounded-2xl w-full max-w-5xl h-[85vh] flex flex-col shadow-2xl overflow-hidden relative">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-ink-800 bg-ink-900/50 shrink-0 z-10">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-display text-ink-100 uppercase tracking-wide">
-              {t.storyReader.rpgPanel} - Relationship Web
-            </h2>
-            <span className="px-2 py-0.5 rounded-full bg-accent-500/10 text-accent-400 text-xs font-medium border border-accent-500/20">
-              Interactive
-            </span>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-ink-300 hover:text-ink-100 hover:bg-ink-800 transition-colors"
-          >
-            <X size={20} />
-          </button>
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      size="xl"
+      closeOnEsc
+      closeOnScrimClick
+      className="max-w-5xl h-[85vh] overflow-hidden rounded-2xl"
+    >
+      <ModalHeader className="bg-ink-900/50">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-display text-ink-100 uppercase tracking-wide">
+            {t.storyReader.rpgPanel} - Relationship Web
+          </h2>
+          <span className="px-2 py-0.5 rounded-full bg-accent-500/10 text-accent-400 text-xs font-medium border border-accent-500/20">
+            Interactive
+          </span>
         </div>
+      </ModalHeader>
 
-        {/* Graph Area */}
-        <div className="flex-1 relative bg-ink-950/50">
+      <ModalBody className="flex-1 relative bg-ink-950/50 p-0 flex flex-col md:flex-row">
+        <div className="flex-1 relative">
           <ForceGraph2D
             ref={fgRef}
-            graphData={graphData}
+            graphData={{ nodes, links }}
             nodeLabel="name"
             nodeColor="color"
             nodeRelSize={6}
@@ -116,77 +144,120 @@ export function RelationshipWebModal({ isOpen, onClose, relationships, character
               fgRef.current?.centerAt(node.x, node.y, 1000);
               fgRef.current?.zoom(3, 2000);
             }}
-            nodeCanvasObject={(node: { name: string }, ctx, globalScale) => {
+            nodeCanvasObject={(node: GraphNode, ctx, globalScale) => {
               const label = node.name;
               const fontSize = 12 / globalScale;
               ctx.font = `${fontSize}px Sans-Serif`;
               const textWidth = ctx.measureText(label).width;
-              const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2);
+              const bckgDimensions = [textWidth, fontSize].map((n) => n + fontSize * 0.2);
 
-              ctx.fillStyle = 'rgba(15, 23, 42, 0.8)'; // ink-950
+              ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
               ctx.beginPath();
               ctx.roundRect(
-                node.x - bckgDimensions[0] / 2,
-                node.y - bckgDimensions[1] / 2 - 12,
+                (node.x ?? 0) - bckgDimensions[0] / 2,
+                (node.y ?? 0) - bckgDimensions[1] / 2 - 12,
                 bckgDimensions[0],
                 bckgDimensions[1],
-                4
+                4,
               );
               ctx.fill();
 
-              // Draw node circle
               ctx.beginPath();
-              ctx.arc(node.x, node.y, node.val / 2, 0, 2 * Math.PI, false);
+              ctx.arc(node.x ?? 0, node.y ?? 0, node.val / 2, 0, 2 * Math.PI, false);
               ctx.fillStyle = node.color;
               ctx.fill();
 
-              // Draw text
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
-              ctx.fillStyle = '#e2e8f0'; // ink-200
-              ctx.fillText(label, node.x, node.y - 12);
+              ctx.fillStyle = LABEL_TEXT_COLOR;
+              ctx.fillText(label, node.x ?? 0, (node.y ?? 0) - 12);
             }}
           />
 
           {/* Controls Overlay */}
           <div className="absolute bottom-4 right-4 flex flex-col gap-2">
             <button
-              onClick={() => fgRef.current?.zoom(fgRef.current?.zoom() * 1.2, 400)}
-              className="p-2 bg-ink-800/80 border border-ink-700 text-ink-200 hover:text-ink-100 rounded-lg backdrop-blur shadow hover:bg-ink-700/80 transition"
-              title="Zoom In"
+              type="button"
+              onClick={() => fgRef.current?.zoom((fgRef.current?.zoom() ?? 1) * 1.2, 400)}
+              aria-label="Zoom In"
+              className="p-2 bg-ink-800/80 border border-ink-700 text-ink-200 hover:text-ink-100 rounded-lg backdrop-blur shadow hover:bg-ink-700/80 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
             >
-              <ZoomIn size={18} />
+              <ZoomIn size={18} aria-hidden="true" />
             </button>
             <button
-              onClick={() => fgRef.current?.zoom(fgRef.current?.zoom() / 1.2, 400)}
-              className="p-2 bg-ink-800/80 border border-ink-700 text-ink-200 hover:text-ink-100 rounded-lg backdrop-blur shadow hover:bg-ink-700/80 transition"
-              title="Zoom Out"
+              type="button"
+              onClick={() => fgRef.current?.zoom((fgRef.current?.zoom() ?? 1) / 1.2, 400)}
+              aria-label="Zoom Out"
+              className="p-2 bg-ink-800/80 border border-ink-700 text-ink-200 hover:text-ink-100 rounded-lg backdrop-blur shadow hover:bg-ink-700/80 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
             >
-              <ZoomOut size={18} />
+              <ZoomOut size={18} aria-hidden="true" />
             </button>
             <button
+              type="button"
               onClick={() => fgRef.current?.zoomToFit(400, 50)}
-              className="p-2 bg-ink-800/80 border border-ink-700 text-ink-200 hover:text-ink-100 rounded-lg backdrop-blur shadow hover:bg-ink-700/80 transition"
-              title="Fit to Screen"
+              aria-label="Fit to Screen"
+              className="p-2 bg-ink-800/80 border border-ink-700 text-ink-200 hover:text-ink-100 rounded-lg backdrop-blur shadow hover:bg-ink-700/80 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
             >
-              <Maximize size={18} />
+              <Maximize size={18} aria-hidden="true" />
             </button>
-          </div>
-          
-          {/* Legend */}
-          <div className="absolute top-4 left-4 bg-ink-900/80 backdrop-blur-md border border-ink-800 p-3 rounded-xl shadow-lg">
-            <h4 className="text-xs font-semibold text-ink-300 mb-2 uppercase tracking-wider">Legend</h4>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500"></span><span className="text-[10px] text-ink-200">Ally</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500"></span><span className="text-[10px] text-ink-200">Enemy / Rival</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-pink-500"></span><span className="text-[10px] text-ink-200">Romantic</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-violet-500"></span><span className="text-[10px] text-ink-200">Mentor</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500"></span><span className="text-[10px] text-ink-200">Family / Neutral</span></div>
-            </div>
-            <div className="mt-3 text-[9px] text-ink-400 italic">Particles indicate relationship intensity.</div>
           </div>
         </div>
-      </div>
-    </div>
+
+        {/* Character navigation list */}
+        <div className="md:w-56 border-t md:border-t-0 md:border-l border-ink-800 p-3 bg-ink-900/70 flex flex-col gap-2">
+          <h4 className="text-xs font-semibold text-ink-300 uppercase tracking-wider">Characters</h4>
+          <div
+            role="listbox"
+            aria-label="Character navigation"
+            aria-orientation="vertical"
+            onKeyDown={handleListKeyDown}
+            className="flex flex-col gap-1 max-h-60 md:max-h-full overflow-y-auto"
+          >
+            {nodes.length === 0 && (
+              <p className="text-xs text-ink-300/60 italic">No characters in the web.</p>
+            )}
+            {nodes.map((node, idx) => (
+              <button
+                key={node.id}
+                ref={(el) => { buttonRefs.current[idx] = el; }}
+                type="button"
+                role="option"
+                aria-selected={idx === focusedIndex}
+                tabIndex={idx === focusedIndex ? 0 : -1}
+                onClick={() => focusNode(idx)}
+                onFocus={() => setFocusedIndex(idx)}
+                className={cn(
+                  'text-left text-sm rounded-md px-2 py-1 transition-colors',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
+                  idx === focusedIndex
+                    ? 'bg-accent-500/20 text-accent-200'
+                    : 'text-ink-100 hover:bg-ink-800/70',
+                )}
+                style={{ minHeight: '32px' }}
+              >
+                {node.name}
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 text-[10px] text-ink-400">
+            Use arrow keys or Home/End to navigate characters.
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="absolute top-4 left-4 bg-ink-900/80 backdrop-blur-md border border-ink-800 p-3 rounded-xl shadow-lg">
+          <h4 className="text-xs font-semibold text-ink-300 mb-2 uppercase tracking-wider">Legend</h4>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+            {(Object.keys(RELATIONSHIP_TYPE_COLORS) as Array<keyof typeof RELATIONSHIP_TYPE_COLORS>).map((key) => (
+              <div key={key} data-testid="relationship-legend-item" className="flex items-center gap-1.5">
+                <span className={cn('w-2 h-2 rounded-full', RELATIONSHIP_TYPE_COLORS[key].swatchClass)} aria-hidden="true" />
+                <span className="text-[10px] text-ink-200 capitalize">{(t.relationship as Record<string, string>)[key] || key}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 text-[9px] text-ink-400 italic">Particles indicate relationship intensity.</div>
+        </div>
+      </ModalBody>
+    </Modal>
   );
 }

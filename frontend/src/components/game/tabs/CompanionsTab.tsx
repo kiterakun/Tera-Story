@@ -1,26 +1,12 @@
 import { useState } from 'react';
-import { UserRound, Skull, AlertTriangle, HelpCircle } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
-import type { EntityData } from '../EntityDetailModal';
-import type { Character } from '../../services/playthroughApi';
-import { useTranslation } from '../../i18n';
-import { getImageUrl } from '../../utils/url';
-import { DynamicStatList } from '../DynamicStatDisplay';
-import { useStoryStore } from '../../stores/storyStore';
-
-const STATUS_COLORS: Record<string, string> = {
-  active: 'text-green-400 bg-green-500/10',
-  dead: 'text-red-400 bg-red-500/10',
-  injured: 'text-amber-400 bg-amber-500/10',
-  missing: 'text-gray-400 bg-gray-500/10',
-};
-
-const STATUS_ICONS: Record<string, typeof UserRound> = {
-  active: UserRound,
-  dead: Skull,
-  injured: AlertTriangle,
-  missing: HelpCircle,
-};
+import type { EntityData } from '../../EntityDetailModal';
+import type { Character } from '../../../services/playthroughApi';
+import { useTranslation } from '../../../i18n';
+import { getImageUrl } from '../../../utils/url';
+import { DynamicStatList } from '../../DynamicStatDisplay';
+import { useStoryStore } from '../../../stores/storyStore';
+import { EntityCard } from '../../../design-system/EntityCard';
 
 interface CompanionsTabProps {
   sortedNpcs: Character[];
@@ -44,7 +30,7 @@ export function CompanionsTab({ sortedNpcs, setDetailEntity, t }: CompanionsTabP
     <div className="space-y-3 animate-fade-in">
       {sortedNpcs.map(npc => {
         const isExpanded = expandedNpcId === npc._id;
-        const StatusIcon = STATUS_ICONS[npc.status] || UserRound;
+        const statusLabel = t.entityStatus[npc.status as keyof typeof t.entityStatus] || npc.status;
 
         return (
           <div
@@ -52,42 +38,24 @@ export function CompanionsTab({ sortedNpcs, setDetailEntity, t }: CompanionsTabP
             className="bg-ink-950/50 rounded-xl border border-ink-700/50 overflow-hidden"
           >
             {/* NPC Header */}
-            <button
-              type="button"
+            <EntityCard
+              variant="character"
+              name={npc.name}
+              subtitle={t.characterCard.npc}
+              description={npc.description}
+              imageUrl={npc.imageUrl ? getImageUrl(npc.imageUrl) : undefined}
+              imageAlt={npc.name}
+              status={npc.status}
+              statusLabel={statusLabel}
+              selected={isExpanded}
               onClick={() => setExpandedNpcId(isExpanded ? null : npc._id)}
-              className="w-full flex items-center gap-3 p-3 text-left hover:bg-ink-800/30 transition-colors"
+              className="rounded-none border-0 bg-transparent hover:bg-ink-800/30"
+              aria-label={`${npc.name}, ${statusLabel}`}
             >
-              {npc.imageUrl ? (
-                <img
-                  src={getImageUrl(npc.imageUrl)}
-                  alt={npc.name}
-                  className="w-10 h-10 rounded-lg object-cover border border-ink-700 shrink-0"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-lg bg-ink-800 border border-ink-700 flex items-center justify-center shrink-0">
-                  <UserRound size={16} className="text-ink-400" />
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-ink-100 truncate">{npc.name}</span>
-                  <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${STATUS_COLORS[npc.status] || STATUS_COLORS.active}`}>
-                    <StatusIcon size={10} />
-                    {t.entityStatus[npc.status as keyof typeof t.entityStatus] || npc.status}
-                  </div>
-                </div>
-                <p className="text-xs text-ink-200/50 truncate mt-0.5">{npc.description}</p>
-              </div>
-              <svg
-                className={`w-4 h-4 text-ink-200/40 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path d="M6 9l6 6 6-6" />
-              </svg>
-            </button>
+              <span className="block text-[10px] text-ink-200/40">
+                {isExpanded ? '▲' : '▼'} {t.playthrough.viewDetails}
+              </span>
+            </EntityCard>
 
             {/* Expanded Content */}
             {isExpanded && (

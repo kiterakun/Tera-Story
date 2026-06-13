@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
+import 'vitest-axe/extend-expect';
 
 // Set default language to Vietnamese so all test assertions match VI translations.
-// useLanguage() falls back to localStorage['tera-lang'] when no Zustand settings are loaded.
 localStorage.setItem('tera-lang', 'vi');
 
 // jsdom polyfills

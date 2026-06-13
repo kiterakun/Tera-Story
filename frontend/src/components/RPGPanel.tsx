@@ -1,19 +1,12 @@
 import { Heart, Network, Package, Skull, Sparkles, UserRound, Users } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { EntityData } from './EntityDetailModal';
-import type { Character, Item, ItemRarity, Relationship, SpecialItem } from '../services/playthroughApi';
+import type { Character, Item, Relationship, SpecialItem } from '../services/playthroughApi';
 import { useTranslation } from '../i18n';
 import { getImageUrl } from '../utils/url';
 import type { ResourceTemplate } from '@/types/entities';
 import { DynamicStatList } from './DynamicStatDisplay';
-
-const rarityColor: Record<ItemRarity, string> = {
-  common: 'text-ink-200/70',
-  uncommon: 'text-green-400',
-  rare: 'text-blue-400',
-  epic: 'text-purple-400',
-  legendary: 'text-amber-400',
-};
+import { rarityText } from '../design-system/colors';
 
 type RpgTab = 'stats' | 'inventory' | 'abilities' | 'relations';
 
@@ -169,7 +162,7 @@ export default function RPGPanel({
                         }`}>{t.entityStatus[item.status]}</span>
                       )}
                     </div>
-                    <span className={`text-[10px] uppercase tracking-wide font-medium ${rarityColor[item.rarity]}`}>{t.rarity[item.rarity]}</span>
+                    <span className={`text-[10px] uppercase tracking-wide font-medium ${rarityText(item.rarity)}`}>{t.rarity[item.rarity]}</span>
                   </div>
                 </div>
                 <p className="text-ink-200/60 text-xs mt-1.5 line-clamp-2">{item.description}</p>
@@ -207,7 +200,7 @@ export default function RPGPanel({
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-[10px] text-purple-400/80 bg-purple-400/10 px-1.5 py-0.5 rounded">{si.category}</span>
-                      <span className={`text-[10px] uppercase tracking-wide font-medium ${rarityColor[si.rarity]}`}>{t.rarity[si.rarity]}</span>
+                      <span className={`text-[10px] uppercase tracking-wide font-medium ${rarityText(si.rarity)}`}>{t.rarity[si.rarity]}</span>
                     </div>
                   </div>
                 </div>
