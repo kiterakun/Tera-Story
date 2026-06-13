@@ -94,3 +94,13 @@ export {
 } from './Modal';
 
 export { createFocusTrap, type FocusTrap } from './focusTrap';
+
+export {
+  Drawer,
+  DrawerHeader,
+  DrawerBody,
+  DrawerFooter,
+  type DrawerProps,
+  type DrawerSide,
+  type DrawerWidth,
+} from './Drawer';

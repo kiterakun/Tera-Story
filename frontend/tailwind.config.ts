@@ -143,6 +143,18 @@ export default {
           '0%':   { transform: 'translateX(100%)' },
           '100%': { transform: 'translateX(0)' },
         },
+        'slide-in-left': {
+          '0%':   { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        'slide-in-top': {
+          '0%':   { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(0)' },
+        },
+        'slide-in-bottom': {
+          '0%':   { transform: 'translateY(100%)' },
+          '100%': { transform: 'translateY(0)' },
+        },
         'fly-up': {
           '0%':   { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
@@ -157,6 +169,9 @@ export default {
         'fade-out':       'fade-out var(--duration-base) var(--ease-accelerate)',
         'scale-in':       'scale-in var(--duration-slow) var(--ease-spring)',
         'slide-in-right': 'slide-in-right var(--duration-slow) var(--ease-standard)',
+        'slide-in-left':  'slide-in-left var(--duration-slow) var(--ease-standard)',
+        'slide-in-top':   'slide-in-top var(--duration-slow) var(--ease-standard)',
+        'slide-in-bottom':'slide-in-bottom var(--duration-slow) var(--ease-standard)',
         'fly-up':         'fly-up 1500ms var(--ease-standard)',
         'pulse-glow':     'pulse-glow 2000ms var(--ease-standard) infinite',
       },
