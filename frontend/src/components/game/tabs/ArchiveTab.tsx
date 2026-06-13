@@ -1,10 +1,10 @@
 import { RotateCcw } from 'lucide-react';
-import type { Character, Item, SpecialItem } from '../../services/playthroughApi';
-import type { Organization } from '../../types/entities';
-import { useTranslation } from '../../i18n';
-import type { Location } from '../../services/mapApi';
+import type { Character, Item, SpecialItem } from '../../../services/playthroughApi';
+import type { Organization } from '../../../types/entities';
+import { useTranslation } from '../../../i18n';
+import type { Location } from '../../../services/mapApi';
 
-interface ArchivedEntities {
+export interface ArchivedEntities {
   characters: Character[];
   items: Item[];
   specialItems: SpecialItem[];

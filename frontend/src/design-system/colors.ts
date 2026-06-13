@@ -138,6 +138,23 @@ export const SPECIAL_STATUS_STYLES: Record<SpecialItemStatusKind, StatusStyle> =
 };
 
 // ============================================================
+// Organization status (active / disbanded / hidden)
+// ============================================================
+
+export type OrganizationStatusKind = 'active' | 'disbanded' | 'hidden';
+
+export const ORGANIZATION_STATUS_STYLES: Record<OrganizationStatusKind, StatusStyle> = {
+  active:    { text: 'text-green-400', bg: 'bg-green-500/10' },
+  disbanded: { text: 'text-red-400',   bg: 'bg-red-500/10' },
+  hidden:    { text: 'text-amber-400', bg: 'bg-amber-500/10' },
+};
+
+export function getOrganizationStatusStyle(status: string | undefined | null): StatusStyle {
+  if (!status) return ORGANIZATION_STATUS_STYLES.hidden;
+  return ORGANIZATION_STATUS_STYLES[status as OrganizationStatusKind] ?? ORGANIZATION_STATUS_STYLES.hidden;
+}
+
+// ============================================================
 // Role palette (danger / success / info / warning)
 // These mirror the --danger/--success/--info/--warning CSS tokens
 // but are exposed as Tailwind class strings for use in className={}.

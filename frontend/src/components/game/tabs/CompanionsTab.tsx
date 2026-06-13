@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { UserRound, Skull, AlertTriangle, HelpCircle } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
-import type { EntityData } from '../EntityDetailModal';
-import type { Character } from '../../services/playthroughApi';
-import { useTranslation } from '../../i18n';
-import { getImageUrl } from '../../utils/url';
-import { DynamicStatList } from '../DynamicStatDisplay';
-import { useStoryStore } from '../../stores/storyStore';
+import type { EntityData } from '../../EntityDetailModal';
+import type { Character } from '../../../services/playthroughApi';
+import { useTranslation } from '../../../i18n';
+import { getImageUrl } from '../../../utils/url';
+import { DynamicStatList } from '../../DynamicStatDisplay';
+import { useStoryStore } from '../../../stores/storyStore';
 
 const STATUS_COLORS: Record<string, string> = {
   active: 'text-green-400 bg-green-500/10',
