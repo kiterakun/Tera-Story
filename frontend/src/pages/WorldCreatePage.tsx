@@ -12,6 +12,7 @@ import type {
 import type { OrganizationTemplate, SpecialItemTemplate } from "../types/entities";
 import * as supportApi from "../services/supportApi";
 import { api } from "../services/api";
+import { TERRAIN_COLORS } from "../design-system/terrain";
 import { 
   AiWorldGenerator, 
   WorldBasicInfoForm, 
@@ -23,19 +24,6 @@ import {
 } from "../components/world-create";
 
 type Step = "form" | "map" | "creating";
-
-const terrainColors: Record<string, string> = {
-  forest: '#22c55e',
-  mountain: '#78716c',
-  desert: '#fbbf24',
-  ocean: '#3b82f6',
-  plains: '#84cc16',
-  swamp: '#059669',
-  tundra: '#94a3b8',
-  volcanic: '#dc2626',
-  urban: '#6b7280',
-  default: '#64748b',
-};
 
 export default function WorldCreatePage() {
   const t = useTranslation();
@@ -209,7 +197,7 @@ export default function WorldCreatePage() {
           onSkip={() => navigate(`/worlds/${createdWorld?._id}`)}
           isCreating={step === "creating"}
           createdWorld={createdWorld}
-          terrainColors={terrainColors}
+          terrainColors={TERRAIN_COLORS}
         />
       </div>
     );
