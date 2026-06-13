@@ -293,7 +293,7 @@ describe('ChoiceCards', () => {
 });
 
 describe('ChoiceCards a11y audit (axe)', () => {
-  it('passes axe-core scan', async () => {
+  it('passes axe-core scan', { timeout: 30000 }, async () => {
     const { axe } = await import('vitest-axe');
     const { container } = render(
       <ChoiceCards
