@@ -73,9 +73,9 @@ export function LocationCard({ location, isCurrent, isExpanded, onToggle, templa
           </div>
           {expanded && (
             <div className="mt-2 space-y-2">
-              <p className="text-sm text-ink-200/80 leading-relaxed">{location.description}</p>
+              <p className="text-sm text-ink-200/80 leading-relaxed break-words">{location.description}</p>
               {location.dynamicStats && location.dynamicStats.length > 0 && (
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {location.dynamicStats.map((stat, idx) => (
                     <div key={idx} className="bg-ink-950/50 rounded-lg px-2 py-1">
                       <DynamicStatList stats={[stat]} templates={templates} compact />
@@ -86,7 +86,7 @@ export function LocationCard({ location, isCurrent, isExpanded, onToggle, templa
             </div>
           )}
           {!expanded && location.description && (
-            <p className="text-sm text-ink-200/60 mt-1 line-clamp-2">{location.description}</p>
+            <p className="text-sm text-ink-200/60 mt-1 line-clamp-2 sm:line-clamp-3 break-words">{location.description}</p>
           )}
         </div>
         <div className="text-ink-400 shrink-0">
