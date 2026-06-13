@@ -2,6 +2,7 @@ import { useEffect, type FC } from 'react';
 import { LevelBadge } from './LevelBadge';
 import { Sparkles } from 'lucide-react';
 import { useTranslation } from '../../i18n';
+import { Modal, ModalBody } from '../../design-system';
 
 interface LevelUpModalProps {
   isOpen: boolean;
@@ -25,12 +26,14 @@ export const LevelUpModal: FC<LevelUpModalProps> = ({
     return () => clearTimeout(timer);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-ink-950/80 animate-[fadeIn_0.3s_ease-out]" onClick={onClose} />
-      <div className="relative bg-ink-900 border border-gold/30 rounded-2xl p-8 max-w-sm w-full mx-4 text-center animate-[scaleIn_0.4s_cubic-bezier(0.34,1.56,0.64,1)]">
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      size="sm"
+      className="max-w-sm border-gold/30"
+    >
+      <ModalBody className="p-8 text-center animate-scale-in">
         <Sparkles className="w-10 h-10 text-gold mx-auto mb-3" />
         <p className="text-gold text-sm font-medium uppercase tracking-wider mb-2">{t.progression.levelUp}</p>
         <div className="flex justify-center mb-3">
@@ -48,7 +51,7 @@ export const LevelUpModal: FC<LevelUpModalProps> = ({
         >
           {t.progression.awesome}
         </button>
-      </div>
-    </div>
+      </ModalBody>
+    </Modal>
   );
 };
