@@ -9,6 +9,7 @@ import { useTranslation } from '../../i18n';
 import { useStoryStore } from '../../stores/storyStore';
 import type { EntityData } from '../EntityDetailModal';
 import type { Relationship, Character, Item, SpecialItem } from '../../types';
+import { cn } from '../../design-system';
 
 type RpgTab = 'stats' | 'inventory' | 'abilities' | 'relations';
 
@@ -46,6 +47,16 @@ interface ReaderMobileNavProps {
   setIsRelationshipModalOpen: Dispatch<SetStateAction<boolean>>;
   isRelationshipModalOpen: boolean;
 }
+
+const navButtonClass = (active: boolean) =>
+  cn(
+    'flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[44px]',
+    'transition-colors duration-base ease-standard',
+    'active:bg-ink-800/50',
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
+    'focus-visible:ring-inset',
+    active ? 'text-accent-400' : 'text-ink-200/60 hover:text-ink-100',
+  );
 
 export function ReaderMobileNav({
   navOpen,
@@ -87,7 +98,7 @@ export function ReaderMobileNav({
 
   return (
     <>
-      {/* Mobile RPG drawer */}
+      {/* Mobile RPG drawer (Phase 3 Drawer primitive, slides from right) */}
       <MobileDrawer
         isOpen={rpgOpen}
         onClose={() => setRpgOpen(false)}
@@ -112,7 +123,7 @@ export function ReaderMobileNav({
         />
       </MobileDrawer>
 
-      {/* Mobile chapter navigation drawer */}
+      {/* Mobile chapter navigation drawer (slides from left) */}
       <MobileDrawer
         isOpen={navOpen}
         onClose={() => setNavOpen(false)}
@@ -138,44 +149,74 @@ export function ReaderMobileNav({
         />
       </MobileDrawer>
 
-      {/* Mobile bottom navigation bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-ink-900/95 backdrop-blur-md border-t border-ink-700 safe-area-bottom">
+      {/* Mobile bottom navigation bar — only visible <lg (1024px) */}
+      <nav
+        aria-label="Mobile reader navigation"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-ink-900/95 backdrop-blur-md border-t border-ink-700 safe-area-bottom"
+      >
         <div className="flex items-stretch h-14">
           <button
+            type="button"
             onClick={navigateBack}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 text-ink-200/60 hover:text-ink-100 active:bg-ink-800/50 transition-colors"
+            aria-label={t.storyReader.mobileBack}
+            className={cn(
+              'flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[44px]',
+              'text-ink-200/60 hover:text-ink-100 active:bg-ink-800/50',
+              'transition-colors duration-base ease-standard',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
+            )}
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={20} aria-hidden="true" />
             <span className="text-[10px] font-medium">{t.storyReader.mobileBack}</span>
           </button>
           <button
+            type="button"
             onClick={() => { setNavOpen(!navOpen); setRpgOpen(false); }}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors active:bg-ink-800/50 ${navOpen ? 'text-accent-400' : 'text-ink-200/60 hover:text-ink-100'}`}
+            aria-label={t.storyReader.mobileChapters}
+            aria-expanded={navOpen}
+            aria-current={navOpen ? 'page' : undefined}
+            className={navButtonClass(navOpen)}
           >
             <div className="relative">
-              <List size={20} />
+              <List size={20} aria-hidden="true" />
               {totalChapters > 0 && (
-                <span className="absolute -top-1.5 -right-2.5 text-[9px] font-bold bg-accent-600 text-white rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">{totalChapters}</span>
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-1.5 -right-2.5 text-[9px] font-bold bg-accent-600 text-white rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5"
+                >
+                  {totalChapters}
+                </span>
               )}
             </div>
             <span className="text-[10px] font-medium">{t.storyReader.mobileChapters}</span>
           </button>
           <button
+            type="button"
             onClick={() => navigate(`/playthroughs/${playthroughId}/map`)}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 text-ink-200/60 hover:text-ink-100 active:bg-ink-800/50 transition-colors"
+            aria-label={t.map.title}
+            className={cn(
+              'flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[44px]',
+              'text-ink-200/60 hover:text-ink-100 active:bg-ink-800/50',
+              'transition-colors duration-base ease-standard',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
+            )}
           >
-            <Compass size={20} />
+            <Compass size={20} aria-hidden="true" />
             <span className="text-[10px] font-medium">{t.map.title}</span>
           </button>
           <button
+            type="button"
             onClick={() => { setRpgOpen(!rpgOpen); setNavOpen(false); }}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors active:bg-ink-800/50 ${rpgOpen ? 'text-accent-400' : 'text-ink-200/60 hover:text-ink-100'}`}
+            aria-label={t.storyReader.mobileRpg}
+            aria-expanded={rpgOpen}
+            aria-current={rpgOpen ? 'page' : undefined}
+            className={navButtonClass(rpgOpen)}
           >
-            <Swords size={20} />
+            <Swords size={20} aria-hidden="true" />
             <span className="text-[10px] font-medium">{t.storyReader.mobileRpg}</span>
           </button>
         </div>
-      </div>
+      </nav>
     </>
   );
 }
