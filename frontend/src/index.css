@@ -359,6 +359,29 @@ textarea:focus {
 }
 
 /* ============================================================
+   Reader prose — drop-cap + selection styling
+   ============================================================ */
+
+/* Drop-cap on first paragraph of chapter content. Only applied when
+   the wrapper applies the `.first-paragraph` class to that <p>. */
+.first-paragraph::first-letter {
+  font-family: var(--font-display);
+  float: left;
+  font-size: 3.5em;
+  line-height: 0.9;
+  padding: 0.05em 0.5em 0 0;
+  color: var(--gold-400);
+  font-weight: 700;
+}
+
+/* Custom text selection (gold accent) for prose */
+.font-serif ::selection,
+[class*='font-serif'] ::selection {
+  background-color: var(--gold-500);
+  color: var(--ink-950);
+}
+
+/* ============================================================
    Reduced motion — accessibility override
    Honors user's OS-level "reduce motion" preference.
    All custom animations + transitions are disabled.
