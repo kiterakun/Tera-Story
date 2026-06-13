@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useGallery } from '../hooks/useGallery';
+import { Spinner } from '../design-system/Spinner';
 import { shareCard } from '../services/galleryApi';
 import type { StoryCard } from '../services/galleryApi';
 import { Image, Filter, Share2, Download, X, Grid3x3 } from 'lucide-react';
@@ -174,7 +175,7 @@ export default function GalleryPage() {
         <p className="mt-4 text-lg text-narration">{t.gallery.empty}</p>
         <p className="mt-1 text-sm text-ink-500">{t.gallery.emptyHint}</p>
         {isLoading && (
-          <div className="mt-4 h-5 w-5 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
+          <Spinner size="sm" className="mt-4 h-5 w-5 border-2 border-accent-500 border-t-transparent rounded-full" />
         )}
       </div>
     );

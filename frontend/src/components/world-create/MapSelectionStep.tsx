@@ -1,5 +1,6 @@
 import React from 'react';
-import { MapPin, Check, Loader2 } from 'lucide-react';
+import { MapPin, Check } from 'lucide-react';
+import { Spinner } from '../../design-system/Spinner';
 import { useTranslation } from '../../i18n';
 import type { MapData, World } from '../../services/worldApi';
 
@@ -40,7 +41,7 @@ export function MapSelectionStep({
           {isCreating && (
             <div className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
               <div className="text-center">
-                <Loader2 size={40} className="animate-spin text-accent-400 mx-auto mb-3" />
+                <Spinner size="lg" className="w-10 h-10 text-accent-400 mx-auto mb-3" />
                 <p className="text-ink-100 font-medium">{t.worldCreate.creatingPlaythrough}</p>
               </div>
             </div>
@@ -158,7 +159,7 @@ export function MapSelectionStep({
             >
               {isCreating ? (
                 <>
-                  <Loader2 size={16} className="animate-spin" />
+                  <Spinner size="sm" />
                   {t.worldCreate.creatingPlaythrough}
                 </>
               ) : (

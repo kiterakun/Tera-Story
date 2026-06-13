@@ -32,10 +32,7 @@ export function ChapterStatusOverlay({
         {isStreaming && streamingText ? (
           <div className="text-ink-200/90">
             <div className="flex items-center gap-2 mb-3">
-              <svg className="animate-spin w-4 h-4 text-accent-400" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
+              <Spinner size="sm" className="w-4 h-4 text-accent-400" />
               <span className="text-xs font-sans text-accent-400 font-medium">
                 {streamPhase === 'tools' ? t.storyReader.streamPhaseTools : t.storyReader.streamingChapter}
               </span>
@@ -45,10 +42,7 @@ export function ChapterStatusOverlay({
           </div>
         ) : (
           <div className="flex items-center gap-3 text-ink-200/60">
-            <svg className="animate-spin w-5 h-5 text-accent-400" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
+            <Spinner size="lg" className="w-5 h-5 text-accent-400" />
             <div>
               <p className="text-sm font-sans font-medium text-ink-100">
                 {streamPhase === 'context' ? 'Analyzing world and story state...' : t.storyReader.generatingChapter}
@@ -90,10 +84,7 @@ export function ChapterStatusOverlay({
     return (
       <div className="border-l-2 border-blue-400/30 pl-5 py-4 mt-4 bg-blue-400/[0.03] rounded-r-2xl animate-fade-in">
         <div className="flex items-center gap-3 text-ink-200/60">
-          <svg className="animate-spin w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
+          <Spinner size="sm" className="w-4 h-4 text-blue-400" />
           <p className="text-sm font-sans font-medium text-blue-300">{t.storyReader.updatingGameState}</p>
         </div>
       </div>
@@ -129,10 +120,7 @@ export function ChapterStatusOverlay({
     return (
       <div className="border-l-2 border-blue-400/30 pl-5 py-4 mt-4 bg-blue-400/[0.03] rounded-r-2xl animate-fade-in">
         <div className="flex items-center gap-3">
-          <svg className="animate-spin w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
+          <Spinner size="sm" className="w-4 h-4 text-blue-400" />
           <p className="text-sm font-sans font-medium text-blue-300">{t.storyReader.retryingTools}</p>
         </div>
       </div>

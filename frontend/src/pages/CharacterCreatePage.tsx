@@ -9,10 +9,10 @@ import {
   UserRound,
   Users,
   Info,
-  Loader2,
 } from "lucide-react";
 import * as supportApi from "../services/supportApi";
 import { AiCharacterGenerator } from "../components/game/AiCharacterGenerator";
+import { Spinner } from "../design-system/Spinner";
 
 export default function CharacterCreatePage() {
   const t = useTranslation();
@@ -295,7 +295,7 @@ export default function CharacterCreatePage() {
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
-                  <Loader2 size={16} className="animate-spin" />
+                  <Spinner size="sm" />
                   {t.characterCreate.forging}
                 </span>
               ) : (

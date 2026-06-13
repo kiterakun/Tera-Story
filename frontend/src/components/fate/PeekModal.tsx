@@ -1,4 +1,5 @@
-import { X, Loader2 } from 'lucide-react';
+import { X } from 'lucide-react';
+import { Spinner } from '../../design-system/Spinner';
 import type { PeekResponse } from '../../services/fateThreadsApi';
 import { useTranslation } from '../../i18n';
 
@@ -46,7 +47,7 @@ export function PeekModal({
 
           {isLoading && (
             <div className="flex flex-col items-center gap-3 py-8">
-              <Loader2 size={32} className="animate-spin text-gold" />
+              <Spinner size="lg" className="w-8 h-8 text-gold" />
               <p className="text-sm text-ink-400">
                 {t.fateThreads.peekLoading}
               </p>

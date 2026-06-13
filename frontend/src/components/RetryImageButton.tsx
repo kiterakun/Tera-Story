@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { RefreshCw, Check } from 'lucide-react';
+import { Spinner } from '../design-system/Spinner';
 import { api } from '../services/api';
 import { useTranslation } from '../i18n';
 
@@ -44,7 +45,7 @@ export function RetryImageButton({ entityType, entityId, showLabel = false, clas
       className={`inline-flex items-center gap-1 text-accent-400/70 hover:text-accent-400 transition-colors disabled:opacity-50 ${className}`}
       title={t.common.regenerateImage}
     >
-      <RefreshCw size={showLabel ? 14 : 10} className={status === 'loading' ? 'animate-spin' : ''} />
+      {status === 'loading' ? <Spinner size="sm" /> : <RefreshCw size={showLabel ? 14 : 10} />}
       {showLabel && <span className="text-xs">{status === 'loading' ? t.common.generating : t.common.regenerateImage}</span>}
     </button>
   );

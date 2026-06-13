@@ -1,5 +1,6 @@
 import React from 'react';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import { Spinner } from '../../design-system/Spinner';
 import { useTranslation } from '../../i18n';
 
 interface AiWorldGeneratorProps {
@@ -42,7 +43,7 @@ export function AiWorldGenerator({
       >
         {isGenerating ? (
           <>
-            <Loader2 size={16} className="animate-spin" />
+            <Spinner size="sm" />
             {t.worldCreate.aiGenerating}
           </>
         ) : (

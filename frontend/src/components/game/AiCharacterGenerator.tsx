@@ -1,5 +1,6 @@
-import { Sparkles, Loader2, Wand2 } from 'lucide-react';
+import { Sparkles, Wand2 } from 'lucide-react';
 import { useTranslation } from '../../i18n';
+import { Spinner } from '../../design-system/Spinner';
 
 interface AiCharacterGeneratorProps {
   prompt: string;
@@ -49,7 +50,7 @@ export function AiCharacterGenerator({
         >
           {isGenerating ? (
             <>
-              <Loader2 size={16} className="animate-spin text-white/80" />
+              <Spinner size="sm" className="text-white/80" />
               <span>{t.characterCreate.aiGenerating}</span>
             </>
           ) : (

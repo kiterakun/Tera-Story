@@ -5,7 +5,6 @@ import {
   MapPin,
   Navigation,
   Compass,
-  Loader2,
   ChevronDown,
   ChevronRight,
   ChevronLeft,
@@ -18,6 +17,7 @@ import {
   Shield,
   Crosshair,
 } from 'lucide-react';
+import { Spinner } from '../design-system/Spinner';
 import { useTranslation } from '../i18n';
 import { getWorldMap } from '../services/mapApi';
 import type { Location, MapData } from '../services/mapApi';
@@ -325,7 +325,7 @@ export default function MapPage() {
       return (
         <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
           <div className="flex flex-col items-center gap-3 text-ink-400">
-            <Loader2 size={40} className="animate-spin" />
+            <Spinner size="lg" className="w-10 h-10" />
             <p className="text-sm">{t.map?.loading || 'Loading world map skeleton...'}</p>
           </div>
         </div>
@@ -493,7 +493,7 @@ export default function MapPage() {
     return (
       <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-ink-400">
-          <Loader2 size={40} className="animate-spin" />
+          <Spinner size="lg" className="w-10 h-10" />
           <p className="text-sm">{t.map.loading}</p>
         </div>
       </div>

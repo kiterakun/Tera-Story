@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Star, ArrowRight, Sparkles, Loader2, AlertTriangle, X } from 'lucide-react';
+import { Star, ArrowRight, Sparkles, AlertTriangle, X } from 'lucide-react';
+import { Spinner } from '../design-system/Spinner';
 import { useTranslation } from '../i18n';
 import { showError } from '../lib/toast';
 import * as supportApi from '../services/supportApi';
@@ -114,7 +115,7 @@ export function ChoiceCards({ choices, isGenerating, playthroughId, onChoiceSele
             className="px-3 py-3 bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/30 rounded-xl transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
             title={t.choiceCards.enrichTooltip}
           >
-            {isEnriching ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+            {isEnriching ? <Spinner size="sm" /> : <Sparkles size={16} />}
           </button>
           {/* Go button */}
           <button

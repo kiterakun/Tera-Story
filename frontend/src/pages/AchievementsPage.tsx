@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAchievements } from '../hooks/useAchievements';
+import { Spinner } from '../design-system/Spinner';
 import type { AchievementWithProgress } from '../services/achievementApi';
 import { Trophy, Lock, HelpCircle, Award } from 'lucide-react';
 import { useTranslation, useLanguage } from '../i18n';
@@ -106,7 +107,7 @@ export default function AchievementsPage() {
         <p className="mt-4 text-lg text-narration">{t.achievements.empty}</p>
         <p className="mt-1 text-sm text-ink-500">{t.achievements.emptyHint}</p>
         {isLoading && (
-          <div className="mt-4 h-5 w-5 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
+          <Spinner size="sm" className="mt-4 h-5 w-5 border-2 border-accent-500 border-t-transparent rounded-full" />
         )}
       </div>
     );

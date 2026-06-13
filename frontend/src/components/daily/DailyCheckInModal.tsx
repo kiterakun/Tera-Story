@@ -1,5 +1,6 @@
 import { useState, type FC } from 'react';
 import { Check, Gift, Star, X, Flame } from 'lucide-react';
+import { Spinner } from '../../design-system/Spinner';
 import type { DailyStatus, ClaimDailyResponse } from '../../services/dailyApi';
 import { useTranslation } from '../../i18n';
 import { StreakBadge } from './StreakBadge';
@@ -166,7 +167,7 @@ export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
                   >
                     {claiming ? (
                       <>
-                        <span className="w-4 h-4 border-2 border-ink-950 border-t-transparent rounded-full animate-spin" />
+                        <Spinner size="sm" className="border-2 border-ink-950 border-t-transparent rounded-full" />
                         {t.daily.claiming}
                       </>
                     ) : (

@@ -9,6 +9,7 @@ import type { AppTheme } from './stores/uiStore'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Layout } from './components/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { Spinner } from './design-system/Spinner'
 
 const LoginPage = React.lazy(() => import('./pages/LoginPage'))
 const RegisterPage = React.lazy(() => import('./pages/RegisterPage'))
@@ -67,7 +68,7 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" /></div>}>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Spinner size="lg" className="h-8 w-8 text-blue-500" /></div>}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />

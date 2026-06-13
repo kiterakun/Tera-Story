@@ -13,10 +13,10 @@ import {
   Maximize2,
   GitBranch,
   ChevronDown,
-  Loader2,
   AlertCircle,
   Layers,
 } from 'lucide-react';
+import { Spinner } from '../design-system/Spinner';
 import { useFateThreads } from '../hooks/useFateThreads';
 import { PeekModal } from '../components/fate/PeekModal';
 import { ChapterDetailPanel } from '../components/fate/ChapterDetailPanel';
@@ -384,7 +384,7 @@ export default function FateThreadsPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 size={40} className="animate-spin text-gold" />
+          <Spinner size="lg" className="w-10 h-10 text-gold" />
           <p className="text-sm text-ink-400">{t.fateThreads.loading}</p>
         </div>
       </div>
