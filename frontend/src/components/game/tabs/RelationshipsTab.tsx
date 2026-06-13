@@ -1,6 +1,7 @@
 import { Network } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { Character, Relationship } from '../../../services/playthroughApi';
+import { ROLE } from '../../../design-system/colors';
 import type { useTranslation } from '../../../i18n';
 
 interface RelationshipsTabProps {
@@ -41,9 +42,9 @@ export function RelationshipsTab({
 
         const intensityColor =
           rel.intensity > 50
-            ? 'text-green-400'
+            ? ROLE.success.text
             : rel.intensity < -50
-              ? 'text-red-400'
+              ? ROLE.danger.text
               : 'text-ink-200/70';
 
         return (
