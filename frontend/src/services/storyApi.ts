@@ -1,4 +1,5 @@
 import { api } from './api';
+import { useAuthStore } from '../stores/authStore';
 
 export interface GenerateChapterResponse {
   success: boolean;
@@ -45,10 +46,16 @@ export function generateChapterStream(
   const controller = new AbortController();
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
+  // Include the Bearer token explicitly so the raw fetch behaves the
+  // same as the axios instance (which sets Authorization via
+  // interceptor). Cookie auth still flows via credentials: 'include'.
+  const bearerToken = useAuthStore.getState().token;
+
   fetch(`${baseUrl}/story/generate-stream`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...(bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}),
     },
     credentials: 'include',
     body: JSON.stringify({ playthroughId, choice }),
