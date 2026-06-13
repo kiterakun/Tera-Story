@@ -27,6 +27,7 @@ import { DynamicStatList } from '../DynamicStatDisplay';
 import { CharacterTab } from './CharacterTab';
 import { CompanionsTab } from './CompanionsTab';
 import { ArchiveTab } from './ArchiveTab';
+import { rarityTextBorder } from '../../design-system/colors';
 
 type GameTab = 'character' | 'companions' | 'relationships' | 'map' | 'inventory' | 'abilities' | 'organizations' | 'archive';
 
@@ -57,14 +58,6 @@ const TABS: { id: GameTab; icon: typeof UserRound; labelKey: string }[] = [
 ];
 
 
-
-const RARITY_COLORS: Record<string, string> = {
-  common: 'text-gray-300 border-gray-500/30',
-  uncommon: 'text-green-400 border-green-500/30',
-  rare: 'text-blue-400 border-blue-500/30',
-  epic: 'text-purple-400 border-purple-500/30',
-  legendary: 'text-amber-400 border-amber-500/30',
-};
 
 export default function GamePanel({
   isOpen,
@@ -325,7 +318,7 @@ export default function GamePanel({
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {sortedItems.map(item => {
-                      const rarityColor = RARITY_COLORS[item.rarity] || RARITY_COLORS.common;
+                      const rarityColor = rarityTextBorder(item.rarity);
                       return (
                         <div
                           key={item._id}
@@ -369,7 +362,7 @@ export default function GamePanel({
                         <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">{category}</h4>
                         <div className="space-y-2">
                           {items.map(si => {
-                            const rarityColor = RARITY_COLORS[si.rarity] || RARITY_COLORS.common;
+                            const rarityColor = rarityTextBorder(si.rarity);
                             return (
                               <div
                                 key={si._id}

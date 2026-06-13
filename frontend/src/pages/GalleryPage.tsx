@@ -4,13 +4,7 @@ import { shareCard } from '../services/galleryApi';
 import type { StoryCard } from '../services/galleryApi';
 import { Image, Filter, Share2, Download, X, Grid3x3 } from 'lucide-react';
 import { useTranslation, useLanguage } from '../i18n';
-
-const RARITY_COLORS: Record<string, string> = {
-  common: 'border-ink-600 bg-ink-800/50',
-  uncommon: 'border-emerald-500 bg-emerald-500/10',
-  rare: 'border-blue-500 bg-blue-500/10',
-  epic: 'border-purple-500 bg-purple-500/10 ring-2 ring-purple-400/30',
-};
+import { rarityBorderBg } from '../design-system/colors';
 
 function CardDetailModal({ card, onClose }: { card: StoryCard | null; onClose: () => void }) {
   const t = useTranslation();
@@ -71,7 +65,7 @@ function CardDetailModal({ card, onClose }: { card: StoryCard | null; onClose: (
         <div className="flex flex-col justify-between p-5">
           <div>
             <span
-              className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${RARITY_COLORS[card.rarity]}`}
+              className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${rarityBorderBg(card.rarity)}`}
             >
               {rarityLabels[card.rarity]}
             </span>
@@ -117,7 +111,7 @@ function StoryCardItem({ card, onClick }: { card: StoryCard; onClick: () => void
   return (
     <button
       onClick={onClick}
-      className={`group relative aspect-[3/4] w-full overflow-hidden rounded-lg border-2 ${RARITY_COLORS[card.rarity]} transition-transform hover:scale-105 focus:scale-105`}
+      className={`group relative aspect-[3/4] w-full overflow-hidden rounded-lg border-2 ${rarityBorderBg(card.rarity)} transition-transform hover:scale-105 focus:scale-105`}
     >
       {card.thumbnailUrl || card.imageUrl ? (
         <img
@@ -133,7 +127,7 @@ function StoryCardItem({ card, onClick }: { card: StoryCard; onClick: () => void
       )}
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink-950/90 to-transparent p-3 pt-8">
         <p className="text-sm font-medium text-ink-100 line-clamp-2">{card.title}</p>
-        <span className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${RARITY_COLORS[card.rarity]}`}>
+        <span className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${rarityBorderBg(card.rarity)}`}>
           {rarityLabels[card.rarity]}
         </span>
       </div>

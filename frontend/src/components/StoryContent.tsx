@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { ItemRarity } from '../services/playthroughApi';
 import { useTranslation } from '../i18n';
+import { RARITY_STYLES } from '../design-system/colors';
 
 interface EntityRef {
   type: 'char' | 'item' | 'special';
@@ -13,14 +14,6 @@ interface StoryContentProps {
   onEntityClick?: (entity: EntityRef) => void;
   className?: string;
 }
-
-const RARITY_STYLES: Record<ItemRarity, { text: string; bg: string; glow: string }> = {
-  common: { text: 'text-gray-300', bg: 'bg-gray-500/10', glow: '' },
-  uncommon: { text: 'text-green-400', bg: 'bg-green-500/10', glow: '' },
-  rare: { text: 'text-blue-400', bg: 'bg-blue-500/10', glow: 'drop-shadow-[0_0_4px_rgba(96,165,250,0.5)]' },
-  epic: { text: 'text-purple-400', bg: 'bg-purple-500/10', glow: 'drop-shadow-[0_0_6px_rgba(192,132,252,0.6)]' },
-  legendary: { text: 'text-amber-400', bg: 'bg-amber-500/10', glow: 'drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]' },
-};
 
 const CHAR_STYLE = { text: 'text-accent-400', bg: 'bg-accent-500/10', glow: '' };
 

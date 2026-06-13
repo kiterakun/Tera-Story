@@ -1,11 +1,17 @@
-import { X, UserRound, Package, Sparkles, Skull, AlertTriangle, HelpCircle, Landmark } from 'lucide-react';
+import { X, UserRound, Package, Sparkles, Landmark } from 'lucide-react';
 import { useTranslation } from '../i18n';
-import type { Character, Item, SpecialItem, ItemRarity, CharacterStatus, ItemStatus, SpecialItemStatus } from '../services/playthroughApi';
+import type { Character, Item, SpecialItem } from '../services/playthroughApi';
 import type { Organization } from '../types/entities';
 import { getImageUrl } from '../utils/url';
 import { RetryImageButton } from './RetryImageButton';
 import { DynamicStatList } from './DynamicStatDisplay';
 import { useStoryStore } from '../stores/storyStore';
+import {
+  RARITY_STYLES,
+  CHARACTER_STATUS_STYLES,
+  ITEM_STATUS_STYLES,
+  SPECIAL_STATUS_STYLES,
+} from '../design-system/colors';
 
 type EntityData =
   | { type: 'character'; data: Character }
@@ -17,35 +23,6 @@ interface EntityDetailModalProps {
   entity: EntityData | null;
   onClose: () => void;
 }
-
-const RARITY_CONFIG: Record<ItemRarity, { border: string; bg: string; text: string; glow: string; icon: string }> = {
-  common: { border: 'border-gray-500/40', bg: 'bg-gray-500/5', text: 'text-gray-300', glow: '', icon: '○' },
-  uncommon: { border: 'border-green-500/40', bg: 'bg-green-500/5', text: 'text-green-400', glow: '', icon: '◇' },
-  rare: { border: 'border-blue-500/40', bg: 'bg-blue-500/5', text: 'text-blue-400', glow: 'shadow-[0_0_15px_rgba(96,165,250,0.15)]', icon: '◆' },
-  epic: { border: 'border-purple-500/40', bg: 'bg-purple-500/5', text: 'text-purple-400', glow: 'shadow-[0_0_20px_rgba(192,132,252,0.2)]', icon: '★' },
-  legendary: { border: 'border-amber-500/40', bg: 'bg-amber-500/5', text: 'text-amber-400', glow: 'shadow-[0_0_25px_rgba(251,191,36,0.25)]', icon: '✦' },
-};
-
-const CHARACTER_STATUS_CONFIG: Record<CharacterStatus, { text: string; bg: string; icon: typeof Skull }> = {
-  active: { text: 'text-green-400', bg: 'bg-green-500/10', icon: UserRound },
-  dead: { text: 'text-red-400', bg: 'bg-red-500/10', icon: Skull },
-  injured: { text: 'text-amber-400', bg: 'bg-amber-500/10', icon: AlertTriangle },
-  missing: { text: 'text-gray-400', bg: 'bg-gray-500/10', icon: HelpCircle },
-};
-
-const ITEM_STATUS_CONFIG: Record<ItemStatus, { text: string; bg: string }> = {
-  active: { text: 'text-green-400', bg: 'bg-green-500/10' },
-  destroyed: { text: 'text-red-400', bg: 'bg-red-500/10' },
-  lost: { text: 'text-gray-400', bg: 'bg-gray-500/10' },
-  consumed: { text: 'text-amber-400', bg: 'bg-amber-500/10' },
-};
-
-const SPECIAL_STATUS_CONFIG: Record<SpecialItemStatus, { text: string; bg: string }> = {
-  active: { text: 'text-green-400', bg: 'bg-green-500/10' },
-  sealed: { text: 'text-red-400', bg: 'bg-red-500/10' },
-  lost: { text: 'text-gray-400', bg: 'bg-gray-500/10' },
-  consumed: { text: 'text-amber-400', bg: 'bg-amber-500/10' },
-};
 
 export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
   const t = useTranslation();
@@ -117,7 +94,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
               {char.role === 'protagonist' ? t.characterPanel.protagonist : 'NPC'}
             </span>
             {char.status && char.status !== 'active' && (
-              <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${CHARACTER_STATUS_CONFIG[char.status].text} ${CHARACTER_STATUS_CONFIG[char.status].bg}`}>
+              <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${CHARACTER_STATUS_STYLES[char.status].text} ${CHARACTER_STATUS_STYLES[char.status].bg}`}>
                 {entityStatusLabels[char.status]}
               </span>
             )}
@@ -169,7 +146,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
   };
 
   const renderItem = (item: Item) => {
-    const rc = RARITY_CONFIG[item.rarity];
+    const rc = RARITY_STYLES[item.rarity];
     return (
       <div className="space-y-4">
         {/* Hero image */}
@@ -190,7 +167,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
               {rc.icon} {t.rarity[item.rarity]}
             </span>
             {item.status && item.status !== 'active' && (
-              <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${ITEM_STATUS_CONFIG[item.status].text} ${ITEM_STATUS_CONFIG[item.status].bg}`}>
+              <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${ITEM_STATUS_STYLES[item.status].text} ${ITEM_STATUS_STYLES[item.status].bg}`}>
                 {entityStatusLabels[item.status]}
               </span>
             )}
@@ -219,7 +196,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
   };
 
   const renderSpecialItem = (si: SpecialItem) => {
-    const rc = RARITY_CONFIG[si.rarity];
+    const rc = RARITY_STYLES[si.rarity];
     return (
       <div className="space-y-4">
         {/* Hero image */}
@@ -241,7 +218,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
               {rc.icon} {t.rarity[si.rarity]}
             </span>
             {si.status && si.status !== 'active' && (
-              <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${SPECIAL_STATUS_CONFIG[si.status].text} ${SPECIAL_STATUS_CONFIG[si.status].bg}`}>
+              <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded ${SPECIAL_STATUS_STYLES[si.status].text} ${SPECIAL_STATUS_STYLES[si.status].bg}`}>
                 {entityStatusLabels[si.status]}
               </span>
             )}
@@ -279,7 +256,7 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
 
   const rarity = entity.type === 'item' ? entity.data.rarity
     : entity.type === 'special' ? entity.data.rarity : null;
-  const rc = rarity ? RARITY_CONFIG[rarity] : null;
+  const rc = rarity ? RARITY_STYLES[rarity] : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

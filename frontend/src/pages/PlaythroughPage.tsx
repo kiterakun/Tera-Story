@@ -8,6 +8,7 @@ import { Search, UserRound, Plus, ChevronLeft, Play, BookOpen, Trash2 } from 'lu
 import { getImageUrl } from '../utils/url';
 import * as playthroughApi from '../services/playthroughApi';
 import { RetryImageButton } from '../components/RetryImageButton';
+import { rarityText } from '../design-system/colors';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 
 export default function PlaythroughPage() {
@@ -194,13 +195,7 @@ export default function PlaythroughPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-ink-100 font-medium truncate">{item.name}</span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wider ${
-                          item.rarity === 'legendary' ? 'bg-amber-500/10 text-amber-400' :
-                          item.rarity === 'epic' ? 'bg-purple-500/10 text-purple-400' :
-                          item.rarity === 'rare' ? 'bg-blue-500/10 text-blue-400' :
-                          item.rarity === 'uncommon' ? 'bg-green-500/10 text-green-400' :
-                          'bg-ink-700/50 text-ink-200/60'
-                        }`}>{(t.rarity as Record<string, string>)[item.rarity] || item.rarity}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wider bg-ink-700/50 ${rarityText(item.rarity)}`}>{(t.rarity as Record<string, string>)[item.rarity] || item.rarity}</span>
                       </div>
                       <p className="text-xs text-ink-200/50 line-clamp-1">{item.description}</p>
                     </div>
@@ -225,13 +220,7 @@ export default function PlaythroughPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm text-ink-100 font-medium">{si.name}</span>
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-medium uppercase tracking-wider">{si.category}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wider ${
-                        si.rarity === 'legendary' ? 'bg-amber-500/10 text-amber-400' :
-                        si.rarity === 'epic' ? 'bg-purple-500/10 text-purple-400' :
-                        si.rarity === 'rare' ? 'bg-blue-500/10 text-blue-400' :
-                        si.rarity === 'uncommon' ? 'bg-green-500/10 text-green-400' :
-                        'bg-ink-700/50 text-ink-200/60'
-                      }`}>{(t.rarity as Record<string, string>)[si.rarity] || si.rarity}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wider bg-ink-700/50 ${rarityText(si.rarity)}`}>{(t.rarity as Record<string, string>)[si.rarity] || si.rarity}</span>
                     </div>
                     <p className="text-xs text-ink-200/50 line-clamp-2">{si.description}</p>
                   </div>

@@ -3,13 +3,7 @@ import { useAchievements } from '../hooks/useAchievements';
 import type { AchievementWithProgress } from '../services/achievementApi';
 import { Trophy, Lock, HelpCircle, Award } from 'lucide-react';
 import { useTranslation, useLanguage } from '../i18n';
-
-const RARITY_COLORS: Record<string, string> = {
-  common: 'border-ink-500 bg-ink-800/50',
-  uncommon: 'border-emerald-500 bg-emerald-500/10',
-  rare: 'border-blue-500 bg-blue-500/10',
-  epic: 'border-purple-500 bg-purple-500/10 ring-2 ring-purple-400/30',
-};
+import { rarityBorderBg } from '../design-system/colors';
 
 function AchievementCard({
   achievement,
@@ -28,7 +22,7 @@ function AchievementCard({
       onClick={onClick}
       className={`relative rounded-lg border-2 p-4 text-left transition-transform hover:scale-105 focus:scale-105 ${
         achievement.unlocked
-          ? RARITY_COLORS[achievement.rarity]
+          ? rarityBorderBg(achievement.rarity)
           : 'border-ink-800 bg-ink-900/50 opacity-60'
       }`}
     >
@@ -204,7 +198,7 @@ export default function AchievementsPage() {
             </div>
             <div className="flex items-center gap-4 text-sm text-ink-400">
               <span>{t.achievements.categories[selectedAchievement.category as keyof typeof t.achievements.categories]}</span>
-              <span className={`rounded-full px-2 py-0.5 text-xs ${RARITY_COLORS[selectedAchievement.rarity]}`}>
+              <span className={`rounded-full px-2 py-0.5 text-xs ${rarityBorderBg(selectedAchievement.rarity)}`}>
                 {selectedAchievement.rarity}
               </span>
               <span className="text-accent-400">+{selectedAchievement.xpReward} XP</span>
