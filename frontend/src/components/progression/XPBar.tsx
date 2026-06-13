@@ -1,13 +1,21 @@
 import type { FC } from 'react';
+import { prefersReducedMotion } from '../../design-system/motion';
 
 interface XPBarProps {
   currentXp: number;
   xpToNextLevel: number;
   animated?: boolean;
+  ariaLabel?: string;
 }
 
-export const XPBar: FC<XPBarProps> = ({ currentXp, xpToNextLevel, animated = false }) => {
-  const pct = xpToNextLevel > 0 ? Math.min(100, Math.round((currentXp / xpToNextLevel) * 100)) : 100;
+export const XPBar: FC<XPBarProps> = ({
+  currentXp,
+  xpToNextLevel,
+  animated = false,
+  ariaLabel,
+}) => {
+  const pct = xpToNextLevel > 0 ? Math.min(100, Math.max(0, Math.round((currentXp / xpToNextLevel) * 100))) : 100;
+  const transitionClass = animated && !prefersReducedMotion() ? motionClass : '';
 
   return (
     <div className="w-full">
@@ -15,9 +23,16 @@ export const XPBar: FC<XPBarProps> = ({ currentXp, xpToNextLevel, animated = fal
         <span>{currentXp} XP</span>
         <span>{xpToNextLevel} XP</span>
       </div>
-      <div className="h-2 bg-ink-800 rounded-full overflow-hidden">
+      <div
+        className="h-2 bg-ink-800 rounded-full overflow-hidden"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={ariaLabel ?? `${pct}% of XP to next level`}
+      >
         <div
-          className={`h-full bg-gradient-to-r from-gold to-amber-400 rounded-full ${animated ? 'transition-[width] duration-500 ease-out' : ''}`}
+          className={`h-full bg-gradient-to-r from-gold to-amber-400 rounded-full ${transitionClass}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -25,3 +40,5 @@ export const XPBar: FC<XPBarProps> = ({ currentXp, xpToNextLevel, animated = fal
     </div>
   );
 };
+
+const motionClass = 'transition-[width] duration-base ease-standard';
