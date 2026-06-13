@@ -11,6 +11,7 @@ describe('EntityCard primitive', () => {
         subtitle="Protagonist"
         description="A careful scout."
         status="active"
+        onClick={() => undefined}
       />,
     );
 
@@ -87,7 +88,7 @@ describe('EntityCard primitive', () => {
   });
 
   it('marks selected cards with aria-pressed and selected classes', () => {
-    render(<EntityCard variant="character" name="Selected Hero" selected />);
+    render(<EntityCard variant="character" name="Selected Hero" selected onClick={() => undefined} />);
 
     const card = screen.getByRole('button', { name: 'Selected Hero' });
     expect(card).toHaveAttribute('aria-pressed', 'true');
@@ -118,7 +119,7 @@ describe('EntityCard primitive', () => {
   });
 
   it('accepts custom aria-label', () => {
-    render(<EntityCard variant="special-item" name="Crown" aria-label="Open Crown details" />);
+    render(<EntityCard variant="special-item" name="Crown" aria-label="Open Crown details" onClick={() => undefined} />);
 
     expect(screen.getByRole('button', { name: 'Open Crown details' })).toBeInTheDocument();
   });
