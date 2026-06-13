@@ -1,5 +1,6 @@
 import { useTranslation } from '../../i18n';
 import { ResourceTemplateEditor } from './ResourceTemplateEditor';
+import { Input } from '../../design-system/Input';
 import type { OrganizationTemplate, ResourceTemplate } from '../../types/entities';
 
 interface OrganizationTemplateEditorProps {
@@ -79,38 +80,32 @@ export function OrganizationTemplateEditor({ templates, onChange }: Organization
               <button
                 type="button"
                 onClick={() => handleRemove(index)}
-                className="text-ink-200/40 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-400/10 transition-all"
+                aria-label={`${t.worldCreate.remove ?? 'Remove'} ${template.type || index + 1}`}
+                className="text-ink-200/40 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-400/10 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
             <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
-                  {t.worldCreate.orgType ?? 'Type'}
-                </label>
-                <input
-                  className="w-full bg-ink-800 border border-ink-700 rounded-lg px-4 py-3 text-base text-ink-100 placeholder:text-ink-500 focus:border-accent-400 outline-none transition-all"
-                  placeholder={t.worldCreate.orgTypePlaceholder ?? 'e.g. guild, kingdom, cult, faction'}
-                  value={template.type}
-                  onChange={(e) => handleTypeChange(index, e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-ink-200/80 mb-1.5">
-                  {t.worldCreate.description}
-                </label>
-                <input
-                  className="w-full bg-ink-800 border border-ink-700 rounded-lg px-4 py-3 text-base text-ink-100 placeholder:text-ink-500 focus:border-accent-400 outline-none transition-all"
-                  placeholder={t.worldCreate.orgDescPlaceholder ?? 'Describe this organization type...'}
-                  value={template.description}
-                  onChange={(e) => handleDescriptionChange(index, e.target.value)}
-                />
-              </div>
+              <Input
+                label={t.worldCreate.orgType ?? 'Type'}
+                placeholder={t.worldCreate.orgTypePlaceholder ?? 'e.g. guild, kingdom, cult, faction'}
+                value={template.type}
+                onChange={(e) => handleTypeChange(index, e.target.value)}
+                required
+                error={!template.type.trim() ? (t.worldCreate.orgTypeRequired ?? 'Type is required') : undefined}
+                inputClassName="bg-ink-800"
+              />
+              <Input
+                label={t.worldCreate.description}
+                placeholder={t.worldCreate.orgDescPlaceholder ?? 'Describe this organization type...'}
+                value={template.description}
+                onChange={(e) => handleDescriptionChange(index, e.target.value)}
+                inputClassName="bg-ink-800"
+              />
 
               {/* Default Stats */}
               <div>

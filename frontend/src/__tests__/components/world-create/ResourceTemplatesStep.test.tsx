@@ -12,7 +12,7 @@ describe('ResourceTemplatesStep', () => {
         setLocationResources={() => undefined}
       />,
     );
-    expect(screen.getByText('HP')).toBeInTheDocument();
-    expect(screen.getByText('danger')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('HP')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('danger')).toBeInTheDocument();
   });
 });
