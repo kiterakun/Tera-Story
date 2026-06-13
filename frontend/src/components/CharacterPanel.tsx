@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Swords, UserRound, Users, X } from 'lucide-react';
+import { Swords, UserRound, Users } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { getImageUrl } from '../utils/url';
 import { RetryImageButton } from './RetryImageButton';
 import { DynamicStatList } from './DynamicStatDisplay';
+import { Drawer, DrawerBody } from '../design-system';
 import type { DynamicStat, ResourceTemplate } from '@/types/entities';
 
-export interface Character {
+export interface CharacterPanel {
   _id: string;
   name: string;
   description: string;
@@ -16,8 +17,8 @@ export interface Character {
 }
 
 export interface CharacterPanelProps {
-  protagonist: Character | null;
-  npcs: Character[];
+  protagonist: CharacterPanel | null;
+  npcs: CharacterPanel[];
   resourceTemplates: ResourceTemplate[];
 }
 
@@ -27,60 +28,67 @@ export function CharacterPanel({ protagonist, npcs, resourceTemplates }: Charact
 
   return (
     <>
-      {/* Toggle button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed right-4 top-1/2 -translate-y-1/2 z-30 bg-ink-800 border border-ink-700 rounded-l-xl p-3 hover:border-accent-400/50 transition-all duration-200 shadow-lg"
-        title={t.characterPanel.title}
+        type="button"
+        onClick={() => setIsOpen(true)}
+        aria-label={t.characterPanel.title}
+        aria-expanded={isOpen}
+        className="fixed right-4 top-1/2 -translate-y-1/2 z-30 bg-ink-800 border border-ink-700 rounded-l-xl p-3 hover:border-accent-400/50 transition-all duration-200 shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
       >
-        <Swords size={18} className="text-ink-100" />
+        <Swords size={18} className="text-ink-100" aria-hidden="true" />
       </button>
 
-      {/* Panel drawer */}
-      <div className={`fixed right-0 top-0 h-full w-80 bg-ink-900 border-l border-ink-700 z-20 transform transition-transform duration-300 overflow-y-auto ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="p-5">
-          <div className="flex justify-between items-center mb-5">
-            <h2 className="font-display text-lg text-ink-100">{t.characterPanel.characters}</h2>
-            <button onClick={() => setIsOpen(false)} className="w-8 h-8 rounded-lg text-ink-200 hover:text-ink-100 hover:bg-ink-800 flex items-center justify-center transition-colors">
-              <X size={16} />
-            </button>
-          </div>
-
-          {/* Protagonist */}
+      <Drawer
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        title={t.characterPanel.characters}
+        side="right"
+        width="md"
+      >
+        <DrawerBody className="space-y-5">
           {protagonist && (
-            <div className="mb-6">
+            <div>
               <div className="flex items-center gap-3 mb-4">
                 {protagonist.imageUrl ? (
-                  <img src={getImageUrl(protagonist.imageUrl)} alt={protagonist.name} className="w-14 h-14 rounded-xl object-cover border-2 border-accent-400/30" />
+                  <img
+                    src={getImageUrl(protagonist.imageUrl)}
+                    alt={protagonist.name}
+                    className="w-14 h-14 rounded-xl object-cover border-2 border-accent-400/30"
+                  />
                 ) : (
                   <div className="w-14 h-14 rounded-xl bg-ink-700/50 border border-ink-600 flex flex-col items-center justify-center gap-0.5">
-                    <UserRound size={20} className="text-ink-200/60" />
+                    <UserRound size={20} className="text-ink-200/60" aria-hidden="true" />
                     <RetryImageButton entityType="character" entityId={protagonist._id} />
                   </div>
                 )}
                 <div>
                   <h3 className="font-display text-ink-100">{protagonist.name}</h3>
-                  <span className="text-xs text-accent-400 uppercase tracking-wide font-medium">{t.characterPanel.protagonist}</span>
+                  <span className="text-xs text-accent-400 uppercase tracking-wide font-medium">
+                    {t.characterPanel.protagonist}
+                  </span>
                 </div>
               </div>
-
-              {/* Dynamic stats */}
               <DynamicStatList stats={protagonist.dynamicStats} templates={resourceTemplates} />
             </div>
           )}
 
-          {/* NPCs */}
           {npcs.length > 0 && (
             <div>
-              <h3 className="font-display text-xs text-ink-200/60 uppercase tracking-wider mb-3">{t.characterPanel.storyCharacters}</h3>
+              <h3 className="font-display text-xs text-ink-200/60 uppercase tracking-wider mb-3">
+                {t.characterPanel.storyCharacters}
+              </h3>
               <div className="space-y-3">
-                {npcs.map(npc => (
+                {npcs.map((npc) => (
                   <div key={npc._id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-ink-800/50 transition-colors">
                     {npc.imageUrl ? (
-                      <img src={getImageUrl(npc.imageUrl)} alt={npc.name} className="w-10 h-10 rounded-lg object-cover border border-ink-600" />
+                      <img
+                        src={getImageUrl(npc.imageUrl)}
+                        alt={npc.name}
+                        className="w-10 h-10 rounded-lg object-cover border border-ink-600"
+                      />
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-ink-700/50 border border-ink-600 flex flex-col items-center justify-center gap-0.5">
-                        <Users size={14} className="text-ink-200/60" />
+                        <Users size={14} className="text-ink-200/60" aria-hidden="true" />
                         <RetryImageButton entityType="character" entityId={npc._id} />
                       </div>
                     )}
@@ -94,16 +102,11 @@ export function CharacterPanel({ protagonist, npcs, resourceTemplates }: Charact
             </div>
           )}
 
-          {!protagonist && !npcs.length && (
+          {!protagonist && npcs.length === 0 && (
             <p className="text-ink-200/40 text-sm">{t.characterPanel.noCharacters}</p>
           )}
-        </div>
-      </div>
-
-      {/* Backdrop on mobile */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-scrim z-10 md:hidden" onClick={() => setIsOpen(false)} />
-      )}
+        </DrawerBody>
+      </Drawer>
     </>
   );
 }

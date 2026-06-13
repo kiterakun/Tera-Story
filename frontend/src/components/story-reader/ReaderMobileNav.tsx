@@ -3,7 +3,7 @@ import { ChevronLeft, List, Swords, Compass } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MobileDrawer } from '../MobileDrawer';
 import ChapterNav from '../ChapterNav';
-import RPGPanel from '../RPGPanel';
+import RPGDrawer from '../RPGDrawer';
 import type { Chapter } from '../../types/story';
 import { useTranslation } from '../../i18n';
 import { useStoryStore } from '../../stores/storyStore';
@@ -98,30 +98,24 @@ export function ReaderMobileNav({
 
   return (
     <>
-      {/* Mobile RPG drawer (Phase 3 Drawer primitive, slides from right) */}
-      <MobileDrawer
-        isOpen={rpgOpen}
+      {/* Mobile RPG drawer (Phase 5 RPGDrawer, uses Drawer primitive) */}
+      <RPGDrawer
+        open={rpgOpen}
         onClose={() => setRpgOpen(false)}
-        title={t.storyReader.rpgPanel}
-        side="right"
-      >
-        <RPGPanel
-          rpgTab={rpgTab}
-          setRpgTab={setRpgTab}
-          tabLabels={tabLabels}
-          protagonist={protagonist}
-          sortedNpcs={sortedNpcs}
-          sortedItems={sortedItems}
-          sortedSpecialItems={sortedSpecialItems}
-          characters={characters}
-          relationships={relationships}
-          setDetailEntity={setDetailEntity}
-          setIsRelationshipModalOpen={setIsRelationshipModalOpen}
-          isRelationshipModalOpen={isRelationshipModalOpen}
-          t={t}
-          resourceTemplates={world?.resourceTemplates}
-        />
-      </MobileDrawer>
+        rpgTab={rpgTab}
+        setRpgTab={setRpgTab}
+        tabLabels={tabLabels}
+        protagonist={protagonist}
+        sortedNpcs={sortedNpcs}
+        sortedItems={sortedItems}
+        sortedSpecialItems={sortedSpecialItems}
+        characters={characters}
+        relationships={relationships}
+        setDetailEntity={setDetailEntity}
+        setIsRelationshipModalOpen={setIsRelationshipModalOpen}
+        isRelationshipModalOpen={isRelationshipModalOpen}
+        resourceTemplates={world?.resourceTemplates}
+      />
 
       {/* Mobile chapter navigation drawer (slides from left) */}
       <MobileDrawer
