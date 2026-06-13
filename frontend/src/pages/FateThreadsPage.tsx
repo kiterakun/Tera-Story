@@ -701,27 +701,30 @@ export default function FateThreadsPage() {
         </svg>
 
         {/* ── Zoom controls ── */}
-        <div className="absolute bottom-6 left-6 flex flex-col gap-1">
+        <div className="absolute bottom-6 left-6 flex flex-col gap-2">
           <button
+            type="button"
             onClick={zoomIn}
-            className="p-2 rounded-lg bg-ink-900/90 border border-ink-700 text-ink-400 hover:text-ink-200 hover:bg-ink-800 transition-colors"
             aria-label={t.fateThreads.zoomIn}
+            className="min-h-[44px] min-w-[44px] p-2 rounded-lg bg-ink-900/90 border border-ink-700 text-ink-400 hover:text-ink-200 hover:bg-ink-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
           >
-            <ZoomIn size={18} />
+            <ZoomIn size={18} aria-hidden="true" />
           </button>
           <button
+            type="button"
             onClick={zoomOut}
-            className="p-2 rounded-lg bg-ink-900/90 border border-ink-700 text-ink-400 hover:text-ink-200 hover:bg-ink-800 transition-colors"
             aria-label={t.fateThreads.zoomOut}
+            className="min-h-[44px] min-w-[44px] p-2 rounded-lg bg-ink-900/90 border border-ink-700 text-ink-400 hover:text-ink-200 hover:bg-ink-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
           >
-            <ZoomOut size={18} />
+            <ZoomOut size={18} aria-hidden="true" />
           </button>
           <button
+            type="button"
             onClick={fitToView}
-            className="p-2 rounded-lg bg-ink-900/90 border border-ink-700 text-ink-400 hover:text-ink-200 hover:bg-ink-800 transition-colors"
             aria-label={t.fateThreads.fitToView}
+            className="min-h-[44px] min-w-[44px] p-2 rounded-lg bg-ink-900/90 border border-ink-700 text-ink-400 hover:text-ink-200 hover:bg-ink-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
           >
-            <Maximize2 size={18} />
+            <Maximize2 size={18} aria-hidden="true" />
           </button>
         </div>
 
