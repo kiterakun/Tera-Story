@@ -1,9 +1,13 @@
 /**
- * UserMenu — avatar + dropdown with proper menu semantics.
+ * UserMenu — avatar + dropdown with full menu keyboard semantics.
  *
- * Renders a button with aria-haspopup + aria-expanded and the
- * dropdown panel with role="menu". Outside-click closes. ESC
- * closes (will be migrated to Modal primitive in Phase 3).
+ * Implements WAI-ARIA menu pattern:
+ * - Button with aria-haspopup="menu" + aria-expanded toggles dropdown
+ * - Dropdown panel role="menu" with role="menuitem" children
+ * - ArrowDown/ArrowUp cycle focus between menuitems
+ * - Home/End jump to first/last menuitem
+ * - Escape closes (focus returns to trigger)
+ * - Outside-click closes
  */
 
 import { useState, useRef, useEffect } from 'react';
@@ -18,23 +22,59 @@ export function UserMenu() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
+  // Outside-click + ESC + arrow-key navigation
   useEffect(() => {
     if (!open) return;
+
     const handleClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
+      const menu = menuRef.current;
+      const trigger = triggerRef.current;
+      const target = e.target as Node;
+      if (menu && menu.contains(target)) return;
+      if (trigger && trigger.contains(target)) return;
+      setOpen(false);
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      const items = menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]');
+      if (!items || items.length === 0) return;
+
+      switch (e.key) {
+        case 'Escape':
+          e.preventDefault();
+          // Focus the trigger first (synchronously) so focus doesn't
+          // get lost when the menu unmounts.
+          triggerRef.current?.focus();
+          setOpen(false);
+          return;
+        case 'ArrowDown':
+        case 'ArrowUp':
+        case 'Home':
+        case 'End': {
+          e.preventDefault();
+          const currentIndex = Array.from(items).findIndex((el) => el === document.activeElement);
+          let nextIndex = currentIndex;
+          if (e.key === 'ArrowDown') nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
+          if (e.key === 'ArrowUp') nextIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+          if (e.key === 'Home') nextIndex = 0;
+          if (e.key === 'End') nextIndex = items.length - 1;
+          items[nextIndex]?.focus();
+          return;
+        }
       }
     };
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
+
+    // Focus first menuitem when menu opens
+    const items = menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]');
+    items?.[0]?.focus();
+
     document.addEventListener('mousedown', handleClick);
-    document.addEventListener('keydown', handleEsc);
+    document.addEventListener('keydown', handleKey);
     return () => {
       document.removeEventListener('mousedown', handleClick);
-      document.removeEventListener('keydown', handleEsc);
+      document.removeEventListener('keydown', handleKey);
     };
   }, [open]);
 
@@ -46,14 +86,12 @@ export function UserMenu() {
     navigate('/login');
   };
 
-  const closeMenu = () => setOpen(false);
-
   return (
     <nav aria-label="User menu" className="relative hidden md:block">
       <button
-        ref={containerRef as React.RefObject<HTMLButtonElement>}
+        ref={triggerRef}
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`Account menu for ${user.username}`}
@@ -72,6 +110,7 @@ export function UserMenu() {
 
       {open && (
         <div
+          ref={menuRef}
           role="menu"
           aria-label="Account menu"
           className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-ink-800 border border-ink-700 shadow-lg py-2 animate-scale-in z-50"
@@ -82,16 +121,18 @@ export function UserMenu() {
           <Link
             to="/settings"
             role="menuitem"
-            onClick={closeMenu}
-            className="block px-4 py-2 text-sm text-ink-200 hover:text-ink-100 hover:bg-ink-700 transition-colors duration-base"
+            tabIndex={-1}
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2 text-sm text-ink-200 hover:text-ink-100 hover:bg-ink-700 transition-colors duration-base focus:bg-ink-700 focus:outline-none"
           >
             {t.layout?.settings ?? 'Settings'}
           </Link>
           <button
             type="button"
             role="menuitem"
+            tabIndex={-1}
             onClick={handleLogout}
-            className="block w-full text-left px-4 py-2 text-sm text-ink-200 hover:text-ink-100 hover:bg-ink-700 transition-colors duration-base"
+            className="block w-full text-left px-4 py-2 text-sm text-ink-200 hover:text-ink-100 hover:bg-ink-700 transition-colors duration-base focus:bg-ink-700 focus:outline-none"
           >
             {t.layout?.logout ?? 'Logout'}
           </button>
