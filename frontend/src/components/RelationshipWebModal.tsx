@@ -4,8 +4,12 @@ import ForceGraph2D from 'react-force-graph-2d';
 import type { Relationship, Character } from '../services/playthroughApi';
 import { useTranslation } from '../i18n';
 import { Modal, ModalHeader, ModalBody } from '../design-system';
-import { RELATIONSHIP_TYPE_COLORS, getRelationshipTypeColor } from '../design-system/colors';
+import { RELATIONSHIP_TYPE_COLORS, getRelationshipTypeColor, NODE_GRAPH_COLORS } from '../design-system/colors';
 import { cn } from '../design-system/cn';
+
+const PROTAGONIST_COLOR = NODE_GRAPH_COLORS.protagonist;
+const NPC_COLOR = NODE_GRAPH_COLORS.npc;
+const LABEL_TEXT_COLOR = NODE_GRAPH_COLORS.label;
 
 interface RelationshipWebModalProps {
   isOpen: boolean;
@@ -42,8 +46,7 @@ export function RelationshipWebModal({ isOpen, onClose, relationships, character
       charIdsInRels.add(r.characterA._id);
       charIdsInRels.add(r.characterB._id);
     });
-    const PROTAGONIST_COLOR = '#f59e0b';
-    const NPC_COLOR = '#3b82f6';
+
     const graphNodes: GraphNode[] = characters
       .filter((c) => charIdsInRels.has(c._id) || c.role === 'protagonist')
       .map((c) => ({
@@ -166,7 +169,7 @@ export function RelationshipWebModal({ isOpen, onClose, relationships, character
 
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
-              ctx.fillStyle = '#e2e8f0';
+              ctx.fillStyle = LABEL_TEXT_COLOR;
               ctx.fillText(label, node.x ?? 0, (node.y ?? 0) - 12);
             }}
           />

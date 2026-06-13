@@ -186,6 +186,41 @@ export function getRelationshipTypeColor(type: string | undefined | null): Relat
 }
 
 // ============================================================
+// Fate thread palette
+//
+// Centralized hex + Tailwind class pairs used by the FateThreads
+// canvas. Same rationale as RELATIONSHIP_TYPE_COLORS: the canvas
+// only accepts literal color strings, so we keep the hex here
+// alongside the Tailwind class that the legend swatch uses.
+// ============================================================
+
+export const FATE_THREAD_COLORS = {
+  chosen:     { color: '#D4A843', swatchClass: 'text-amber-400' },
+  inactive:   { color: '#6B7280', swatchClass: 'text-gray-500' },
+  current:    { color: '#D4A843', swatchClass: 'text-amber-400' },
+  currentSub: { color: '#C9A94E', swatchClass: 'text-amber-500' },
+  other:      { color: '#4B5563', swatchClass: 'text-gray-600' },
+  otherText:  { color: '#9CA3AF', swatchClass: 'text-gray-400' },
+  node:       { color: '#0a0a0f', swatchClass: 'bg-ink-950' },
+  textCurrent: { color: '#E8C96A', swatchClass: 'text-amber-300' },
+} as const;
+
+// ============================================================
+// Node graph palette
+//
+// Centralized colors used by canvas-rendered node graphs
+// (RelationshipWebModal). The canvas only accepts literal color
+// strings, so we keep the hex here alongside Tailwind class
+// aliases for the legend swatches.
+// ============================================================
+
+export const NODE_GRAPH_COLORS = {
+  protagonist: '#f59e0b',
+  npc: '#3b82f6',
+  label: '#e2e8f0',
+} as const;
+
+// ============================================================
 // Role palette (danger / success / info / warning)
 // These mirror the --danger/--success/--info/--warning CSS tokens
 // but are exposed as Tailwind class strings for use in className={}.

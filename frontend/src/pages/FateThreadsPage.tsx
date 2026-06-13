@@ -17,6 +17,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { Spinner } from '../design-system/Spinner';
+import { FATE_THREAD_COLORS } from '../design-system/colors';
 import { useFateThreads } from '../hooks/useFateThreads';
 import { PeekModal } from '../components/fate/PeekModal';
 import { ChapterDetailPanel } from '../components/fate/ChapterDetailPanel';
@@ -601,7 +602,7 @@ export default function FateThreadsPage() {
                     y1={y1}
                     x2={x2}
                     y2={y2}
-                    stroke={edge.isChosen ? '#D4A843' : '#6B7280'}
+                    stroke={edge.isChosen ? FATE_THREAD_COLORS.chosen.color : FATE_THREAD_COLORS.inactive.color}
                     strokeWidth={edge.isChosen ? 2.5 : 1.5}
                     strokeDasharray={edge.isChosen ? undefined : '6 4'}
                     strokeLinecap="round"
@@ -620,7 +621,7 @@ export default function FateThreadsPage() {
                   {edge.isChosen && (
                     <polygon
                       points={`${x2 - 5},${y2 - 8} ${x2},${y2} ${x2 + 5},${y2 - 8}`}
-                      fill="#D4A843"
+                      fill={FATE_THREAD_COLORS.chosen.color}
                     />
                   )}
                 </g>
@@ -633,9 +634,9 @@ export default function FateThreadsPage() {
               const bgColor = isCurrent
                 ? 'rgba(212, 168, 67, 0.15)'
                 : 'rgba(107, 114, 128, 0.1)';
-              const borderColor = isCurrent ? '#D4A843' : '#4B5563';
-              const textColor = isCurrent ? '#E8C96A' : '#9CA3AF';
-              const subtitleColor = isCurrent ? '#C9A94E' : '#6B7280';
+              const borderColor = isCurrent ? FATE_THREAD_COLORS.current.color : FATE_THREAD_COLORS.other.color;
+              const textColor = isCurrent ? FATE_THREAD_COLORS.textCurrent.color : FATE_THREAD_COLORS.otherText.color;
+              const subtitleColor = isCurrent ? FATE_THREAD_COLORS.currentSub.color : FATE_THREAD_COLORS.inactive.color;
 
               const title = ln.node.title.length > 28
                 ? ln.node.title.slice(0, 28) + '…'
@@ -689,7 +690,7 @@ export default function FateThreadsPage() {
                       cx={ln.x + NODE_WIDTH - 12}
                       cy={ln.y + 12}
                       r={4}
-                      fill="#D4A843"
+                      fill={FATE_THREAD_COLORS.chosen.color}
                       style={{ pointerEvents: 'none' }}
                     />
                   )}
@@ -736,7 +737,7 @@ export default function FateThreadsPage() {
               y={0}
               width={minimapWidth}
               height={minimapHeight}
-              fill="#0a0a0f"
+              fill={FATE_THREAD_COLORS.node.color}
             />
             {/* All nodes */}
             {layoutNodes.map((ln) => {
@@ -752,7 +753,7 @@ export default function FateThreadsPage() {
                   width={Math.max(mw, 1.5)}
                   height={Math.max(mh, 1.5)}
                   rx={1}
-                  fill={ln.node.isCurrentPath ? '#D4A843' : '#4B5563'}
+                  fill={ln.node.isCurrentPath ? FATE_THREAD_COLORS.current.color : FATE_THREAD_COLORS.other.color}
                   opacity={0.7}
                 />
               );
@@ -769,7 +770,7 @@ export default function FateThreadsPage() {
                   (viewportSize.height / scale) * minimapScale
                 }
                 fill="none"
-                stroke="#D4A843"
+                stroke={FATE_THREAD_COLORS.chosen.color}
                 strokeWidth={1.5}
                 rx={2}
               />
