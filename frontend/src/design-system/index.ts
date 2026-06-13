@@ -82,3 +82,15 @@ export {
 } from './Spinner';
 
 export { Badge, type BadgeProps, type BadgeVariant, type BadgeShape } from './Badge';
+
+export {
+  Modal,
+  ModalHeader,
+  ModalTitle,
+  ModalBody,
+  ModalFooter,
+  type ModalProps,
+  type ModalSize,
+} from './Modal';
+
+export { createFocusTrap, type FocusTrap } from './focusTrap';
