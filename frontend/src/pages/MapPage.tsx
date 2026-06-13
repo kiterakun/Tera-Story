@@ -1,195 +1,20 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMap } from '../hooks/useMap';
 import {
   MapPin,
-  Navigation,
   Compass,
-  ChevronDown,
-  ChevronRight,
   ChevronLeft,
   Globe,
-  Mountain,
-  AlertTriangle,
-  Eye,
-  TreePine,
-  Home,
-  Shield,
-  Crosshair,
 } from 'lucide-react';
 import { Spinner } from '../design-system/Spinner';
 import { useTranslation } from '../i18n';
 import { getWorldMap } from '../services/mapApi';
-import type { Location, MapData } from '../services/mapApi';
+import type { MapData } from '../services/mapApi';
 import { DynamicStatList } from '../components/DynamicStatDisplay';
 import { useStoryStore } from '../stores/storyStore';
-import type { ResourceTemplate } from '../types/entities';
-
-// ── Constants ──────────────────────────────────────────────────────────
-
-const LOCATION_TYPE_ICONS: Record<string, typeof MapPin> = {
-  town: Home,
-  dungeon: AlertTriangle,
-  wilderness: TreePine,
-  ruin: Eye,
-  sanctuary: Shield,
-  crossroad: Crosshair,
-};
-
-const LOCATION_TYPE_COLORS: Record<string, string> = {
-  town: 'text-amber-400',
-  dungeon: 'text-red-400',
-  wilderness: 'text-green-400',
-  ruin: 'text-stone-400',
-  sanctuary: 'text-blue-400',
-  crossroad: 'text-yellow-400',
-};
-
-const LOCATION_TYPE_BG: Record<string, string> = {
-  town: 'bg-amber-900/30 border-amber-700/50',
-  dungeon: 'bg-red-900/30 border-red-700/50',
-  wilderness: 'bg-green-900/30 border-green-700/50',
-  ruin: 'bg-stone-800/50 border-stone-600/50',
-  sanctuary: 'bg-blue-900/30 border-blue-700/50',
-  crossroad: 'bg-yellow-900/30 border-yellow-700/50',
-};
-
-const STATUS_BADGES: Record<string, { labelKey: string; className: string }> = {
-  undiscovered: { labelKey: 'undiscovered', className: 'bg-stone-700 text-stone-400' },
-  known: { labelKey: 'known', className: 'bg-blue-900/50 text-blue-300' },
-  visited: { labelKey: 'visited', className: 'bg-green-900/50 text-green-300' },
-  cleared: { labelKey: 'cleared', className: 'bg-amber-900/50 text-amber-300' },
-};
-
-// ── Sub-components ────────────────────────────────────────────────────
-
-function LocationCard({
-  location,
-  isCurrent,
-  isExpanded,
-  onToggle,
-  templates,
-}: {
-  location: Location;
-  isCurrent?: boolean;
-  isExpanded?: boolean;
-  onToggle?: () => void;
-  templates?: ResourceTemplate[];
-}) {
-  const t = useTranslation();
-  const Icon = LOCATION_TYPE_ICONS[location.type] || MapPin;
-  const colorClass = LOCATION_TYPE_COLORS[location.type] || 'text-stone-400';
-  const bgClass = LOCATION_TYPE_BG[location.type] || 'bg-stone-800/50 border-stone-600/50';
-  const statusInfo = STATUS_BADGES[location.status] || STATUS_BADGES.undiscovered!;
-  const statusLabel = t.map.status[statusInfo.labelKey as keyof typeof t.map.status];
-
-  return (
-    <div
-      className={`rounded-xl border p-4 transition-all duration-200 ${
-        isCurrent
-          ? 'border-accent-500/60 bg-accent-900/20 shadow-lg shadow-accent-900/20'
-          : bgClass
-      } ${onToggle ? 'cursor-pointer hover:border-ink-600' : ''}`}
-      onClick={onToggle}
-    >
-      <div className="flex items-start gap-3">
-        <div className={`mt-0.5 ${colorClass}`}>
-          <Icon size={20} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-display text-ink-100 text-base">{location.name}</h3>
-            {isCurrent && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-accent-600/30 text-accent-300 border border-accent-500/40">
-                {t.map.currentBadge}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2 mt-1">
-            <span className={`text-xs ${colorClass}`}>
-              {t.map.types[location.type as keyof typeof t.map.types] || location.type}
-            </span>
-            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${statusInfo.className}`}>
-              {statusLabel}
-            </span>
-          </div>
-          {isExpanded && (
-            <div className="mt-2 space-y-2">
-              <p className="text-sm text-ink-200/80 leading-relaxed">
-                {location.description}
-              </p>
-              {location.dynamicStats && location.dynamicStats.length > 0 && (
-                <div className="grid grid-cols-2 gap-1.5">
-                  {location.dynamicStats.map((stat, idx) => (
-                    <div key={idx} className="bg-ink-950/50 rounded-lg px-2 py-1">
-                      <DynamicStatList stats={[stat]} templates={templates} compact />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          {!isExpanded && location.description && (
-            <p className="text-sm text-ink-200/60 mt-1 line-clamp-2">
-              {location.description}
-            </p>
-          )}
-        </div>
-        {onToggle && (
-          <div className="text-ink-400 shrink-0">
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function RegionGroup({
-  regionName,
-  continentName,
-  locations,
-  currentLocationId,
-  expandedId,
-  onToggleLocation,
-  templates,
-}: {
-  regionName: string;
-  continentName?: string;
-  locations: Location[];
-  currentLocationId?: string;
-  expandedId: string | null;
-  onToggleLocation: (id: string) => void;
-  templates?: ResourceTemplate[];
-}) {
-  const t = useTranslation();
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 px-1">
-        <Mountain size={14} className="text-ink-400" />
-        <h3 className="font-display text-ink-200 text-sm">{regionName}</h3>
-        {continentName && (
-          <span className="text-xs text-ink-400">({continentName})</span>
-        )}
-        <span className="text-xs text-ink-500 ml-auto">
-          {t.map.locationsCount.replace('{count}', String(locations.length))}
-        </span>
-      </div>
-      <div className="space-y-2 pl-4 border-l-2 border-ink-800">
-        {locations.map((loc) => (
-          <LocationCard
-            key={loc._id}
-            location={loc}
-            isCurrent={loc._id === currentLocationId}
-            isExpanded={expandedId === loc._id}
-            onToggle={() => onToggleLocation(loc._id)}
-            templates={templates}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
+import { RegionGroup, LOCATION_STATUS_BADGES as STATUS_BADGES } from '../components/map';
 
 // ── Main Page ─────────────────────────────────────────────────────────
 

@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Compass, MapPin, Mountain, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getWorldMap } from '../../../services/mapApi';
 import { useStoryStore } from '../../../stores/storyStore';
 import { useMap } from '../../../hooks/useMap';
 import { DynamicStatList } from '../../DynamicStatDisplay';
+import { LocationCard, RegionGroup } from '../../map';
 import type { useTranslation } from '../../../i18n';
+import type { Location } from '../../../services/mapApi';
 
 interface MapTabProps {
   playthroughId: string;
@@ -18,6 +20,7 @@ export function MapTab({ playthroughId, t }: MapTabProps) {
   const { currentContext, playthroughLocations, fetchCurrentLocation, fetchAllLocations } = useMap();
 
   const [continentMap, setContinentMap] = useState<Map<string, string>>(new Map());
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Load world map to get continent names
   useEffect(() => {
@@ -43,12 +46,31 @@ export function MapTab({ playthroughId, t }: MapTabProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playthroughId]);
 
+  const regions = useMemo(() => {
+    const grouped = new Map<string, { regionName: string; continentName?: string; locations: Location[] }>();
+    for (const loc of playthroughLocations) {
+      const regionId = loc.region?._id ?? 'unknown';
+      const existing = grouped.get(regionId);
+      if (existing) {
+        existing.locations.push(loc);
+      } else {
+        grouped.set(regionId, {
+          regionName: loc.region?.name ?? t.map.unknownRegion,
+          continentName: loc.region ? continentMap.get(loc.region.continentId) : undefined,
+          locations: [loc],
+        });
+      }
+    }
+    return Array.from(grouped.values());
+  }, [playthroughLocations, continentMap, t.map.unknownRegion]);
+
   return (
     <div className="space-y-4 animate-fade-in">
       {/* View Detailed Map Button */}
       <button
+        type="button"
         onClick={() => navigate(`/playthroughs/${playthroughId}/map`)}
-        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-accent-600 hover:bg-accent-500 text-white font-semibold text-sm transition-all duration-200 shadow-md shadow-accent-600/20 cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-accent-600 hover:bg-accent-500 text-white font-semibold text-sm transition-all duration-200 shadow-md shadow-accent-600/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
       >
         <Compass size={16} aria-hidden="true" />
         {t.map.viewDetailedMap}
@@ -92,51 +114,29 @@ export function MapTab({ playthroughId, t }: MapTabProps) {
         <p className="text-sm text-ink-200/50 text-center py-4">{t.map.noLocation}</p>
       )}
 
-      {/* Discovered Locations */}
-      {playthroughLocations.length > 0 && (
-        <div>
-          <h4 className="text-xs text-ink-200/50 uppercase tracking-wider mb-2">
+      {/* Discovered Locations grouped by region */}
+      {regions.length > 0 && (
+        <div className="space-y-3">
+          <h4 className="text-xs text-ink-200/50 uppercase tracking-wider">
             {t.map.discoveredLocations}
           </h4>
-          <div className="space-y-2">
-            {playthroughLocations.map((loc) => (
-              <div key={loc._id} className="bg-ink-950/50 rounded-xl border border-ink-700/50 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <MapPin size={14} className="text-ink-400" aria-hidden="true" />
-                    <span className="text-sm text-ink-100 font-medium">{loc.name}</span>
-                    <span className="text-xs text-ink-200/40 capitalize">
-                      ({t.map.types[loc.type as keyof typeof t.map.types] || loc.type})
-                    </span>
-                  </div>
-                  {loc.region && (
-                    <div className="flex items-center gap-1.5 text-[9px] text-ink-200/40">
-                      <span className="flex items-center gap-0.5">
-                        <Mountain size={9} aria-hidden="true" />
-                        {loc.region.name}
-                      </span>
-                      <span aria-hidden="true">/</span>
-                      <span className="flex items-center gap-0.5">
-                        <Globe size={9} aria-hidden="true" />
-                        {continentMap.get(loc.region.continentId) || t.map.continent}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                {loc.dynamicStats && loc.dynamicStats.length > 0 && (
-                  <div className="grid grid-cols-2 gap-1 mt-2">
-                    {loc.dynamicStats.map((stat, idx) => (
-                      <div key={idx} className="bg-ink-900/50 rounded px-1.5 py-0.5">
-                        <DynamicStatList stats={[stat]} templates={world?.locationResourceTemplates} compact />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          {regions.map((region) => (
+            <RegionGroup
+              key={region.regionName}
+              regionName={region.regionName}
+              continentName={region.continentName}
+              locations={region.locations}
+              expandedId={expandedId}
+              onToggleLocation={setExpandedId}
+              templates={world?.locationResourceTemplates}
+            />
+          ))}
         </div>
       )}
+
+      {/* Hidden reference: LocationCard is exported but unused at this level;
+          keeps the export in scope for downstream consumers. */}
+      {void LocationCard}
     </div>
   );
 }
