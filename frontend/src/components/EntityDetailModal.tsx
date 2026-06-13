@@ -1,4 +1,4 @@
-import { X, UserRound, Package, Sparkles, Landmark } from 'lucide-react';
+import { UserRound, Package, Sparkles, Landmark } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import type { Character, Item, SpecialItem } from '../services/playthroughApi';
 import type { Organization } from '../types/entities';
@@ -6,6 +6,7 @@ import { getImageUrl } from '../utils/url';
 import { RetryImageButton } from './RetryImageButton';
 import { DynamicStatList } from './DynamicStatDisplay';
 import { useStoryStore } from '../stores/storyStore';
+import { Modal, ModalBody } from '../design-system';
 import {
   RARITY_STYLES,
   CHARACTER_STATUS_STYLES,
@@ -258,40 +259,43 @@ export function EntityDetailModal({ entity, onClose }: EntityDetailModalProps) {
     : entity.type === 'special' ? entity.data.rarity : null;
   const rc = rarity ? RARITY_STYLES[rarity] : null;
 
+  // Compute display title for accessibility (aria-labelledby).
+  const entityTitle = (() => {
+    switch (entity.type) {
+      case 'character': return entity.data.name;
+      case 'item': return entity.data.name;
+      case 'special': return entity.data.name;
+      case 'organization': return entity.data.name;
+    }
+  })();
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-scrim backdrop-blur-sm" onClick={onClose} />
-
-      {/* Modal */}
-      <div className={`relative w-full max-w-md bg-ink-900 border rounded-3xl p-6 max-h-[85vh] overflow-y-auto ${rc ? `${rc.border} ${rc.glow}` : 'border-ink-700'}`}>
-        {/* Rarity shimmer for epic/legendary */}
-        {rarity === 'legendary' && (
-          <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-amber-500/5 animate-pulse" />
-          </div>
-        )}
-        {rarity === 'epic' && (
-          <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-transparent to-purple-500/5 animate-pulse" />
-          </div>
-        )}
-
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-lg text-ink-200 hover:text-ink-100 hover:bg-ink-800 flex items-center justify-center transition-colors z-10"
-        >
-          <X size={16} />
-        </button>
-
-        <div className="relative pt-2">
-          {entity.type === 'character' && renderCharacter(entity.data)}
-          {entity.type === 'item' && renderItem(entity.data)}
-          {entity.type === 'special' && renderSpecialItem(entity.data)}
-          {entity.type === 'organization' && renderOrganization(entity.data)}
+    <Modal
+      open={!!entity}
+      onClose={onClose}
+      title={entityTitle}
+      size="md"
+      className={`rounded-3xl ${rc ? `${rc.border} ${rc.glow}` : 'border-ink-700'}`}
+    >
+      {/* Rarity shimmer for epic/legendary (overlaid on modal panel) */}
+      {rarity === 'legendary' && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-amber-500/5 animate-pulse" />
         </div>
-      </div>
-    </div>
+      )}
+      {rarity === 'epic' && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-transparent to-purple-500/5 animate-pulse" />
+        </div>
+      )}
+
+      <ModalBody className="relative pt-2">
+        {entity.type === 'character' && renderCharacter(entity.data)}
+        {entity.type === 'item' && renderItem(entity.data)}
+        {entity.type === 'special' && renderSpecialItem(entity.data)}
+        {entity.type === 'organization' && renderOrganization(entity.data)}
+      </ModalBody>
+    </Modal>
   );
 
   function renderOrganization(org: Organization) {
