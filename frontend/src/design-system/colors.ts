@@ -155,6 +155,37 @@ export function getOrganizationStatusStyle(status: string | undefined | null): S
 }
 
 // ============================================================
+// Relationship type colors
+//
+// Single source of truth for the colors used by the relationship
+// graph canvas and legend. Hex strings are intentional so the
+// canvas (which only accepts literal color strings) stays in sync
+// with the Tailwind legend swatches.
+// ============================================================
+
+export interface RelationshipTypeColor {
+  /** Hex color (canvas + legend) */
+  color: string;
+  /** Tailwind class for the legend swatch */
+  swatchClass: string;
+}
+
+export const RELATIONSHIP_TYPE_COLORS = {
+  ally:     { color: '#10b981', swatchClass: 'bg-emerald-500' },
+  enemy:    { color: '#ef4444', swatchClass: 'bg-red-500' },
+  rival:    { color: '#f97316', swatchClass: 'bg-orange-500' },
+  romantic: { color: '#ec4899', swatchClass: 'bg-pink-500' },
+  mentor:   { color: '#8b5cf6', swatchClass: 'bg-violet-500' },
+  family:   { color: '#3b82f6', swatchClass: 'bg-blue-500' },
+  neutral:  { color: '#6b7280', swatchClass: 'bg-gray-500' },
+} as const;
+
+export function getRelationshipTypeColor(type: string | undefined | null): RelationshipTypeColor {
+  if (!type) return RELATIONSHIP_TYPE_COLORS.neutral;
+  return RELATIONSHIP_TYPE_COLORS[type as keyof typeof RELATIONSHIP_TYPE_COLORS] ?? RELATIONSHIP_TYPE_COLORS.neutral;
+}
+
+// ============================================================
 // Role palette (danger / success / info / warning)
 // These mirror the --danger/--success/--info/--warning CSS tokens
 // but are exposed as Tailwind class strings for use in className={}.

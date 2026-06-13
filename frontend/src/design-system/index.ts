@@ -25,10 +25,12 @@ export {
   ITEM_STATUS_STYLES,
   SPECIAL_STATUS_STYLES,
   ORGANIZATION_STATUS_STYLES,
+  RELATIONSHIP_TYPE_COLORS,
   ROLE,
   getRarityStyle,
   getCharacterStatusStyle,
   getOrganizationStatusStyle,
+  getRelationshipTypeColor,
   rarityText,
   rarityBorder,
   rarityTextBorder,
@@ -39,6 +41,7 @@ export {
   type ItemStatusKind,
   type SpecialItemStatusKind,
   type OrganizationStatusKind,
+  type RelationshipTypeColor,
 } from './colors';
 
 // ============================================================
