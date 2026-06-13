@@ -88,6 +88,9 @@ export { Badge, type BadgeProps, type BadgeVariant, type BadgeShape } from './Ba
 
 export { EntityCard, type EntityCardProps, type EntityCardVariant } from './EntityCard';
 
+export { ItemCard, type ItemCardProps } from './ItemCard';
+export { AbilityCard, type AbilityCardProps } from './AbilityCard';
+
 export {
   Modal,
   ModalHeader,
