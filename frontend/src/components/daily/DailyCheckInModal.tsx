@@ -48,7 +48,7 @@ export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="absolute inset-0 bg-scrim" onClick={onClose} />
       <div className="relative bg-ink-900 border border-ink-700 rounded-2xl max-w-md w-full animate-[scaleIn_0.3s_ease-out] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-ink-800">

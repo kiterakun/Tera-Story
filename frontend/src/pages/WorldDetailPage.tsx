@@ -182,7 +182,7 @@ export default function WorldDetailPage() {
               )}
               {currentWorld.imageUrl && (
                 <div className="absolute bottom-3 right-3">
-                  <RetryImageButton entityType="world" entityId={currentWorld._id} className="bg-black/50 backdrop-blur-sm rounded-lg p-1.5" />
+                  <RetryImageButton entityType="world" entityId={currentWorld._id} className="bg-scrim backdrop-blur-sm rounded-lg p-1.5" />
                 </div>
               )}
             </div>
@@ -385,7 +385,7 @@ export default function WorldDetailPage() {
       {/* Create Playthrough Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black/60" onClick={() => setShowCreateModal(false)} />
+          <div className="fixed inset-0 bg-scrim" onClick={() => setShowCreateModal(false)} />
           <div className="relative bg-ink-800 border border-ink-700 rounded-2xl p-6 w-full max-w-lg mx-4 shadow-2xl animate-fade-in max-h-[90vh] flex flex-col">
             <div className="flex justify-between items-center mb-5 shrink-0">
               <h3 className="text-lg font-display text-ink-100">{t.worldDetail.startJourney}</h3>

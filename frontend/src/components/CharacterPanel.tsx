@@ -102,7 +102,7 @@ export function CharacterPanel({ protagonist, npcs, resourceTemplates }: Charact
 
       {/* Backdrop on mobile */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 z-10 md:hidden" onClick={() => setIsOpen(false)} />
+        <div className="fixed inset-0 bg-scrim z-10 md:hidden" onClick={() => setIsOpen(false)} />
       )}
     </>
   );

@@ -118,7 +118,7 @@ export default function GamePanel({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-scrim backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel */}
       <div className="relative bg-ink-900 border border-ink-700 rounded-2xl shadow-2xl w-full max-w-4xl h-[90vh] md:h-auto max-h-[90vh] md:max-h-[85vh] flex flex-col overflow-hidden animate-fade-in">
