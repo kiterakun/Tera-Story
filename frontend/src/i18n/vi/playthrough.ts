@@ -25,6 +25,7 @@ export default {
     deleteConfirmMsg: 'Bạn có chắc muốn xóa "{name}"? Tất cả tiến trình sẽ bị mất.',
     deleteFailed: 'Xóa lượt chơi thất bại',
     gameMenu: 'Menu Trò Chơi',
+    gameTabs: 'Các tab trò chơi',
     archive: 'Lưu Trữ',
     restore: 'Khôi Phục',
     archivedEntities: 'Thực Thể Đã Lưu Trữ',

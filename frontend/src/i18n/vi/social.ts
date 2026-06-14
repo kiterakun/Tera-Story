@@ -54,5 +54,6 @@ export default {
     downloaded: 'Đã tải ảnh!',
     downloadFailed: 'Không thể tải ảnh',
     twitterText: 'Khám phá câu chuyện của tôi trên Tera-Story!',
+    urlPreview: 'Xem trước URL chia sẻ',
   },
 };

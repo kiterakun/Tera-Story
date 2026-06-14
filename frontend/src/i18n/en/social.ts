@@ -54,5 +54,6 @@ export default {
     downloaded: 'Image downloaded!',
     downloadFailed: 'Failed to download image',
     twitterText: 'Explore my story on Tera-Story!',
+    urlPreview: 'Share URL preview',
   },
 };

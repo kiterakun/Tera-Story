@@ -10,6 +10,7 @@ import progression from './progression';
 import social from './social';
 import map from './map';
 import daily from './daily';
+import landing from './landing';
 
 const en = {
   ...ui,
@@ -24,6 +25,7 @@ const en = {
   ...social,
   ...map,
   ...daily,
+  ...landing,
 };
 
 export type Translations = typeof en;

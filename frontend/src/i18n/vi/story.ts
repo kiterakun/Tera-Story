@@ -36,6 +36,18 @@ export default {
     summarizeArcDesc: 'Nén toàn bộ chương trong arc hiện tại thành bản tóm tắt ngắn gọn để giảm kích thước ngữ cảnh, sau đó bắt đầu arc mới.',
     summarizingArc: 'Đang tóm tắt arc...',
     confirmSummarize: 'Thao tác này sẽ tóm tắt tất cả chương trong arc hiện tại và bắt đầu arc mới. Tiếp tục?',
+
+    beginStoryPrompt: 'Bắt đầu câu chuyện',
+    toast: {
+      imageReady: 'Hình ảnh sẵn sàng',
+      imageReadyDesc: 'Hình ảnh {entity} đã được tạo.',
+      chapterCompleted: 'Chương {index} hoàn thành',
+      chapterCompletedDesc: 'Dữ liệu câu chuyện đã làm mới.',
+      combatResolved: 'Đã giải quyết giao tranh',
+      combatResolvedDesc: 'Kết quả: {result}',
+      entityUpdated: 'Thực thể đã cập nhật',
+      entityUpdatedDesc: '{name} đã thay đổi.',
+    },
     mobileBack: 'Quay lại',
     mobileChapters: 'Chương',
     mobileRpg: 'RPG',

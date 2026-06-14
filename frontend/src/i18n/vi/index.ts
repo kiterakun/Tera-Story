@@ -11,6 +11,7 @@ import progression from './progression';
 import social from './social';
 import map from './map';
 import daily from './daily';
+import landing from './landing';
 
 const vi: Translations = {
   ...ui,
@@ -25,6 +26,7 @@ const vi: Translations = {
   ...social,
   ...map,
   ...daily,
+  ...landing,
 };
 
 export default vi;

@@ -25,6 +25,7 @@ export default {
     deleteConfirmMsg: 'Are you sure you want to delete "{name}"? All story progress will be lost.',
     deleteFailed: 'Failed to delete playthrough',
     gameMenu: 'Game Menu',
+    gameTabs: 'Game tabs',
     archive: 'Archive',
     restore: 'Restore',
     archivedEntities: 'Archived Entities',

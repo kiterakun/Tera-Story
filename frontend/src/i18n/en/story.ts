@@ -35,7 +35,19 @@ export default {
     summarizeArc: 'Summarize Arc & Start New',
     summarizeArcDesc: 'Condense the current arc into a brief summary to reduce context size, then start a new arc.',
     summarizingArc: 'Summarizing...',
-    confirmSummarize: 'This will summarize all chapters in the current arc and start a new one. Continue?',
+
+
+    beginStoryPrompt: 'Begin the story',
+    toast: {
+      imageReady: 'Image ready',
+      imageReadyDesc: '{entity} image has been generated.',
+      chapterCompleted: 'Chapter {index} completed',
+      chapterCompletedDesc: 'Story data refreshed.',
+      combatResolved: 'Combat resolved',
+      combatResolvedDesc: 'Result: {result}',
+      entityUpdated: 'Entity updated',
+      entityUpdatedDesc: '{name} changed.',
+    },
     mobileBack: 'Back',
     mobileChapters: 'Chapters',
     mobileRpg: 'RPG',
