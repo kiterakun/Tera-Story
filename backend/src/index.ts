@@ -58,6 +58,11 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 
+// Assign a UUID to every request and echo it in the X-Request-Id response
+// header for client-side debugging. Runs before rate limiting and routes.
+import { requestId } from './middleware/requestId';
+app.use(requestId);
+
 // Rate Limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -176,7 +181,7 @@ app.get('/api/share/chronicle/:shareId', async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Public chronicle error:', err);
+    logger.error({ err }, 'Public chronicle error');
     res.status(500).json({ status: 'error', message: 'Internal server error' });
   }
 });
@@ -186,6 +191,31 @@ app.use('/api', authMiddleware, charactersRouter);
 
 // Chapter/Arc Routes (nested under playthroughs, arcs, chapters)
 app.use('/api', authMiddleware, chaptersRouter);
+
+// Versioned API aliases — /api/v1/* mirrors /api/* for incremental migration.
+import v1Router from './v1/router';
+import { logger } from './utils/logger';
+import * as Sentry from '@sentry/node';
+// /api/v1/* — auth is applied per-route via authMiddleware in index.ts; the
+// v1 router itself is mountable without global auth so public endpoints
+// (share/token) can be handled without credentials.
+app.use('/api/v1', v1Router);
+
+// Sentry — initialized only when SENTRY_DSN is set. Captures uncaught
+// exceptions and request-scoped errors with requestId as a tag.
+if (env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: env.SENTRY_DSN,
+    environment: env.NODE_ENV ?? 'development',
+    tracesSampleRate: env.NODE_ENV === 'production' ? 0.1 : 0,
+  });
+  Sentry.setTag('service', 'tera-story-api');
+  app.use((req, _res, next) => {
+    if (req.requestId) Sentry.setTag('requestId', req.requestId);
+    next();
+  });
+  logger.info('Sentry initialized');
+}
 
 // Item Routes (nested under playthroughs + standalone)
 app.use('/api', authMiddleware, itemsRouter);
@@ -219,25 +249,25 @@ if (require.main === module) {
   
   connectDatabase().then(() => {
     app.listen(PORT, () => {
-      console.log(`Server listening on port ${PORT}`);
-      console.log(`Environment: ${env.NODE_ENV}`);
+      logger.info(`Server listening on port ${PORT}`);
+      logger.info(`Environment: ${env.NODE_ENV}`);
     });
     startDailyResetJob();
   }).catch(err => {
-    console.error('Failed to start server:', err);
+    logger.error({ err }, 'Failed to start server');
     process.exit(1);
   });
 }
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+  logger.info('SIGTERM signal received: closing HTTP server');
   await disconnectDatabase();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('SIGINT signal received: closing HTTP server');
+  logger.info('SIGINT signal received: closing HTTP server');
   await disconnectDatabase();
   process.exit(0);
 });
