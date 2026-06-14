@@ -11,7 +11,7 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-function ErrorFallback({ error, onReset }: { error: Error | null; onReset: () => void }) {
+function ErrorFallback({ onReset }: { onReset: () => void }) {
   const t = useTranslation();
   return (
     <div className="flex items-center justify-center min-h-screen p-8 bg-ink-950 text-ink-100">
@@ -20,7 +20,7 @@ function ErrorFallback({ error, onReset }: { error: Error | null; onReset: () =>
           {t.errors.somethingWentWrong}
         </h2>
         <p className="text-ink-300 mb-6 text-sm">
-          {error?.message || t.errors.unexpectedError}
+          {t.errors.unexpectedError}
         </p>
         <button
           onClick={onReset}
@@ -51,7 +51,6 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     if (this.state.hasError) {
       return (
         <ErrorFallback
-          error={this.state.error}
           onReset={() => {
             this.setState({ hasError: false, error: null });
             window.location.reload();
