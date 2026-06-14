@@ -12,7 +12,7 @@ import { Menu, X, LayoutGrid, Trophy, Users } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useStoryStore } from '../../stores/storyStore';
 import { useTranslation } from '../../i18n';
-import { cn } from '../../design-system';
+import { cn, createFocusTrap, type FocusTrap } from '../../design-system';
 
 export function MobileMenu() {
   const t = useTranslation();
@@ -25,6 +25,7 @@ export function MobileMenu() {
   const [open, setOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const trapRef = useRef<FocusTrap | null>(null);
 
   const closeMenu = () => {
     setOpen(false);
@@ -34,16 +35,41 @@ export function MobileMenu() {
 
   useEffect(() => {
     if (!open) return;
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeMenu();
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeMenu();
+        return;
+      }
+      // Arrow-key navigation: Up/Down cycle focusable elements inside the drawer.
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        const drawer = drawerRef.current;
+        if (!drawer) return;
+        const items = Array.from(
+          drawer.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'),
+        );
+        if (items.length === 0) return;
+        e.preventDefault();
+        const active = document.activeElement as HTMLElement | null;
+        const idx = active ? items.indexOf(active) : -1;
+        const dir = e.key === 'ArrowDown' ? 1 : -1;
+        const next = items[(idx + dir + items.length) % items.length];
+        next?.focus();
+      }
     };
-    document.addEventListener('keydown', handleEsc);
+    document.addEventListener('keydown', handleKey);
     // Lock body scroll while drawer is open (standard scroll-lock pattern).
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    // Activate focus trap on the drawer (Tab/Shift+Tab cycle inside).
+    if (drawerRef.current) {
+      trapRef.current = createFocusTrap(drawerRef.current);
+      trapRef.current.activate();
+    }
     return () => {
-      document.removeEventListener('keydown', handleEsc);
+      document.removeEventListener('keydown', handleKey);
       document.body.style.overflow = previousOverflow;
+      trapRef.current?.deactivate();
+      trapRef.current = null;
     };
   }, [open]);
 
@@ -70,7 +96,7 @@ export function MobileMenu() {
         ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Open menu"
+        aria-label={t.layout?.openMenu ?? 'Open menu'}
         aria-expanded={open}
         className={cn(
           'md:hidden min-h-[44px] min-w-[44px] rounded-lg p-2',
@@ -94,7 +120,7 @@ export function MobileMenu() {
             ref={drawerRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Mobile menu"
+            aria-label={t.layout?.mobileMenu ?? 'Mobile menu'}
             className={cn(
               'fixed top-0 right-0 bottom-0 z-50 w-72 max-w-[85vw]',
               'bg-ink-900 border-l border-ink-700 shadow-xl',
@@ -102,18 +128,18 @@ export function MobileMenu() {
             )}
           >
             <div className="flex items-center justify-between px-4 h-16 border-b border-ink-700">
-              <span className="font-display text-lg text-ink-100">Menu</span>
+              <span className="font-display text-lg text-ink-100">{t.layout?.mobileMenu ?? 'Menu'}</span>
               <button
                 type="button"
                 onClick={closeMenu}
-                aria-label="Close menu"
+                aria-label={t.layout?.closeMenu ?? 'Close menu'}
                 className="min-h-[44px] min-w-[44px] rounded-lg p-2 text-ink-200 hover:text-ink-100 hover:bg-ink-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 inline-flex items-center justify-center"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <nav aria-label="Mobile navigation" className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
+            <nav aria-label={t.layout?.mobileNavigation ?? 'Mobile navigation'} className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
               <Link to="/worlds" onClick={closeMenu} className={linkClass('/worlds')}>
                 {t.layout?.worlds ?? 'Worlds'}
               </Link>

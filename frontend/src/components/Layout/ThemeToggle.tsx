@@ -31,7 +31,8 @@ export interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ className }: ThemeToggleProps) {
-  const { theme, setTheme } = useUIStore();
+  const theme = useUIStore((s) => s.theme);
+  const setTheme = useUIStore((s) => s.setTheme);;
   const t = useTranslation();
   const next = NEXT_THEME[theme];
   const Icon = THEME_ICON[theme];

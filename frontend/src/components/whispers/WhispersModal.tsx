@@ -69,8 +69,8 @@ export const WhispersModal: FC<WhispersModalProps> = ({
                 style={{ animationDelay: `${i * 150}ms`, animationFillMode: 'backwards' }}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <Icon className="w-4 h-4 text-gold shrink-0" />
-                  <span className="text-xs font-medium text-gold uppercase tracking-wide">
+                  <Icon className="w-4 h-4 text-gold-400 shrink-0" />
+                  <span className="text-xs font-medium text-gold-400 uppercase tracking-wide">
                     {t.whispers.types[w.type as keyof typeof t.whispers.types]}
                   </span>
                 </div>
@@ -93,7 +93,7 @@ export const WhispersModal: FC<WhispersModalProps> = ({
         </button>
         <button
           onClick={onContinue}
-          className="flex-1 px-4 py-2 text-sm bg-gold text-ink-950 rounded-lg font-semibold hover:bg-amber-400 transition-colors"
+          className="flex-1 px-4 py-2 text-sm bg-gold-500 text-ink-950 rounded-lg font-semibold hover:bg-amber-400 transition-colors"
         >
           {t.whispers.continue}
         </button>

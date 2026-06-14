@@ -1,12 +1,13 @@
 import { useParams } from 'react-router-dom';
 import { useChronicle } from '../hooks/useChronicle';
-import { shareChronicle } from '../services/chronicleApi';
 import type { ArcSummary } from '../services/chronicleApi';
 import {
   ScrollText, BookOpen, GitBranch, Swords, Clock, Share2, ChevronDown, ChevronUp, Image,
 } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { useState } from 'react';
+import { ExportMenu } from '../components/ExportMenu';
+import { ShareDialog } from '../components/ShareDialog';
 
 function ArcSection({
   arc,
@@ -28,13 +29,13 @@ function ArcSection({
       <div
         className={`absolute left-0 top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-2 ${
           isCurrent
-            ? 'border-gold bg-gold/20'
+            ? 'border-gold-400 bg-gold-500/20'
             : arc.summary.length > 20
-              ? 'border-gold bg-gold'
+              ? 'border-gold-400 bg-gold-500'
               : 'border-ink-600 bg-ink-800'
         }`}
       >
-        {isCurrent ? <div className="h-2 w-2 rounded-full bg-gold" /> : null}
+        {isCurrent ? <div className="h-2 w-2 rounded-full bg-gold-500" /> : null}
       </div>
 
       {/* Timeline line */}
@@ -42,7 +43,7 @@ function ArcSection({
 
       <div className="pb-8">
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold text-gold">
+          <h3 className="text-lg font-semibold text-gold-400">
             {t.chronicle.arcLabel.replace('{count}', String(index + 1))}: {arc.title}
           </h3>
           <span className="rounded-full bg-ink-800 px-2 py-0.5 text-xs text-ink-400">
@@ -122,12 +123,13 @@ export default function ChroniclePage() {
   const t = useTranslation();
   const { playthroughId } = useParams<{ playthroughId: string }>();
   const { chronicle, isLoading, error, refetch } = useChronicle(playthroughId ?? '');
+  const [shareOpen, setShareOpen] = useState(false);
 
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <p className="text-red-400">{error}</p>
-        <button onClick={refetch} className="mt-4 rounded-lg bg-gold px-4 py-2 text-sm text-ink-950 hover:bg-gold/80">
+        <button onClick={refetch} className="mt-4 rounded-lg bg-gold-500 px-4 py-2 text-sm text-ink-950 hover:bg-gold-500/80">
           {t.chronicle.retry}
         </button>
       </div>
@@ -149,17 +151,6 @@ export default function ChroniclePage() {
   const data = chronicle.chronicle;
   const stats = data?.stats;
 
-  const handleShare = async () => {
-    if (!playthroughId) return;
-    try {
-      const res = await shareChronicle(playthroughId);
-      await navigator.clipboard.writeText(
-        `${window.location.origin}${res.data.shareUrl}`
-      );
-    } catch {
-      // silent fail
-    }
-  };
 
   return (
     <div className="p-4 md:p-6">
@@ -167,13 +158,13 @@ export default function ChroniclePage() {
       <div className="mb-8">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gold">{chronicle.playthroughName}</h1>
+            <h1 className="text-2xl font-bold text-gold-400">{chronicle.playthroughName}</h1>
             <p className="mt-1 text-sm text-narration">
               {chronicle.status === 'completed' ? t.chronicle.completed : t.chronicle.inProgress}
             </p>
           </div>
           <button
-            onClick={handleShare}
+            onClick={() => setShareOpen(true)}
             className="flex items-center gap-2 rounded-lg border border-ink-700 px-4 py-2 text-sm text-ink-300 hover:bg-ink-800 transition-colors"
           >
             <Share2 size={16} /> {t.chronicle.share}
@@ -184,22 +175,22 @@ export default function ChroniclePage() {
       {/* Stats bar */}
       <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
         <div className="rounded-lg border border-ink-800 bg-ink-900/50 p-4 text-center">
-          <BookOpen size={20} className="mx-auto text-gold" />
+          <BookOpen size={20} className="mx-auto text-gold-400" />
           <p className="mt-2 text-2xl font-bold text-ink-200">{stats?.totalScenes ?? '-'}</p>
           <p className="text-xs text-ink-500">{t.chronicle.sceneLabel}</p>
         </div>
         <div className="rounded-lg border border-ink-800 bg-ink-900/50 p-4 text-center">
-          <GitBranch size={20} className="mx-auto text-gold" />
+          <GitBranch size={20} className="mx-auto text-gold-400" />
           <p className="mt-2 text-2xl font-bold text-ink-200">{stats?.totalChoices ?? '-'}</p>
           <p className="text-xs text-ink-500">{t.chronicle.choiceLabel}</p>
         </div>
         <div className="rounded-lg border border-ink-800 bg-ink-900/50 p-4 text-center">
-          <Swords size={20} className="mx-auto text-gold" />
+          <Swords size={20} className="mx-auto text-gold-400" />
           <p className="mt-2 text-2xl font-bold text-ink-200">{stats?.totalCombats ?? '-'}</p>
           <p className="text-xs text-ink-500">{t.chronicle.battleLabel}</p>
         </div>
         <div className="rounded-lg border border-ink-800 bg-ink-900/50 p-4 text-center">
-          <Clock size={20} className="mx-auto text-gold" />
+          <Clock size={20} className="mx-auto text-gold-400" />
           <p className="mt-2 text-2xl font-bold text-ink-200">
             {stats?.totalPlayTimeMinutes != null 
               ? t.chronicle.timeUnit.replace('{count}', String(Math.round(stats.totalPlayTimeMinutes))) 
@@ -227,6 +218,24 @@ export default function ChroniclePage() {
           <p className="text-sm text-ink-500">{t.chronicle.noArcData}</p>
         </div>
       )}
+
+      {playthroughId && (
+        <section className="mt-10 rounded-3xl border border-gold-400/20 bg-ink-900/60 p-6">
+          <h2 className="font-display text-lg text-ink-100 mb-3">Export &amp; share</h2>
+          <p className="text-sm text-ink-200/70 mb-4">
+            Download your saga as a PDF, Markdown, or ePub. Or share a public link.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <ExportMenu playthroughId={playthroughId} />
+          </div>
+        </section>
+      )}
+
+      <ShareDialog
+        playthroughId={playthroughId ?? ''}
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+      />
     </div>
   );
 }

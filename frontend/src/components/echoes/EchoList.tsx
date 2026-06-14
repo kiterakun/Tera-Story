@@ -12,7 +12,7 @@ interface EchoListProps {
 const statusBadges: Record<string, string> = {
   planted: 'bg-ink-700 text-ink-300',
   approaching: 'bg-blue-900/50 text-blue-300',
-  active: 'bg-gold/20 text-gold',
+  active: 'bg-gold-500/20 text-gold-400',
   resolved: 'bg-emerald-900/50 text-emerald-300',
 };
 

@@ -12,6 +12,7 @@ import { InventoryTab } from './tabs/InventoryTab';
 import { AbilitiesTab } from './tabs/AbilitiesTab';
 import { OrganizationsTab } from './tabs/OrganizationsTab';
 import { ArchiveTab } from './tabs/ArchiveTab';
+import { DirectorTabContent } from './DirectorTabContent';
 
 interface GamePanelContentProps {
   activeTab: GameTab;
@@ -63,6 +64,8 @@ export function GamePanelContent({
       return <OrganizationsTab setDetailEntity={setDetailEntity} t={t} />;
     case 'archive':
       return <ArchiveTab archived={archived} isLoading={archiveLoading} restoreEntity={restoreEntity} t={t} />;
+    case 'director':
+      return <DirectorTabContent playthroughId={playthroughId} />;
     default:
       return null;
   }

@@ -106,7 +106,7 @@ export const LeaderboardWidget: FC = () => {
             <div
               key={entry.userId}
               className={`flex items-center gap-3 px-4 py-2.5 border-b border-ink-700/50 last:border-b-0 transition-colors ${
-                isMe ? 'bg-gold/10' : 'hover:bg-ink-800/50'
+                isMe ? 'bg-gold-500/10' : 'hover:bg-ink-800/50'
               }`}
             >
               {/* Rank */}
@@ -133,14 +133,14 @@ export const LeaderboardWidget: FC = () => {
 
               {/* Name */}
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium truncate ${isMe ? 'text-gold' : 'text-ink-200'}`}>
+                <p className={`text-sm font-medium truncate ${isMe ? 'text-gold-400' : 'text-ink-200'}`}>
                   {entry.displayName}
                 </p>
                 <p className="text-xs text-ink-500">Lv.{entry.level}</p>
               </div>
 
               {/* Value */}
-              <span className={`shrink-0 text-sm font-semibold ${isMe ? 'text-gold' : 'text-ink-300'}`}>
+              <span className={`shrink-0 text-sm font-semibold ${isMe ? 'text-gold-400' : 'text-ink-300'}`}>
                 {entry.value.toLocaleString('vi-VN')}
               </span>
             </div>
@@ -154,7 +154,7 @@ export const LeaderboardWidget: FC = () => {
     <div className="rounded-2xl border border-ink-700 bg-ink-900 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-ink-700">
-        <Trophy size={18} className="text-gold shrink-0" />
+        <Trophy size={18} className="text-gold-400 shrink-0" />
         <h3 className="text-sm font-bold text-ink-100">{t.leaderboard.title}</h3>
       </div>
 
@@ -166,7 +166,7 @@ export const LeaderboardWidget: FC = () => {
             onClick={() => handleTypeChange(opt.value)}
             className={`shrink-0 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
               type === opt.value
-                ? 'bg-gold/20 text-gold'
+                ? 'bg-gold-500/20 text-gold-400'
                 : 'text-ink-400 hover:text-ink-200'
             }`}
           >
@@ -206,9 +206,9 @@ export const LeaderboardWidget: FC = () => {
       {/* My rank footer */}
       {myRank > 0 && entries.length > 0 && (
         <div className="border-t border-ink-700 px-4 py-2.5 flex items-center gap-3">
-          <Trophy size={14} className="text-gold shrink-0" />
+          <Trophy size={14} className="text-gold-400 shrink-0" />
           <span className="text-xs text-ink-400">
-            {t.leaderboard.myRank.replace('{rank}', `<span class="font-bold text-gold">#${myRank}</span>`)}
+            {t.leaderboard.myRank.replace('{rank}', `<span class="font-bold text-gold-400">#${myRank}</span>`)}
           </span>
         </div>
       )}

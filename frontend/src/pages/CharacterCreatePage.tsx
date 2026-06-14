@@ -13,6 +13,8 @@ import {
 import * as supportApi from "../services/supportApi";
 import { AiCharacterGenerator } from "../components/game/AiCharacterGenerator";
 import { Spinner } from "../design-system/Spinner";
+import { useCharacterDraft } from "../hooks/useCharacterDraft";
+import { DraftResumeBanner } from "../components/DraftResumeBanner";
 
 export default function CharacterCreatePage() {
   const t = useTranslation();
@@ -36,6 +38,25 @@ export default function CharacterCreatePage() {
   const [error, setError] = useState<string | null>(null);
   const [isEnriching, setIsEnriching] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
+
+  // Draft persistence — useCharacterDraft reads/writes the useDraftStore
+  // slot for character forms. The banner appears on mount when a
+  // saved draft exists and lets the user resume or discard.
+  const characterDraft = useCharacterDraft();
+
+  const handleResume = () => {
+    const restored = characterDraft.state;
+    setName(restored.name);
+    setDescription(restored.description);
+    setRole((restored.archetype === 'npc' ? 'npc' : 'protagonist'));
+    setBackground(restored.background);
+    setPersonality(restored.personality);
+    setAppearance(restored.appearance);
+  };
+
+  const handleDiscard = () => {
+    characterDraft.discardDraft();
+  };
 
   useEffect(() => {
     if (playthroughId && (!playthrough || playthrough._id !== playthroughId)) {
@@ -109,6 +130,11 @@ export default function CharacterCreatePage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12 animate-fade-in">
+      <DraftResumeBanner
+        hasPersistedDraft={characterDraft.hasPersistedDraft}
+        onResume={handleResume}
+        onDiscard={handleDiscard}
+      />
       <div className="mb-8">
         <Link
           to={`/worlds/${realWorldId}/playthroughs/${playthroughId}`}

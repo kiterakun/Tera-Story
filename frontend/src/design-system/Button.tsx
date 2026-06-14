@@ -37,7 +37,7 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
     'bg-danger hover:bg-danger/90 text-white shadow-sm ' +
     'active:scale-[0.98]',
   gold:
-    'bg-gold hover:bg-gold-400 text-ink-950 shadow-sm hover:shadow-gold ' +
+    'bg-gold-500 hover:bg-gold-400 text-ink-950 shadow-sm hover:shadow-gold ' +
     'active:scale-[0.98]',
 };
 

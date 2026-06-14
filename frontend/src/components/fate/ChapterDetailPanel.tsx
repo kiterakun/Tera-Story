@@ -27,11 +27,11 @@ export function ChapterDetailPanel({
         <>
           <DrawerHeader>
             <div>
-              <h2 className="text-lg font-bold text-gold">{node.title}</h2>
+              <h2 className="text-lg font-bold text-gold-400">{node.title}</h2>
               <p className="text-xs text-ink-400 mt-1">
                 {t.fateThreads.arcLabel.replace('{index}', String(node.arcIndex + 1))} &middot; {t.fateThreads.chapterLabel.replace('{index}', String(node.chapterIndex + 1))}
                 {node.isCurrentPath && (
-                  <span className="ml-2 inline-block rounded-full bg-gold/20 px-2 py-0.5 text-xs text-gold">
+                  <span className="ml-2 inline-block rounded-full bg-gold-500/20 px-2 py-0.5 text-xs text-gold-400">
                     {t.fateThreads.currentPath}
                   </span>
                 )}
@@ -61,8 +61,8 @@ export function ChapterDetailPanel({
             )}
 
             {!node.isCompleted && node.isCurrentPath && (
-              <div className="rounded-lg border border-gold/30 bg-gold/10 px-3 py-2">
-                <p className="text-xs text-gold">{t.fateThreads.currentArc}</p>
+              <div className="rounded-lg border border-gold-400/30 bg-gold-500/10 px-3 py-2">
+                <p className="text-xs text-gold-400">{t.fateThreads.currentArc}</p>
               </div>
             )}
           </DrawerBody>

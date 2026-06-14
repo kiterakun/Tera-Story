@@ -31,11 +31,11 @@ export const LevelUpModal: FC<LevelUpModalProps> = ({
       open={isOpen}
       onClose={onClose}
       size="sm"
-      className="max-w-sm border-gold/30"
+      className="max-w-sm border-gold-400/30"
     >
       <ModalBody className="p-8 text-center animate-scale-in">
-        <Sparkles className="w-10 h-10 text-gold mx-auto mb-3" />
-        <p className="text-gold text-sm font-medium uppercase tracking-wider mb-2">{t.progression.levelUp}</p>
+        <Sparkles className="w-10 h-10 text-gold-400 mx-auto mb-3" />
+        <p className="text-gold-400 text-sm font-medium uppercase tracking-wider mb-2">{t.progression.levelUp}</p>
         <div className="flex justify-center mb-3">
           <LevelBadge level={newLevel} size="lg" />
         </div>
@@ -47,7 +47,7 @@ export const LevelUpModal: FC<LevelUpModalProps> = ({
         </p>
         <button
           onClick={onClose}
-          className="px-6 py-2 bg-gold text-ink-950 rounded-lg font-semibold hover:bg-amber-400 transition-colors"
+          className="px-6 py-2 bg-gold-500 text-ink-950 rounded-lg font-semibold hover:bg-amber-400 transition-colors"
         >
           {t.progression.awesome}
         </button>

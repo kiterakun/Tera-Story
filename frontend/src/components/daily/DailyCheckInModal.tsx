@@ -53,7 +53,7 @@ export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
       className="max-w-md rounded-2xl animate-scale-in"
     >
       <ModalHeader className="flex items-center gap-2">
-        <Star className="w-5 h-5 text-gold shrink-0" />
+        <Star className="w-5 h-5 text-gold-400 shrink-0" />
         <span className="text-lg font-semibold text-ink-100">{t.daily.checkInTitle}</span>
       </ModalHeader>
 
@@ -108,7 +108,7 @@ export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
                         isPast
                           ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-400'
                           : isToday
-                            ? 'bg-gold/20 border-2 border-gold text-gold animate-[pulse_2s_ease-in-out_infinite]'
+                            ? 'bg-gold-500/20 border-2 border-gold-400 text-gold-400 animate-[pulse_2s_ease-in-out_infinite]'
                             : 'bg-ink-800 border border-ink-700 text-ink-600'
                       }`}
                     >
@@ -135,11 +135,11 @@ export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
                 <p className="text-sm text-ink-300">
                   +{claimedResult.xpEarned} XP
                   {claimedResult.bonus > 0 && (
-                    <span className="text-gold ml-1">{t.daily.bonus.replace('{count}', String(claimedResult.bonus))}</span>
+                    <span className="text-gold-400 ml-1">{t.daily.bonus.replace('{count}', String(claimedResult.bonus))}</span>
                   )}
                 </p>
                 {xpFly && (
-                  <div className="text-gold text-lg font-bold animate-[flyUp_1.5s_ease-out]">
+                  <div className="text-gold-400 text-lg font-bold animate-[flyUp_1.5s_ease-out]">
                     +{claimedResult.xpEarned} XP
                   </div>
                 )}
@@ -155,7 +155,7 @@ export const DailyCheckInModal: FC<DailyCheckInModalProps> = ({
                 <button
                   onClick={handleClaim}
                   disabled={claiming}
-                  className="w-full py-3 bg-gold text-ink-950 rounded-xl font-bold text-sm hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-gold-500 text-ink-950 rounded-xl font-bold text-sm hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {claiming ? (
                     <>

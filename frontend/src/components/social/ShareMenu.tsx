@@ -96,7 +96,7 @@ export const ShareMenu: FC<ShareMenuProps> = ({ shareType, shareId, imageUrl }) 
             <span className="text-sm font-semibold text-ink-200">{t.share.title}</span>
             <button
               onClick={() => setIsOpen(false)}
-              aria-label="Close share menu"
+              aria-label={t.layout?.closeShareMenu ?? 'Close share menu'}
               className="text-ink-500 hover:text-ink-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 rounded-md p-0.5"
             >
               <X size={16} aria-hidden="true" />
@@ -108,7 +108,7 @@ export const ShareMenu: FC<ShareMenuProps> = ({ shareType, shareId, imageUrl }) 
               type="text"
               readOnly
               value={shareUrl}
-              aria-label="Share URL preview"
+              aria-label={t.share.urlPreview ?? 'Share URL preview'}
               onFocus={(e) => e.target.select()}
               className="w-full min-h-[32px] bg-ink-950 border border-ink-700 rounded-md px-2 py-1 text-[11px] font-mono text-ink-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
             />

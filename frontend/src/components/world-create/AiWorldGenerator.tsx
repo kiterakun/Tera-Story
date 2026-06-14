@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Sparkles, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Spinner } from '../../design-system/Spinner';
 import { useTranslation } from '../../i18n';
@@ -52,8 +51,7 @@ export function AiWorldGenerator({
 }: AiWorldGeneratorProps) {
   const t = useTranslation();
 
-  const [showInspire, setShowInspire] = useState(false);
-
+  
   const handleInspire = () => {
     const pick = INSPIRATION_PROMPTS[Math.floor(Math.random() * INSPIRATION_PROMPTS.length)]!;
     onChange(pick);
@@ -175,25 +173,6 @@ export function AiWorldGenerator({
             <p className="text-xs text-ink-200/60 mt-1 line-clamp-3">{previewDescription}</p>
           )}
         </div>
-      )}
-
-      {showInspire && (
-        <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1" role="listbox" aria-label="Inspiration prompts">
-          {INSPIRATION_PROMPTS.map((p) => (
-            <li key={p}>
-              <button
-                type="button"
-                className="w-full text-left text-xs text-ink-200 hover:text-ink-100 px-2 py-1 rounded-md hover:bg-ink-800 transition-colors"
-                onClick={() => {
-                  onChange(p);
-                  setShowInspire(false);
-                }}
-              >
-                {p}
-              </button>
-            </li>
-          ))}
-        </ul>
       )}
     </div>
   );

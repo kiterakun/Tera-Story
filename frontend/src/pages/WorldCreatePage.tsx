@@ -9,6 +9,7 @@ import {
 } from '../components/world-create';
 import { useWorldDraft } from '../hooks/useWorldDraft';
 import { useWorldCreateActions } from '../hooks/useWorldCreateActions';
+import { DraftResumeBanner } from '../components/DraftResumeBanner';
 
 export default function WorldCreatePage() {
   const t = useTranslation();
@@ -51,6 +52,11 @@ export default function WorldCreatePage() {
         <h1 className="text-3xl sm:text-4xl font-display text-ink-100">{t.worldCreate.title}</h1>
         <p className="text-ink-200/60 mt-2 text-sm">{t.worldCreate.subtitle}</p>
       </header>
+      <DraftResumeBanner
+        hasPersistedDraft={draft.hasPersistedDraft}
+        onResume={draft.resumeDraft}
+        onDiscard={draft.discardDraft}
+      />
       <WorldCreateWizard
         state={draft.state}
         setState={draft.setState}

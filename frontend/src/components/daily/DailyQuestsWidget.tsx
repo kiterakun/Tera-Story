@@ -32,7 +32,7 @@ export const DailyQuestsWidget: FC<DailyQuestsWidgetProps> = ({
     <div className="bg-ink-900 border border-ink-700 rounded-2xl p-4 space-y-3">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Gift className="w-5 h-5 text-gold shrink-0" />
+        <Gift className="w-5 h-5 text-gold-400 shrink-0" />
         <h3 className="text-sm font-semibold text-ink-100">{t.daily.todayQuests}</h3>
       </div>
 
@@ -59,7 +59,7 @@ export const DailyQuestsWidget: FC<DailyQuestsWidgetProps> = ({
         /* Empty state — all done */
         <div className="text-center py-6">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Star className="w-5 h-5 text-gold" />
+            <Star className="w-5 h-5 text-gold-400" />
           </div>
           <p className="text-sm text-ink-300 font-medium">
             {t.daily.allQuestsDone}
@@ -99,7 +99,7 @@ export const DailyQuestsWidget: FC<DailyQuestsWidgetProps> = ({
                         className={`h-full rounded-full transition-[width] duration-300 ease-out ${
                           quest.completed
                             ? 'bg-emerald-500'
-                            : 'bg-gradient-to-r from-gold to-amber-400'
+                            : 'bg-gradient-to-r from-gold-500 to-amber-400'
                         }`}
                         style={{ width: `${progressPct}%` }}
                       />
@@ -115,7 +115,7 @@ export const DailyQuestsWidget: FC<DailyQuestsWidgetProps> = ({
                   {quest.completed && !quest.claimed ? (
                     <button
                       onClick={() => onClaim(quest._id)}
-                      className="px-3 py-1.5 text-xs font-semibold bg-gold text-ink-950 rounded-lg hover:bg-amber-400 transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold bg-gold-500 text-ink-950 rounded-lg hover:bg-amber-400 transition-colors"
                     >
                       +{quest.xpReward} XP
                     </button>

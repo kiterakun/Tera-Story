@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect } from 'react'
 import { Toaster } from 'sonner'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
 import { useUIStore } from './stores/uiStore'
 import { useSettingsStore } from './stores/settingsStore'
@@ -13,6 +13,9 @@ import { Spinner } from './design-system/Spinner'
 
 const LoginPage = React.lazy(() => import('./pages/LoginPage'))
 const RegisterPage = React.lazy(() => import('./pages/RegisterPage'))
+const LandingPage = React.lazy(() => import('./pages/LandingPage'))
+const DraftsPage = React.lazy(() => import('./pages/DraftsPage'))
+const SharePage = React.lazy(() => import('./pages/SharePage'))
 const WorldListPage = React.lazy(() => import('./pages/WorldListPage'))
 const WorldDetailPage = React.lazy(() => import('./pages/WorldDetailPage'))
 const WorldCreatePage = React.lazy(() => import('./pages/WorldCreatePage'))
@@ -70,12 +73,12 @@ function App() {
       <BrowserRouter>
         <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Spinner size="lg" className="h-8 w-8 text-blue-500" /></div>}>
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/*" element={
             <Layout>
               <Routes>
-                <Route path="/" element={<Navigate to="/worlds" replace />} />
                 
                 {/* Protected Routes */}
                 <Route path="/worlds" element={<ProtectedRoute><WorldListPage /></ProtectedRoute>} />
@@ -92,6 +95,8 @@ function App() {
                 <Route path="/worlds/:worldId/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
                 <Route path="/playthroughs/:playthroughId/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
                 <Route path="/worlds/:worldId/playthroughs/:playthroughId/characters/create" element={<ProtectedRoute><CharacterCreatePage /></ProtectedRoute>} />
+                <Route path="/drafts" element={<ProtectedRoute><DraftsPage /></ProtectedRoute>} />
+                <Route path="/share/:token" element={<SharePage />} />
               </Routes>
             </Layout>
           } />

@@ -1,25 +1,32 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { Suspense, lazy, useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useChapterGeneration } from '../hooks/useChapterGeneration';
 import { useSSE } from '../hooks/useSSE';
-import { EntityDetailModal, type EntityData } from '../components/EntityDetailModal';
+import { Spinner } from '../design-system/Spinner';
 import * as storyApi from '../services/storyApi';
 import * as playthroughApi from '../services/playthroughApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
 import { Swords, Gamepad2, Compass } from 'lucide-react';
-import GamePanel from '../components/game/GamePanel';
 import type { CombatEncounter, Relationship, ConsequenceSeed } from '../services/playthroughApi';
-import RPGPanel from '../components/RPGPanel';
 import ChapterNav from '../components/ChapterNav';
 import { showSuccess, showError } from '../lib/toast';
-import { RelationshipWebModal } from '../components/RelationshipWebModal';
 import { ConsequenceFlashback } from '../components/ConsequenceFlashback';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { LevelUpModal } from '../components/progression/LevelUpModal';
 import { useProgression } from '../hooks/useProgression';
 import type { Chapter, Choice } from '../types';
+
+// Heavy subcomponents — lazy-loaded to keep initial StoryReaderPage chunk small.
+const EntityDetailModal = lazy(() =>
+  import('../components/EntityDetailModal').then((m) => ({ default: m.EntityDetailModal })),
+);
+type EntityData = (typeof import('../components/EntityDetailModal'))['EntityData'];
+const GamePanel = lazy(() => import('../components/game/GamePanel'));
+const RelationshipWebModal = lazy(() =>
+  import('../components/RelationshipWebModal').then((m) => ({ default: m.RelationshipWebModal })),
+);
 import { type EntityRef } from '../components/StoryContent';
 import { 
   ProtagonistGuard, 
@@ -306,25 +313,38 @@ export default function StoryReaderPage() {
   useSSE(playthroughId, token, {
     onImageCompleted: async (payload) => {
       const event = toImageCompletedEvent(payload);
-      showSuccess('Image ready', `${event.entityType ?? 'Entity'} image has been generated.`);
+      const entity = event.entityType ?? 'Entity';
+      showSuccess(
+        t.storyReader.toast.imageReady,
+        t.storyReader.toast.imageReadyDesc.replace('{entity}', entity),
+      );
       await Promise.all([invalidateCharacters(), invalidateItems(), invalidateSpecialItems()]);
     },
     onChapterCompleted: async (payload) => {
       const event = toChapterCompletedEvent(payload);
-      const chapterLabel = typeof event.chapterIndex === 'number' ? `Chapter ${event.chapterIndex + 1} completed` : 'Chapter completed';
-      showSuccess(chapterLabel, 'Story data refreshed.');
+      const index = typeof event.chapterIndex === 'number' ? String(event.chapterIndex + 1) : '?';
+      showSuccess(
+        t.storyReader.toast.chapterCompleted.replace('{index}', index),
+        t.storyReader.toast.chapterCompletedDesc,
+      );
       await reloadAfterGeneration();
     },
     onCombatResolved: async (payload) => {
       const event = toCombatResolvedEvent(payload);
       const result = event.result ? event.result.replace(/_/g, ' ') : 'resolved';
-      showSuccess('Combat resolved', `Result: ${result}`);
+      showSuccess(
+        t.storyReader.toast.combatResolved,
+        t.storyReader.toast.combatResolvedDesc.replace('{result}', result),
+      );
       await Promise.all([loadActiveCombat(), invalidateCharacters(), loadStoryState()]);
     },
     onEntityUpdated: async (payload) => {
       const event = toEntityUpdatedEvent(payload);
       const name = event.name ?? event.entityType ?? 'Entity';
-      showSuccess('Entity updated', `${name} changed.`);
+      showSuccess(
+        t.storyReader.toast.entityUpdated,
+        t.storyReader.toast.entityUpdatedDesc.replace('{name}', name),
+      );
       await Promise.all([invalidateCharacters(), invalidateItems(), invalidateSpecialItems()]);
     },
   });
@@ -335,7 +355,24 @@ export default function StoryReaderPage() {
     setChoices([]);
     setIsNewGame(false);
     setCurrentChapterIdx(-1);
+    // Save the freeform choice to the draft store so the user can resume
+    // it after a refresh. Cleared on successful generation.
+    if (choiceText && choiceText !== t.storyReader.beginStoryPrompt) {
+      try {
+        const { useDraftStore } = await import('../stores/draftStore');
+        useDraftStore.getState().setChoice(playthroughId, choiceText);
+      } catch {
+        /* non-critical */
+      }
+    }
     await generateChapterStream(playthroughId, choiceText);
+    // Clear the saved choice once generation starts.
+    try {
+      const { useDraftStore } = await import('../stores/draftStore');
+      useDraftStore.getState().clearChoice(playthroughId);
+    } catch {
+      /* non-critical */
+    }
     await reloadAfterGeneration();
   };
 
@@ -345,7 +382,7 @@ export default function StoryReaderPage() {
     setIsNewGame(false);
     setChoices([]);
     setCurrentChapterIdx(-1);
-    await generateChapterStream(playthroughId, 'Begin the story');
+    await generateChapterStream(playthroughId, t.storyReader.beginStoryPrompt);
     await reloadAfterGeneration();
   };
 
@@ -569,29 +606,31 @@ export default function StoryReaderPage() {
         <Gamepad2 size={22} />
       </button>
 
-      <GamePanel
-        isOpen={gamePanelOpen}
-        onClose={() => setGamePanelOpen(false)}
-        playthroughId={playthroughId!}
-        protagonist={protagonist}
-        sortedNpcs={sortedNpcs}
-        sortedItems={sortedItems}
-        sortedSpecialItems={sortedSpecialItems}
-        characters={characters}
-        relationships={relationships}
-        setDetailEntity={setDetailEntity}
-        setIsRelationshipModalOpen={setIsRelationshipModalOpen}
-        t={t}
-      />
+      <Suspense fallback={<div className="fixed inset-0 z-40 flex items-center justify-center bg-ink-950/60"><Spinner size="lg" /></div>}>
+        <GamePanel
+          isOpen={gamePanelOpen}
+          onClose={() => setGamePanelOpen(false)}
+          playthroughId={playthroughId!}
+          protagonist={protagonist}
+          sortedNpcs={sortedNpcs}
+          sortedItems={sortedItems}
+          sortedSpecialItems={sortedSpecialItems}
+          characters={characters}
+          relationships={relationships}
+          setDetailEntity={setDetailEntity}
+          setIsRelationshipModalOpen={setIsRelationshipModalOpen}
+          t={t}
+        />
 
-      <EntityDetailModal entity={detailEntity} onClose={() => setDetailEntity(null)} />
-      
-      <RelationshipWebModal
-        isOpen={isRelationshipModalOpen}
-        onClose={() => setIsRelationshipModalOpen(false)}
-        relationships={relationships}
-        characters={characters}
-      />
+        <EntityDetailModal entity={detailEntity} onClose={() => setDetailEntity(null)} />
+
+        <RelationshipWebModal
+          isOpen={isRelationshipModalOpen}
+          onClose={() => setIsRelationshipModalOpen(false)}
+          relationships={relationships}
+          characters={characters}
+        />
+      </Suspense>
 
       <ConsequenceFlashback consequences={flashbackQueue} />
       

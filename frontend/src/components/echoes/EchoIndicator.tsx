@@ -18,7 +18,7 @@ const echoTypeIcons: Record<string, typeof Radio> = {
 const statusColors: Record<string, string> = {
   planted: 'text-ink-500',
   approaching: 'text-ink-300',
-  active: 'text-gold animate-pulse',
+  active: 'text-gold-400 animate-pulse',
   resolved: 'text-ink-600 line-through',
 };
 

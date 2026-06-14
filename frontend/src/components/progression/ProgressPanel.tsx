@@ -54,7 +54,7 @@ export const ProgressPanel: FC = () => {
       <div className="grid grid-cols-2 gap-3">
         {stats.map((stat) => (
           <div key={stat.label} className="bg-ink-800/50 rounded-lg p-3 flex items-center gap-2">
-            <stat.icon className="w-4 h-4 text-gold shrink-0" />
+            <stat.icon className="w-4 h-4 text-gold-400 shrink-0" />
             <div>
               <p className="text-lg font-bold text-ink-100">{stat.value.toLocaleString()}</p>
               <p className="text-xs text-ink-400">{stat.label}</p>

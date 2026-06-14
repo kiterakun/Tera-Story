@@ -27,7 +27,7 @@ export function PeekModal({
       <ModalBody>
         {isLoading && (
           <div className="flex flex-col items-center gap-3 py-8">
-            <Spinner size="lg" className="w-8 h-8 text-gold" />
+            <Spinner size="lg" className="w-8 h-8 text-gold-400" />
             <p className="text-sm text-ink-400">
               {t.fateThreads.peekLoading}
             </p>
@@ -63,7 +63,7 @@ export function PeekModal({
         </button>
         <button
           onClick={onContinue}
-          className="px-4 py-2 rounded-lg bg-gold text-ink-950 font-semibold hover:bg-gold/80 transition-colors text-sm"
+          className="px-4 py-2 rounded-lg bg-gold-500 text-ink-950 font-semibold hover:bg-gold-500/80 transition-colors text-sm"
         >
           {t.fateThreads.continueReading}
         </button>

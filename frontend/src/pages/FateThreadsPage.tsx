@@ -385,7 +385,7 @@ export default function FateThreadsPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-4">
-          <Spinner size="lg" className="w-10 h-10 text-gold" />
+          <Spinner size="lg" className="w-10 h-10 text-gold-400" />
           <p className="text-sm text-ink-400">{t.fateThreads.loading}</p>
         </div>
       </div>
@@ -439,7 +439,7 @@ export default function FateThreadsPage() {
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-lg font-bold text-gold flex items-center gap-2">
+          <h1 className="text-lg font-bold text-gold-400 flex items-center gap-2">
             <GitBranch size={20} />
             {t.fateThreads.title}
           </h1>
@@ -491,7 +491,7 @@ export default function FateThreadsPage() {
                       setArcDropdownOpen(false);
                     }}
                     className={`w-full text-left px-3 py-2 text-sm hover:bg-ink-800 transition-colors ${
-                      !selectedArcId ? 'text-gold' : 'text-ink-300'
+                      !selectedArcId ? 'text-gold-400' : 'text-ink-300'
                     }`}
                   >
                     {t.fateThreads.allArcs}
@@ -505,7 +505,7 @@ export default function FateThreadsPage() {
                       }}
                       className={`w-full text-left px-3 py-2 text-sm hover:bg-ink-800 transition-colors ${
                         selectedArcId === arc.arcId
-                          ? 'text-gold'
+                          ? 'text-gold-400'
                           : 'text-ink-300'
                       }`}
                     >
@@ -520,7 +520,7 @@ export default function FateThreadsPage() {
           {/* Legend */}
           <div className="hidden sm:flex items-center gap-4 text-xs text-ink-400">
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-gold" />
+              <span className="w-3 h-3 rounded bg-gold-500" />
               {t.fateThreads.currentPath}
             </span>
             <span className="flex items-center gap-1.5">
@@ -784,7 +784,7 @@ export default function FateThreadsPage() {
         {/* Mobile legend (shown below sm breakpoint) */}
         <div className="absolute top-3 left-3 sm:hidden flex gap-3 text-[10px] text-ink-400 bg-ink-950/80 rounded-lg px-3 py-1.5">
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-gold" />
+            <span className="w-2 h-2 rounded-full bg-gold-500" />
             {t.fateThreads.currentPath}
           </span>
           <span className="flex items-center gap-1">

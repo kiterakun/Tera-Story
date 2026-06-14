@@ -32,7 +32,7 @@ export const XPBar: FC<XPBarProps> = ({
         aria-label={ariaLabel ?? `${pct}% of XP to next level`}
       >
         <div
-          className={`h-full bg-gradient-to-r from-gold to-amber-400 rounded-full ${transitionClass}`}
+          className={`h-full bg-gradient-to-r from-gold-500 to-amber-400 rounded-full ${transitionClass}`}
           style={{ width: `${pct}%` }}
         />
       </div>

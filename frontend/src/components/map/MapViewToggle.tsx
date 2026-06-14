@@ -11,7 +11,7 @@ export function MapViewToggle({ viewMode, onChange }: MapViewToggleProps) {
     <div
       className="flex items-center bg-ink-800/40 border border-ink-700/50 p-1 rounded-xl backdrop-blur-sm shrink-0 w-full md:w-auto"
       role="tablist"
-      aria-label="Map view mode"
+      aria-label={t.layout?.mapViewMode ?? 'Map view mode'}
     >
       <button
         type="button"

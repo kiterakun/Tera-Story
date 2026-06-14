@@ -8,6 +8,7 @@ import {
   Sparkles,
   Archive,
   Landmark,
+  Sliders,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { useTranslation } from '../../i18n';
@@ -20,7 +21,8 @@ export type GameTab =
   | 'inventory'
   | 'abilities'
   | 'organizations'
-  | 'archive';
+  | 'archive'
+  | 'director';
 
 const TABS: { id: GameTab; icon: typeof UserRound; labelKey: string }[] = [
   { id: 'character', icon: UserRound, labelKey: 'protagonist' },
@@ -31,6 +33,7 @@ const TABS: { id: GameTab; icon: typeof UserRound; labelKey: string }[] = [
   { id: 'abilities', icon: Sparkles, labelKey: 'specialItems' },
   { id: 'organizations', icon: Landmark, labelKey: 'organizations' },
   { id: 'archive', icon: Archive, labelKey: 'archive' },
+  { id: 'director', icon: Sliders, labelKey: 'directorTab' },
 ];
 
 interface GameShellProps {
@@ -43,6 +46,9 @@ interface GameShellProps {
 
 export function GameShell({ activeTab, onTabChange, onClose, t, children }: GameShellProps) {
   const getTabLabel = (tab: (typeof TABS)[number]) => {
+    if (tab.id === 'director') {
+      return t.layout?.directorTab ?? 'Director';
+    }
     const key = tab.labelKey as keyof typeof t.characterPanel;
     return t.characterPanel[key] || tab.labelKey;
   };
@@ -53,12 +59,12 @@ export function GameShell({ activeTab, onTabChange, onClose, t, children }: Game
       <div className="relative bg-ink-900 border border-ink-700 rounded-2xl shadow-2xl w-full max-w-4xl h-[90vh] md:h-auto max-h-[90vh] md:max-h-[85vh] flex flex-col overflow-hidden animate-fade-in">
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-ink-700 shrink-0">
           <h2 className="font-display text-base sm:text-lg text-ink-100">{t.playthrough.gameMenu}</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg text-ink-200 hover:text-ink-100 hover:bg-ink-800 flex items-center justify-center transition-colors" aria-label="Close">
+          <button onClick={onClose} className="w-8 h-8 rounded-lg text-ink-200 hover:text-ink-100 hover:bg-ink-800 flex items-center justify-center transition-colors" aria-label={t.layout?.closeGamePanel ?? 'Close'}>
             <X size={18} aria-hidden="true" />
           </button>
         </div>
         <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
-          <div className="w-full md:w-48 border-b md:border-b-0 md:border-r border-ink-700 bg-ink-900/50 p-2 shrink-0 flex md:flex-col overflow-x-auto md:overflow-y-auto gap-1.5 md:gap-0 scrollbar-none" role="tablist" aria-label="Game tabs">
+          <div className="w-full md:w-48 border-b md:border-b-0 md:border-r border-ink-700 bg-ink-900/50 p-2 shrink-0 flex md:flex-col overflow-x-auto md:overflow-y-auto gap-1.5 md:gap-0 scrollbar-none" role="tablist" aria-label={t.playthrough.gameTabs ?? 'Game tabs'}>
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
