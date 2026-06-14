@@ -19,6 +19,9 @@ vi.mock('../../services/storyOrchestrator', () => ({
 import { app } from '../../index';
 import { registerAndGetAgent } from '../helpers';
 import { User } from '../../models/User';
+import { generateChapter } from '../../services/storyOrchestrator';
+
+const generateChapterMock = vi.mocked(generateChapter);
 
 describe('Story routes', () => {
   let agent: ReturnType<typeof request.agent>;
@@ -69,6 +72,18 @@ describe('Story routes', () => {
 
     expect(res.status).toBe(401);
     expect(res.body.error).toBe('No token provided');
+  });
+
+  it('POST /api/story/generate masks internal generation errors', async () => {
+    generateChapterMock.mockRejectedValueOnce(new Error('provider leaked secret stack'));
+
+    const res = await agent
+      .post('/api/story/generate')
+      .send({ playthroughId, choice: 'Trigger failure' });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Failed to generate story. Please try again.');
+    expect(res.body.error).not.toContain('provider leaked secret stack');
   });
 
   it('GET /api/story/:playthroughId/state returns story state', async () => {

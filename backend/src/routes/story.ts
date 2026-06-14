@@ -8,6 +8,14 @@ import { Playthrough } from '../models/Playthrough';
 
 const router = Router();
 
+const STORY_ERROR_MESSAGES = {
+  generate: 'Failed to generate story. Please try again.',
+  retry: 'Failed to retry story generation. Please try again.',
+  retryTools: 'Failed to retry story updates. Please try again.',
+  state: 'Failed to fetch story state. Please try again.',
+  summarize: 'Failed to summarize arc. Please try again.',
+};
+
 // In-memory concurrency guard
 const activeGenerations = new Set<string>();
 
@@ -45,8 +53,7 @@ router.post(
       });
     } catch (err: unknown) {
       console.error('[Story] Generation error:', err);
-      const message = err instanceof Error ? err.message : 'Generation failed';
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: STORY_ERROR_MESSAGES.generate });
     } finally {
       activeGenerations.delete(playthroughId);
     }
@@ -115,8 +122,7 @@ router.post(
       });
     } catch (err: unknown) {
       console.error('[Story] Stream generation error:', err);
-      const message = err instanceof Error ? err.message : 'Generation failed';
-      sendSSE('error', { error: message });
+      sendSSE('error', { error: STORY_ERROR_MESSAGES.generate });
     } finally {
       activeGenerations.delete(playthroughId);
       if (!clientDisconnected) res.end();
@@ -146,8 +152,7 @@ router.post(
       });
     } catch (err: unknown) {
       console.error('[Story] Retry error:', err);
-      const message = err instanceof Error ? err.message : 'Retry failed';
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: STORY_ERROR_MESSAGES.retry });
     }
   }
 );
@@ -174,8 +179,7 @@ router.post(
       });
     } catch (err: unknown) {
       console.error('[Story] Retry tools error:', err);
-      const message = err instanceof Error ? err.message : 'Retry tools failed';
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: STORY_ERROR_MESSAGES.retryTools });
     }
   }
 );
@@ -235,10 +239,8 @@ router.get(
         isGenerating: activeGenerations.has(playthroughId as string),
       });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch story state';
-      res
-        .status(500)
-        .json({ error: message });
+      console.error('[Story] State error:', err);
+      res.status(500).json({ error: STORY_ERROR_MESSAGES.state });
     }
   }
 );
@@ -260,8 +262,7 @@ router.post(
       res.json({ success: true, ...result });
     } catch (err: unknown) {
       console.error('[Story] Summarize arc error:', err);
-      const message = err instanceof Error ? err.message : 'Failed to summarize arc';
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: STORY_ERROR_MESSAGES.summarize });
     }
   }
 );
