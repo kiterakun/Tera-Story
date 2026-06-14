@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/AppError';
+import { logger } from '../utils/logger';
 
 interface MongoError extends Error {
   code?: number;
@@ -37,6 +38,6 @@ export function errorHandler(
   }
 
   // Unknown errors - log and return generic 500
-  console.error('[Unhandled Error]', err);
+  logger.error({ err }, '[Unhandled Error]');
   res.status(500).json({ error: 'Internal server error' });
 }
