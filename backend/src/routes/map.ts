@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import mongoose from 'mongoose';
 import { z } from 'zod';
 import { AuthRequest } from '../middleware/auth';
 import { authMiddleware } from '../middleware/auth';
@@ -7,15 +8,76 @@ import { Continent } from '../models/Continent';
 import { Region } from '../models/Region';
 import { Location } from '../models/Location';
 import { World } from '../models/World';
+import { Playthrough } from '../models/Playthrough';
 import { createUserProviderRegistry } from '../providers/registry';
 import { UserSettings } from '../models/UserSettings';
 
 const router = Router();
 
-router.get('/:worldId', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const { worldId } = req.params;
+function getUserId(req: AuthRequest, res: Response): string | null {
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(401).json({ status: 'error', message: 'Authentication required' });
+    return null;
+  }
+  return userId;
+}
 
-  const continents = await Continent.find({ worldId }).lean();
+function notFound(res: Response, message = 'Resource not found'): void {
+  res.status(404).json({ status: 'error', message });
+}
+
+function getParam(req: AuthRequest, res: Response, name: string): string | null {
+  const value = req.params[name];
+  if (typeof value !== 'string') {
+    res.status(400).json({ status: 'error', message: `${name} is required` });
+    return null;
+  }
+  return value;
+}
+
+async function userOwnsWorld(worldId: mongoose.Types.ObjectId | string, userId: string): Promise<boolean> {
+  const world = await World.exists({ _id: worldId, userId });
+  return Boolean(world);
+}
+
+async function userOwnsContinent(continentId: mongoose.Types.ObjectId | string, userId: string): Promise<boolean> {
+  const continent = await Continent.findById(continentId).select('worldId').lean();
+  return Boolean(continent && await userOwnsWorld(continent.worldId, userId));
+}
+
+async function userOwnsRegion(regionId: mongoose.Types.ObjectId | string, userId: string): Promise<boolean> {
+  const region = await Region.findById(regionId).select('continentId').lean();
+  return Boolean(region && await userOwnsContinent(region.continentId, userId));
+}
+
+async function userOwnsPlaythrough(playthroughId: mongoose.Types.ObjectId | string, userId: string): Promise<boolean> {
+  const playthrough = await Playthrough.exists({ _id: playthroughId, userId });
+  return Boolean(playthrough);
+}
+
+async function userCanAccessLocation(locationId: mongoose.Types.ObjectId | string, userId: string): Promise<boolean> {
+  const location = await Location.findById(locationId).select('regionId playthroughId').lean();
+  if (!location) return false;
+  if (location.playthroughId) {
+    return userOwnsPlaythrough(location.playthroughId, userId);
+  }
+  return userOwnsRegion(location.regionId, userId);
+}
+
+router.get('/:worldId', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const userId = getUserId(req, res);
+  if (!userId) return;
+  const worldId = getParam(req, res, 'worldId');
+  if (!worldId) return;
+
+  const world = await World.findOne({ _id: worldId, userId }).select('_id').lean();
+  if (!world) {
+    notFound(res, 'World not found');
+    return;
+  }
+
+  const continents = await Continent.find({ worldId: world._id }).lean();
   const continentsWithRegions = await Promise.all(
     continents.map(async (continent) => {
       const regions = await Region.find({ continentId: continent._id }).lean();
@@ -27,19 +89,37 @@ router.get('/:worldId', authMiddleware, async (req: AuthRequest, res: Response) 
 });
 
 router.get('/continent/:continentId', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const { continentId } = req.params;
+  const userId = getUserId(req, res);
+  if (!userId) return;
+  const continentId = getParam(req, res, 'continentId');
+  if (!continentId) return;
 
   const continent = await Continent.findById(continentId).lean();
+  if (!continent || !await userOwnsWorld(continent.worldId, userId)) {
+    notFound(res, 'Continent not found');
+    return;
+  }
   const regions = await Region.find({ continentId }).lean();
 
   res.json({ status: 'success', data: { continent, regions } });
 });
 
 router.get('/region/:regionId', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const { regionId } = req.params;
+  const userId = getUserId(req, res);
+  if (!userId) return;
+  const regionId = getParam(req, res, 'regionId');
+  if (!regionId) return;
   const { playthroughId } = req.query;
 
   const region = await Region.findById(regionId).lean();
+  if (!region || !await userOwnsContinent(region.continentId, userId)) {
+    notFound(res, 'Region not found');
+    return;
+  }
+  if (typeof playthroughId === 'string' && playthroughId !== 'current' && !await userOwnsPlaythrough(playthroughId, userId)) {
+    notFound(res, 'Playthrough not found');
+    return;
+  }
   const query = {
     regionId,
     $or: playthroughId && playthroughId !== 'current'
@@ -60,11 +140,22 @@ router.get('/region/:regionId', authMiddleware, async (req: AuthRequest, res: Re
 });
 
 router.get('/travel-options/:locationId', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const { locationId } = req.params;
+  const userId = getUserId(req, res);
+  if (!userId) return;
+  const locationId = getParam(req, res, 'locationId');
+  if (!locationId) return;
   const { playthroughId } = req.query;
 
   const currentLocation = await Location.findById(locationId).lean();
-  const connectedLocations = currentLocation?.connectedLocations ?? [];
+  if (!currentLocation || !await userCanAccessLocation(locationId, userId)) {
+    notFound(res, 'Location not found');
+    return;
+  }
+  if (typeof playthroughId === 'string' && playthroughId !== 'current' && !await userOwnsPlaythrough(playthroughId, userId)) {
+    notFound(res, 'Playthrough not found');
+    return;
+  }
+  const connectedLocations = currentLocation.connectedLocations ?? [];
   const query = {
     _id: { $in: connectedLocations },
     $or: playthroughId && playthroughId !== 'current'
@@ -87,7 +178,16 @@ router.get('/travel-options/:locationId', authMiddleware, async (req: AuthReques
 // ── Playthrough-specific endpoints ─────────────────────────────────────
 
 router.get('/playthrough/:playthroughId/locations', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const { playthroughId } = req.params;
+  const userId = getUserId(req, res);
+  if (!userId) return;
+  const playthroughId = getParam(req, res, 'playthroughId');
+  if (!playthroughId) return;
+
+  const playthrough = await Playthrough.findOne({ _id: playthroughId, userId }).select('_id').lean();
+  if (!playthrough) {
+    notFound(res, 'Playthrough not found');
+    return;
+  }
 
   const locations = await Location.find({ playthroughId }).lean();
 
@@ -105,10 +205,12 @@ router.get('/playthrough/:playthroughId/locations', authMiddleware, async (req: 
 });
 
 router.get('/playthrough/:playthroughId/current', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const { playthroughId } = req.params;
+  const userId = getUserId(req, res);
+  if (!userId) return;
+  const playthroughId = getParam(req, res, 'playthroughId');
+  if (!playthroughId) return;
 
-  const { Playthrough } = await import('../models/Playthrough');
-  const playthrough = await Playthrough.findById(playthroughId).lean();
+  const playthrough = await Playthrough.findOne({ _id: playthroughId, userId }).lean();
   if (!playthrough) {
     res.status(404).json({ status: 'error', message: 'Playthrough not found' });
     return;
@@ -148,20 +250,14 @@ const generateMapSchema = z.object({
 });
 
 router.post('/:worldId/generate', authMiddleware, validate(generateMapSchema), async (req: AuthRequest, res: Response) => {
-  const worldId = req.params.worldId;
-  if (typeof worldId !== 'string') {
-    res.status(400).json({ status: 'error', message: 'worldId is required' });
-    return;
-  }
+  const worldId = getParam(req, res, 'worldId');
+  if (!worldId) return;
 
   const { modelProvider } = req.body as z.infer<typeof generateMapSchema>;
-  const userId = req.user?.id;
-  if (!userId) {
-    res.status(401).json({ status: 'error', message: 'Authentication required' });
-    return;
-  }
+  const userId = getUserId(req, res);
+  if (!userId) return;
 
-  const world = await World.findById(worldId).lean();
+  const world = await World.findOne({ _id: worldId, userId }).lean();
   if (!world) {
     res.status(404).json({ status: 'error', message: 'World not found' });
     return;
