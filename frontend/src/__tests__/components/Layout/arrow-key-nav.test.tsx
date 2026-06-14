@@ -24,7 +24,7 @@ vi.mock('../../../stores/storyStore', () => ({
   useStoryStore: () => ({ currentPlaythrough: null }),
 }));
 vi.mock('../../../stores/uiStore', () => ({
-  useUIStore: () => ({ theme: 'dark', setTheme: vi.fn() }),
+  useUIStore: vi.fn((selector?: (s: { theme: string; setTheme: () => void }) => unknown) => (typeof selector === 'function' ? selector({ theme: 'dark', setTheme: vi.fn() }) : { theme: 'dark', setTheme: vi.fn() })),
 }));
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');

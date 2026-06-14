@@ -17,7 +17,7 @@ describe('Button primitive', () => {
       { v: 'secondary', classNeedle: 'bg-ink-800' },
       { v: 'ghost',     classNeedle: 'bg-transparent' },
       { v: 'danger',    classNeedle: 'bg-danger' },
-      { v: 'gold',      classNeedle: 'bg-gold' },
+      { v: 'gold',      classNeedle: 'bg-gold-500' },
     ] as const;
     for (const { v, classNeedle } of variants) {
       const { unmount } = render(<Button variant={v}>x</Button>);

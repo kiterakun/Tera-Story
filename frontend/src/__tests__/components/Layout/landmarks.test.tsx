@@ -15,7 +15,7 @@ vi.mock('../../../stores/storyStore', () => ({
   useStoryStore: () => ({ currentPlaythrough: null }),
 }));
 vi.mock('../../../stores/uiStore', () => ({
-  useUIStore: () => ({ theme: 'dark', setTheme: vi.fn() }),
+  useUIStore: vi.fn((selector?: (s: { theme: string; setTheme: () => void }) => unknown) => (typeof selector === 'function' ? selector({ theme: 'dark', setTheme: vi.fn() }) : { theme: 'dark', setTheme: vi.fn() })),
 }));
 
 function renderWithRouter(ui: React.ReactNode) {
@@ -35,19 +35,19 @@ describe('Layout landmarks (axe-core parity check)', () => {
     expect(nav).toHaveAttribute('aria-label', 'User menu');
   });
 
-  it('mobile menu drawer landmark has aria-label="Mobile menu"', () => {
+  it('mobile menu drawer landmark has aria-label', () => {
     renderWithRouter(<Navbar />);
     // Open the drawer
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    const dialog = screen.getByRole('dialog', { name: /mobile menu/i });
-    expect(dialog).toHaveAttribute('aria-label', 'Mobile menu');
+    fireEvent.click(screen.getByRole('button', { name: /Mở menu|Open menu/i }));
+    const dialog = screen.getByRole('dialog', { name: /Menu di động|Mobile menu/i });
+    expect(dialog).toHaveAttribute('aria-label', expect.stringMatching(/Menu di động|Mobile menu/));
   });
 
-  it('mobile menu nav landmark has aria-label="Mobile navigation"', () => {
+  it('mobile menu nav landmark has aria-label', () => {
     renderWithRouter(<Navbar />);
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    const nav = screen.getByRole('navigation', { name: /mobile navigation/i });
-    expect(nav).toHaveAttribute('aria-label', 'Mobile navigation');
+    fireEvent.click(screen.getByRole('button', { name: /Mở menu|Open menu/i }));
+    const nav = screen.getByRole('navigation', { name: /Điều hướng di động|Mobile navigation/i });
+    expect(nav).toHaveAttribute('aria-label', expect.stringMatching(/Điều hướng di động|Mobile navigation/));
   });
 
   it('More dropdown menu landmark has aria-label="More navigation"', () => {

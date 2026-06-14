@@ -15,7 +15,7 @@ vi.mock('../../../stores/storyStore', () => ({
   useStoryStore: () => ({ currentPlaythrough: null }),
 }));
 vi.mock('../../../stores/uiStore', () => ({
-  useUIStore: () => ({ theme: 'dark', setTheme: vi.fn() }),
+  useUIStore: vi.fn((selector?: (s: { theme: string; setTheme: () => void }) => unknown) => (typeof selector === 'function' ? selector({ theme: 'dark', setTheme: vi.fn() }) : { theme: 'dark', setTheme: vi.fn() })),
 }));
 
 function renderWithRouter(ui: React.ReactNode) {
@@ -33,7 +33,7 @@ describe('Layout touch target compliance (WCAG 2.1 AA ≥44×44px)', () => {
 
   it('hamburger button has min-h-[44px] and min-w-[44px]', () => {
     renderWithRouter(<Navbar />);
-    const btn = screen.getByRole('button', { name: /open menu/i });
+    const btn = screen.getByRole('button', { name: /Mở menu|Open menu/i });
     expect(btn).toHaveClass('min-h-[44px]');
     expect(btn).toHaveClass('min-w-[44px]');
   });

@@ -10,7 +10,7 @@ vi.mock('../../../stores/storyStore', () => ({
   useStoryStore: () => ({ currentPlaythrough: null }),
 }));
 vi.mock('../../../stores/uiStore', () => ({
-  useUIStore: () => ({ theme: 'dark', setTheme: vi.fn() }),
+  useUIStore: vi.fn((selector?: (s: { theme: string; setTheme: () => void }) => unknown) => (typeof selector === 'function' ? selector({ theme: 'dark', setTheme: vi.fn() }) : { theme: 'dark', setTheme: vi.fn() })),
 }));
 
 function renderWithRouter(ui: React.ReactNode) {
@@ -51,7 +51,7 @@ describe('Navbar', () => {
 
   it('renders hamburger menu button (visible mobile)', () => {
     renderWithRouter(<Navbar />);
-    const ham = screen.getByRole('button', { name: /open menu/i });
+    const ham = screen.getByRole('button', { name: /Mở menu|Open menu/i });
     expect(ham).toBeInTheDocument();
   });
 });

@@ -2,10 +2,13 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ThemeToggle } from '../../../components/Layout/ThemeToggle';
 
-// Mock the UI store
+// Mock the UI store — selector-aware so it matches the new ThemeToggle usage.
 const mockSetTheme = vi.fn();
+const mockState = { theme: 'dark', setTheme: mockSetTheme };
 vi.mock('../../../stores/uiStore', () => ({
-  useUIStore: () => ({ theme: 'dark', setTheme: mockSetTheme }),
+  useUIStore: vi.fn((selector?: (s: typeof mockState) => unknown) =>
+    typeof selector === 'function' ? selector(mockState) : mockState,
+  ),
 }));
 
 describe('ThemeToggle', () => {
