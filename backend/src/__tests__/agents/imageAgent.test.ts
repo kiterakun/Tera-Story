@@ -27,13 +27,6 @@ function fakeImageConfig(overrides?: Partial<IAgentConfig>): IAgentConfig {
   };
 }
 
-function mockSuccessResponse(prompt: string) {
-  mockFetch.mockResolvedValue({
-    ok: true,
-    json: () => Promise.resolve({ data: [{ url: `https://example.com/image?prompt=${encodeURIComponent(prompt)}` }] }),
-  });
-}
-
 function mockSuccessResponseWithBytes(prompt: string) {
   mockFetch
     .mockResolvedValueOnce({
