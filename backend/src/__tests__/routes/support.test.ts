@@ -37,7 +37,8 @@ describe('Support routes', () => {
         .send({});
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('description is required');
+      expect(res.body.error).toBe('Validation failed');
+      expect(res.body.details).toBeDefined();
     });
 
     // enrich-world calls actual AI — test auth+validation only
@@ -60,7 +61,8 @@ describe('Support routes', () => {
         .send({});
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('description is required');
+      expect(res.body.error).toBe('Validation failed');
+      expect(res.body.details).toBeDefined();
     });
   });
 
@@ -81,7 +83,8 @@ describe('Support routes', () => {
         .send({});
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('playthroughId is required');
+      expect(res.body.error).toBe('Validation failed');
+      expect(res.body.details).toBeDefined();
     });
 
     it('returns 404 for non-existent playthrough', async () => {
@@ -113,7 +116,8 @@ describe('Support routes', () => {
         .send({});
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('playthroughId and customChoice are required');
+      expect(res.body.error).toBe('Validation failed');
+      expect(res.body.details).toBeDefined();
     });
 
     it('returns 400 when only customChoice is provided', async () => {
@@ -124,7 +128,8 @@ describe('Support routes', () => {
         .send({ customChoice: 'Go left' });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('playthroughId and customChoice are required');
+      expect(res.body.error).toBe('Validation failed');
+      expect(res.body.details).toBeDefined();
     });
 
     it('returns 400 when only playthroughId is provided', async () => {
@@ -135,7 +140,8 @@ describe('Support routes', () => {
         .send({ playthroughId: String(new mongoose.Types.ObjectId()) });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toBe('playthroughId and customChoice are required');
+      expect(res.body.error).toBe('Validation failed');
+      expect(res.body.details).toBeDefined();
     });
 
     it('returns 404 for non-existent playthrough', async () => {

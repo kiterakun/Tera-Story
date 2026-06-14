@@ -1,15 +1,31 @@
 import { Router, Response } from 'express';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
+import { z } from 'zod';
 import { AuthRequest } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 import { StoryCard } from '../models/StoryCard';
+import { logger } from '../utils/logger';
 
 const router = Router();
+
+const cardIdParam = z.object({
+  cardId: z.string().min(1).max(64),
+});
+
+const listQuerySchema = z.object({
+  page: z.string().regex(/^\d+$/).optional(),
+  limit: z.string().regex(/^\d+$/).optional(),
+  worldId: z.string().optional(),
+  rarity: z.string().optional(),
+  category: z.string().optional(),
+  sort: z.enum(['rarity', 'unlockedAt']).optional(),
+});
 
 // --- Routes ---
 
 // GET /api/gallery - List user's story cards
-router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
+router.get('/', validate(listQuerySchema, 'query'), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
     const userObjectId = new mongoose.Types.ObjectId(userId);
@@ -57,7 +73,7 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
       },
     });
   } catch (err) {
-    console.error('List gallery error:', err);
+    logger.error({ err }, 'List gallery error:');
     res.status(500).json({ status: 'error', message: 'Internal server error' });
   }
 });
@@ -97,13 +113,13 @@ router.get('/stats', async (req: AuthRequest, res: Response): Promise<void> => {
       },
     });
   } catch (err) {
-    console.error('Gallery stats error:', err);
+    logger.error({ err }, 'Gallery stats error:');
     res.status(500).json({ status: 'error', message: 'Internal server error' });
   }
 });
 
 // GET /api/gallery/:cardId - Get card detail
-router.get('/:cardId', async (req: AuthRequest, res: Response): Promise<void> => {
+router.get('/:cardId', validate(cardIdParam, 'params'), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
     const { cardId } = req.params;
@@ -120,13 +136,13 @@ router.get('/:cardId', async (req: AuthRequest, res: Response): Promise<void> =>
 
     res.json({ status: 'success', data: { card } });
   } catch (err) {
-    console.error('Get card detail error:', err);
+    logger.error({ err }, 'Get card detail error:');
     res.status(500).json({ status: 'error', message: 'Internal server error' });
   }
 });
 
 // POST /api/gallery/:cardId/share - Mark card as shared
-router.post('/:cardId/share', async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/:cardId/share', validate(cardIdParam, 'params'), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
     const { cardId } = req.params;
@@ -166,13 +182,13 @@ router.post('/:cardId/share', async (req: AuthRequest, res: Response): Promise<v
       data: { publicShareUrl, shareCount: updated.shareCount },
     });
   } catch (err) {
-    console.error('Share card error:', err);
+    logger.error({ err }, 'Share card error:');
     res.status(500).json({ status: 'error', message: 'Internal server error' });
   }
 });
 
 // GET /api/share/card/:shareId - Public card view
-router.get('/share/card/:shareId', async (req, res: Response): Promise<void> => {
+router.get('/share/card/:shareId', validate(z.object({ shareId: z.string().min(1).max(128) }), 'params'), async (req, res: Response): Promise<void> => {
   try {
     const { shareId } = req.params;
 
@@ -196,7 +212,7 @@ router.get('/share/card/:shareId', async (req, res: Response): Promise<void> => 
       },
     });
   } catch (err) {
-    console.error('Public card error:', err);
+    logger.error({ err }, 'Public card error:');
     res.status(500).json({ status: 'error', message: 'Internal server error' });
   }
 });

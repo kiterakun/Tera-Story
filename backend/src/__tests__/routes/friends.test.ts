@@ -67,7 +67,8 @@ describe('Friends routes', () => {
       .send({})
       .expect(400);
 
-    expect(res.body.status).toBe('error');
+    expect(res.body.error).toBe('Validation failed');
+    expect(res.body.details).toBeDefined();
   });
 
   it('should not allow friending self', async () => {

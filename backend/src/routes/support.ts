@@ -1,25 +1,51 @@
 import { Router, Response } from 'express';
 import mongoose from 'mongoose';
+import { z } from 'zod';
 import { AuthRequest } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 import { UserSettings } from '../models/UserSettings';
 import { World } from '../models/World';
 import { Playthrough } from '../models/Playthrough';
 import { Chapter } from '../models/Chapter';
 import { createUserProviderRegistry } from '../providers/registry';
 import { enrichWorld, enrichCharacter, enrichChoices, enrichCustomChoice } from '../agents/supportAgent';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
+const objectId = z.string().refine((s) => mongoose.Types.ObjectId.isValid(s), {
+  message: 'Invalid id',
+});
+const nonEmptyString = z.string().min(1).max(10000);
+const optionalLanguage = z.string().min(2).max(8).optional();
+
+const enrichWorldSchema = z.object({
+  description: nonEmptyString,
+  language: optionalLanguage,
+});
+
+const enrichCharacterSchema = z.object({
+  description: nonEmptyString,
+  worldId: objectId.optional(),
+  language: optionalLanguage,
+});
+
+const enrichChoicesSchema = z.object({
+  playthroughId: objectId,
+  language: optionalLanguage,
+});
+
+const enrichCustomChoiceSchema = z.object({
+  playthroughId: objectId,
+  customChoice: nonEmptyString,
+  language: optionalLanguage,
+});
+
 // POST /api/support/enrich-world
-router.post('/enrich-world', async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/enrich-world', validate(enrichWorldSchema), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { description, language } = req.body as { description?: string; language?: string };
-
-    if (!description) {
-      res.status(400).json({ error: 'description is required' });
-      return;
-    }
+    const { description, language } = req.body as z.infer<typeof enrichWorldSchema>;
 
     const settings = await UserSettings.findOne({ userId });
     if (!settings) {
@@ -34,25 +60,16 @@ router.post('/enrich-world', async (req: AuthRequest, res: Response): Promise<vo
     const result = await enrichWorld(description, model, lang);
     res.json({ success: true, data: result });
   } catch (err) {
-    console.error('Enrich world error:', err);
+    logger.error({ err }, 'Enrich world error:');
     res.status(500).json({ error: 'Failed to enrich world' });
   }
 });
 
 // POST /api/support/enrich-character
-router.post('/enrich-character', async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/enrich-character', validate(enrichCharacterSchema), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { description, worldId, language } = req.body as {
-      description?: string;
-      worldId?: string;
-      language?: string;
-    };
-
-    if (!description) {
-      res.status(400).json({ error: 'description is required' });
-      return;
-    }
+    const { description, worldId, language } = req.body as z.infer<typeof enrichCharacterSchema>;
 
     const settings = await UserSettings.findOne({ userId });
     if (!settings) {
@@ -90,24 +107,16 @@ router.post('/enrich-character', async (req: AuthRequest, res: Response): Promis
     const result = await enrichCharacter(description, worldContext, model, lang);
     res.json({ success: true, data: result });
   } catch (err) {
-    console.error('Enrich character error:', err);
+    logger.error({ err }, 'Enrich character error:');
     res.status(500).json({ error: 'Failed to enrich character' });
   }
 });
 
 // POST /api/support/enrich-choices
-router.post('/enrich-choices', async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/enrich-choices', validate(enrichChoicesSchema), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { playthroughId, language } = req.body as {
-      playthroughId?: string;
-      language?: string;
-    };
-
-    if (!playthroughId) {
-      res.status(400).json({ error: 'playthroughId is required' });
-      return;
-    }
+    const { playthroughId, language } = req.body as z.infer<typeof enrichChoicesSchema>;
 
     const settings = await UserSettings.findOne({ userId });
     if (!settings) {
@@ -144,25 +153,16 @@ router.post('/enrich-choices', async (req: AuthRequest, res: Response): Promise<
     const choices = await enrichChoices(context, model, lang);
     res.json({ success: true, data: { choices } });
   } catch (err) {
-    console.error('Enrich choices error:', err);
+    logger.error({ err }, 'Enrich choices error:');
     res.status(500).json({ error: 'Failed to enrich choices' });
   }
 });
 
 // POST /api/support/enrich-custom-choice
-router.post('/enrich-custom-choice', async (req: AuthRequest, res: Response): Promise<void> => {
+router.post('/enrich-custom-choice', validate(enrichCustomChoiceSchema), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { playthroughId, customChoice, language } = req.body as {
-      playthroughId?: string;
-      customChoice?: string;
-      language?: string;
-    };
-
-    if (!playthroughId || !customChoice) {
-      res.status(400).json({ error: 'playthroughId and customChoice are required' });
-      return;
-    }
+    const { playthroughId, customChoice, language } = req.body as z.infer<typeof enrichCustomChoiceSchema>;
 
     const settings = await UserSettings.findOne({ userId });
     if (!settings) {
@@ -206,7 +206,7 @@ router.post('/enrich-custom-choice', async (req: AuthRequest, res: Response): Pr
     const result = await enrichCustomChoice(customChoice, storyContext, worldContext, model, lang);
     res.json({ success: true, data: result });
   } catch (err) {
-    console.error('Enrich custom choice error:', err);
+    logger.error({ err }, 'Enrich custom choice error:');
     res.status(500).json({ error: 'Failed to enrich custom choice' });
   }
 });

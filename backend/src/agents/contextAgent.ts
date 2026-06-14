@@ -274,6 +274,11 @@ export async function runContextAgent(
     ? `The player has described their desired story direction: "${playthrough.premise}"`
     : '';
 
+  // --- Director mode settings (referenced in userPrompt template below) ---
+  const director = playthrough.directorSettings ?? { tone: 'balanced', danger: 50, romance: 30, comedy: 40, pacing: 'normal' };
+  const directorInfo = `\n=== DIRECTOR MODE ===\nTone: ${director.tone}\nDanger intensity: ${director.danger}/100\nRomance intensity: ${director.romance}/100\nComedy intensity: ${director.comedy}/100\nPacing: ${director.pacing}\nLean into these axes when crafting the outline and scene.`;
+  const directorInstruction = `\n=== DIRECTOR INSTRUCTIONS ===\nTone: ${director.tone === 'whimsical' ? 'Be playful, witty, and slightly absurd; favor humor and irony.' : director.tone === 'serious' ? 'Lean into gravitas, moral stakes, and consequences. Avoid irony or breaking the fourth wall.' : 'Balance gravitas with warmth and humor.'}\nDanger: ${director.danger >= 70 ? 'Escalate peril, plan real consequences for failure.' : director.danger <= 30 ? 'Keep tension low; success should feel attainable.' : 'Mix high-stakes moments with safe breathing room.'}\nRomance: ${director.romance >= 70 ? 'Weave in deepening emotional bonds and romantic subtext.' : director.romance <= 20 ? 'Avoid romantic subplot; keep interpersonal dynamics platonic or antagonistic.' : 'Allow light chemistry and emotional subtext when natural.'}\nComedy: ${director.comedy >= 70 ? 'Inject witty banter, situational irony, and lighthearted beats.' : director.comedy <= 20 ? 'Keep tone serious; avoid jokes or levity.' : 'Sprinkle in light humor when it serves the scene.'}\nPacing: ${director.pacing === 'fast' ? 'Move the plot forward each chapter with new developments.' : director.pacing === 'slow' ? 'Savor the moment; linger on atmosphere and inner thought.' : 'Balance momentum with breathing room.'}\n`;
+
   // --- First Chapter Outline Instructions ---
   let firstChapterContextInstruction = '';
   if (isColdStart) {
@@ -289,7 +294,7 @@ export async function runContextAgent(
   const userPrompt = `
 Language: ${language}
 Player's choice: "${playerChoice}"
-${premiseInfo ? `\n=== STORY PREMISE ===\n${premiseInfo}\n` : ''}
+${premiseInfo ? `\n=== STORY PREMISE ===\n${premiseInfo}\n` : ''}${directorInfo}${directorInstruction}
 === WORLD ===
 ${worldInfo}
 

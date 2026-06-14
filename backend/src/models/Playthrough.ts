@@ -27,6 +27,22 @@ interface IChronicleCache {
   stats: IChronicleStats;
 }
 
+export interface IDirectorSettings {
+  tone: 'serious' | 'balanced' | 'whimsical';
+  danger: number; // 0-100
+  romance: number; // 0-100
+  comedy: number; // 0-100
+  pacing: 'slow' | 'normal' | 'fast';
+}
+
+export const DEFAULT_DIRECTOR_SETTINGS: IDirectorSettings = {
+  tone: 'balanced',
+  danger: 50,
+  romance: 30,
+  comedy: 40,
+  pacing: 'normal',
+};
+
 export interface IPlaythroughDocument extends Document {
   name: string;
   worldId: mongoose.Types.ObjectId;
@@ -34,6 +50,8 @@ export interface IPlaythroughDocument extends Document {
   status: 'active' | 'paused' | 'completed';
   premise: string; // optional story premise/description for better generation
   currentArcIndex: number;
+  // Director mode settings (tune AI narrative style)
+  directorSettings: IDirectorSettings;
   // Echoes
   echoesCount: number;
   echoesResolvedCount: number;
@@ -75,6 +93,13 @@ const PlaythroughSchema = new Schema<IPlaythroughDocument>(
     premise: {
       type: String,
       default: '',
+    },
+    directorSettings: {
+      tone: { type: String, enum: ['serious', 'balanced', 'whimsical'], default: DEFAULT_DIRECTOR_SETTINGS.tone },
+      danger: { type: Number, default: DEFAULT_DIRECTOR_SETTINGS.danger, min: 0, max: 100 },
+      romance: { type: Number, default: DEFAULT_DIRECTOR_SETTINGS.romance, min: 0, max: 100 },
+      comedy: { type: Number, default: DEFAULT_DIRECTOR_SETTINGS.comedy, min: 0, max: 100 },
+      pacing: { type: String, enum: ['slow', 'normal', 'fast'], default: DEFAULT_DIRECTOR_SETTINGS.pacing },
     },
     currentArcIndex: {
       type: Number,
