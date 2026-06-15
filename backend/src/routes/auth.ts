@@ -45,6 +45,13 @@ function generateRefreshToken(): string {
   return crypto.randomBytes(40).toString('hex');
 }
 
+function hashRefreshToken(refreshToken: string): string {
+  return crypto
+    .createHash('sha256')
+    .update(refreshToken, 'utf8')
+    .digest('hex');
+}
+
 function setAuthCookies(res: Response, token: string, refreshToken: string): void {
   const cookieOptions = {
     httpOnly: true,
@@ -66,10 +73,18 @@ function setAuthCookies(res: Response, token: string, refreshToken: string): voi
 
 async function issueRefreshToken(user: IUserDocument): Promise<string> {
   const refreshToken = generateRefreshToken();
-  user.refreshToken = refreshToken;
+  user.refreshToken = hashRefreshToken(refreshToken);
   user.refreshTokenExpires = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE);
   await user.save();
   return refreshToken;
+}
+
+async function findUserByRefreshToken(refreshToken: string): Promise<IUserDocument | null> {
+  const hashedRefreshToken = hashRefreshToken(refreshToken);
+  return User.findOne({
+    refreshToken: { $in: [hashedRefreshToken, refreshToken] },
+    refreshTokenExpires: { $gt: new Date() },
+  });
 }
 
 function readRefreshToken(req: Request): string | undefined {
@@ -150,10 +165,7 @@ router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const user = await User.findOne({
-    refreshToken: currentRefreshToken,
-    refreshTokenExpires: { $gt: new Date() },
-  });
+  const user = await findUserByRefreshToken(currentRefreshToken);
 
   if (!user) {
     res.status(401).json({ error: 'Invalid refresh token', code: 'token_expired' });
@@ -188,8 +200,9 @@ router.post('/logout', async (req: AuthRequest, res: Response): Promise<void> =>
   const refreshToken = readRefreshToken(req);
 
   if (refreshToken) {
+    const hashedRefreshToken = hashRefreshToken(refreshToken);
     await User.findOneAndUpdate(
-      { refreshToken },
+      { refreshToken: { $in: [hashedRefreshToken, refreshToken] } },
       { $unset: { refreshToken: '', refreshTokenExpires: '' } },
       { returnDocument: 'after' }
     );

@@ -20,6 +20,12 @@ describe('Auth routes', () => {
     expect(res.status).toBe(201);
     expect(res.body.user).toMatchObject({ username: 'alice', email: 'alice@example.com' });
     expect(res.body.user.password).toBeUndefined();
+    expect(res.body.refreshToken).toEqual(expect.any(String));
+
+    const savedUser = await User.findOne({ email: 'alice@example.com' }).orFail();
+    expect(savedUser.refreshToken).toBeDefined();
+    expect(savedUser.refreshToken).not.toBe(res.body.refreshToken);
+    expect(savedUser.refreshToken).toMatch(/^[a-f0-9]{64}$/);
 
     const cookies = res.headers['set-cookie'];
     expect(cookies).toBeDefined();
@@ -84,6 +90,56 @@ describe('Auth routes', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Validation failed');
+  });
+
+  it('POST /api/auth/refresh rotates refresh token and rejects the old token', async () => {
+    const login = await request(app)
+      .post('/api/auth/register')
+      .send({ username: 'rotate', email: 'rotate@example.com', password: 'password123' });
+
+    const oldRefreshToken = login.body.refreshToken;
+    expect(oldRefreshToken).toEqual(expect.any(String));
+
+    const refresh = await request(app)
+      .post('/api/auth/refresh')
+      .send({ refreshToken: oldRefreshToken });
+
+    expect(refresh.status).toBe(200);
+    expect(refresh.body.refreshToken).toEqual(expect.any(String));
+    expect(refresh.body.refreshToken).not.toBe(oldRefreshToken);
+
+    const savedUser = await User.findOne({ email: 'rotate@example.com' }).orFail();
+    expect(savedUser.refreshToken).not.toBe(refresh.body.refreshToken);
+    expect(savedUser.refreshToken).toMatch(/^[a-f0-9]{64}$/);
+
+    const oldTokenRetry = await request(app)
+      .post('/api/auth/refresh')
+      .send({ refreshToken: oldRefreshToken });
+
+    expect(oldTokenRetry.status).toBe(401);
+    expect(oldTokenRetry.body.code).toBe('token_expired');
+  });
+
+  it('POST /api/auth/logout invalidates a hashed refresh token', async () => {
+    const login = await request(app)
+      .post('/api/auth/register')
+      .send({ username: 'logout-hash', email: 'logout-hash@example.com', password: 'password123' });
+
+    const logout = await request(app)
+      .post('/api/auth/logout')
+      .send({ refreshToken: login.body.refreshToken });
+
+    expect(logout.status).toBe(200);
+
+    const savedUser = await User.findOne({ email: 'logout-hash@example.com' }).orFail();
+    expect(savedUser.refreshToken).toBeUndefined();
+    expect(savedUser.refreshTokenExpires).toBeUndefined();
+
+    const refresh = await request(app)
+      .post('/api/auth/refresh')
+      .send({ refreshToken: login.body.refreshToken });
+
+    expect(refresh.status).toBe(401);
   });
 
   it('GET /api/auth/me returns current authenticated user', async () => {
