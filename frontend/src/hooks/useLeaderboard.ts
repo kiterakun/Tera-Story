@@ -7,7 +7,7 @@ export function useLeaderboard() {
   const [myRank, setMyRank] = useState(0);
   const [type, setType] = useState<LeaderboardType>('scenes');
   const [scope, setScope] = useState<LeaderboardScope>('friends');
-  const [period, setPeriod] = useState<LeaderboardPeriod>('this_week');
+  const [period, setPeriod] = useState<LeaderboardPeriod>('weekly');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

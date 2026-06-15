@@ -46,7 +46,7 @@ export const LeaderboardWidget: FC = () => {
   };
 
   const handlePeriodToggle = () => {
-    const newPeriod: LeaderboardPeriod = period === 'this_week' ? 'all_time' : 'this_week';
+    const newPeriod: LeaderboardPeriod = period === 'weekly' ? 'alltime' : 'weekly';
     fetchLeaderboard(type, scope, newPeriod);
   };
 
@@ -100,7 +100,8 @@ export const LeaderboardWidget: FC = () => {
       <div className="max-h-96 overflow-y-auto">
         {entries.map((entry) => {
           const isMe = entry.rank === myRank;
-          const initial = entry.displayName.charAt(0).toUpperCase();
+          const displayName = entry.displayName || entry.username;
+          const initial = displayName.charAt(0).toUpperCase();
 
           return (
             <div
@@ -123,7 +124,7 @@ export const LeaderboardWidget: FC = () => {
                 {entry.avatar ? (
                   <img
                     src={entry.avatar}
-                    alt={entry.displayName}
+                    alt={displayName}
                     className="h-8 w-8 rounded-full object-cover"
                   />
                 ) : (
@@ -134,7 +135,7 @@ export const LeaderboardWidget: FC = () => {
               {/* Name */}
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-medium truncate ${isMe ? 'text-gold-400' : 'text-ink-200'}`}>
-                  {entry.displayName}
+                  {displayName}
                 </p>
                 <p className="text-xs text-ink-500">Lv.{entry.level}</p>
               </div>
@@ -191,12 +192,12 @@ export const LeaderboardWidget: FC = () => {
         <button
           onClick={handlePeriodToggle}
           className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-            period === 'this_week'
+            period === 'weekly'
               ? 'bg-ink-800 text-ink-200'
               : 'text-ink-400 hover:text-ink-200'
           }`}
         >
-          {period === 'this_week' ? t.leaderboard.thisWeek : t.leaderboard.allTime}
+          {period === 'weekly' ? t.leaderboard.thisWeek : t.leaderboard.allTime}
         </button>
       </div>
 

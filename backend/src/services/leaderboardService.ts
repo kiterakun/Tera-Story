@@ -14,6 +14,7 @@ export interface LeaderboardEntry {
   username: string;
   displayName?: string;
   avatar?: string;
+  level: number;
   value: number;
 }
 
@@ -141,7 +142,7 @@ export async function getLeaderboard(
     _id: { $in: userIds },
     ...(scope === 'global' ? { 'privacySettings.showOnLeaderboard': true } : {}),
   })
-    .select('username displayName avatar privacySettings')
+    .select('username displayName avatar privacySettings level')
     .lean();
 
   const usersById = new Map(users.map((user) => [user._id.toString(), user]));
@@ -156,6 +157,7 @@ export async function getLeaderboard(
       username: user.username,
       displayName: user.displayName,
       avatar: user.avatar,
+      level: user.level ?? 1,
       value: entry.value,
     });
   });

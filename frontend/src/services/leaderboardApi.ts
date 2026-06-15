@@ -2,13 +2,13 @@ import { api } from './api';
 
 export type LeaderboardType = 'scenes' | 'achievements' | 'streak' | 'cards';
 export type LeaderboardScope = 'friends' | 'global';
-export type LeaderboardPeriod = 'this_week' | 'all_time';
+export type LeaderboardPeriod = 'weekly' | 'alltime';
 
 export interface LeaderboardEntry {
   rank: number;
   userId: string;
   username: string;
-  displayName: string;
+  displayName?: string;
   avatar?: string;
   level: number;
   value: number;
@@ -24,8 +24,8 @@ export async function getLeaderboard(
   scope: LeaderboardScope,
   period: LeaderboardPeriod
 ) {
-  const res = await api.get<{ status: string; data: LeaderboardResult }>('/leaderboard', {
-    params: { type, scope, period },
+  const res = await api.get<{ status: string; data: LeaderboardResult }>(`/leaderboard/${type}`, {
+    params: { scope, period },
   });
   return res.data;
 }
