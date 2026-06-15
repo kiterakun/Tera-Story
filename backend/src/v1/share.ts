@@ -1,7 +1,7 @@
 /**
  * Share + export routes for /api/v1/*:
  *  - POST /api/v1/playthroughs/:id/share → mint a share token
- *  - GET  /api/v1/share/:token           → public snapshot (no auth)
+ *  - GET  /api/v1/share/token/:token   → public snapshot (no auth)
  *  - GET  /api/v1/share/:token/meta      → token metadata (view count, expiry)
  *  - POST /api/v1/playthroughs/:id/export → PDF / Markdown / ePub
  *
@@ -121,7 +121,7 @@ router.post(
         expiresAt: new Date(Date.now() + SHARE_TTL_MS),
         viewCount: 0,
       });
-      res.json({ success: true, data: { token, expiresAt: doc.expiresAt.toISOString() } });
+      res.json({ token, expiresAt: doc.expiresAt.toISOString() });
     } catch (err) {
       logger.error({ err }, 'Mint share token error');
       res.status(500).json({ error: 'Internal server error' });
@@ -152,7 +152,7 @@ router.get(
         return;
       }
       const snapshot = await buildSnapshot(pt, doc);
-      res.json({ success: true, data: snapshot });
+      res.json(snapshot);
     } catch (err) {
       logger.error({ err }, 'Get shared snapshot error');
       res.status(500).json({ error: 'Internal server error' });

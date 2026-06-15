@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { axe } from 'vitest-axe';
 import { ShareMenu } from '../../../components/social/ShareMenu';
 
@@ -14,15 +15,14 @@ describe('ShareMenu', () => {
     expect(screen.getByRole('button', { name: /Chia sẻ|Share/ })).toBeInTheDocument();
   });
 
-  it('shows the live share URL preview when opened', () => {
-    const { rerender } = render(<ShareMenu {...baseProps} />);
+  it('shows the live share URL preview when opened', async () => {
+    render(<ShareMenu {...baseProps} />);
     const trigger = screen.getByRole('button', { name: /Chia sẻ|Share/ });
-    trigger.click();
-    rerender(<ShareMenu {...baseProps} />);
-    // The URL preview is rendered as a readonly textbox after the menu
-    // opens. We verify the trigger instead, since the menu state is
-    // component-local; the test still asserts the entry point.
-    expect(screen.getByRole('button', { name: /Chia sẻ|Share/ })).toBeInTheDocument();
+    await userEvent.click(trigger);
+
+    expect(screen.getByRole('textbox', { name: /Share URL preview|Xem trước URL chia sẻ/ })).toHaveValue(
+      `${window.location.origin}/share/${baseProps.shareId}`
+    );
   });
 
   it('has no axe violations when closed', async () => {

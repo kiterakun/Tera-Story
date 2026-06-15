@@ -40,6 +40,9 @@ import shareRouter from './routes/share';
 import archiveRouter from './routes/archive';
 import organizationsRouter from './routes/organizations';
 import { authMiddleware } from './middleware/auth';
+import v1Router from './v1/router';
+import { logger } from './utils/logger';
+import * as Sentry from '@sentry/node';
 
 export const app: Express = express();
 
@@ -186,20 +189,15 @@ app.get('/api/share/chronicle/:shareId', async (req, res) => {
   }
 });
 
+// /api/v1/* — auth is applied per-route in the v1 router so public
+// endpoints such as share/token remain readable without credentials.
+app.use('/api/v1', v1Router);
+
 // Character Routes (nested under playthroughs + standalone)
 app.use('/api', authMiddleware, charactersRouter);
 
 // Chapter/Arc Routes (nested under playthroughs, arcs, chapters)
 app.use('/api', authMiddleware, chaptersRouter);
-
-// Versioned API aliases — /api/v1/* mirrors /api/* for incremental migration.
-import v1Router from './v1/router';
-import { logger } from './utils/logger';
-import * as Sentry from '@sentry/node';
-// /api/v1/* — auth is applied per-route via authMiddleware in index.ts; the
-// v1 router itself is mountable without global auth so public endpoints
-// (share/token) can be handled without credentials.
-app.use('/api/v1', v1Router);
 
 // Sentry — initialized only when SENTRY_DSN is set. Captures uncaught
 // exceptions and request-scoped errors with requestId as a tag.

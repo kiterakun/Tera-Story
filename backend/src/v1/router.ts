@@ -15,6 +15,7 @@
 import { Router } from 'express';
 
 import { responseEnvelope } from '../middleware/responseEnvelope';
+import { authMiddleware } from '../middleware/auth';
 
 import authRouter from '../routes/auth';
 import worldsRouter from '../routes/worlds';
@@ -29,14 +30,15 @@ v1Router.use(responseEnvelope);
 // /api/v1/auth → mirrors /api/auth
 v1Router.use('/auth', authRouter);
 // /api/v1/worlds → mirrors /api/worlds
-v1Router.use('/worlds', worldsRouter);
+v1Router.use('/worlds', authMiddleware, worldsRouter);
 // /api/v1/playthroughs → mirrors /api/playthroughs
-v1Router.use('/playthroughs', playthroughsRouter);
+v1Router.use('/playthroughs', authMiddleware, playthroughsRouter);
 // Director + memory sub-routes (GET/PUT director, GET memory).
 import playthroughExtrasRouter from './playthroughs';
-v1Router.use('/playthroughs', playthroughExtrasRouter);
+v1Router.use('/playthroughs', authMiddleware, playthroughExtrasRouter);
 // /api/v1/characters → mirrors /api/characters
-v1Router.use('/characters', charactersRouter);
+v1Router.use('/characters', authMiddleware, charactersRouter);
+
 
 // Share + export sub-routes (mounted on /playthroughs and /share).
 import shareRouter from './share';

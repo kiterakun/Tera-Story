@@ -27,7 +27,7 @@ export const ShareMenu: FC<ShareMenuProps> = ({ shareType, shareId, imageUrl }) 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  const shareUrl = `${window.location.origin}/share/${shareType}/${shareId}`;
+  const shareUrl = `${window.location.origin}/share/${shareId}`;
 
   const handleCopyLink = async () => {
     try {
