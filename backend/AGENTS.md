@@ -25,13 +25,14 @@ backend/src/
 ## WHERE TO LOOK
 | Task | Location | Notes |
 |------|----------|-------|
-| Add API route | `routes/` | Mount in `src/index.ts` under `/api` |
+| Add API route | `routes/` | Mount in `src/index.ts` under `/api`; mount `/api/v1` before broad authenticated `/api` routers so public v1 endpoints remain public |
 | Add AI agent | `agents/` | Export function with system prompt; use `prompts/` dir for prompts |
 | Add game tool | `tools/` | Must implement `execute()` method; factory function pattern `makeXxxTool()` |
 | Add Mongoose model | `models/` | Export interface + schema + model; soft-delete pre hooks |
 | Add business logic | `services/` | Called by routes and agents |
 | Add middleware | `middleware/` | Apply in `src/index.ts` |
-| Debug auth flow | `middleware/auth.ts` | JWT cookie-based |
+| Debug auth flow | `middleware/auth.ts` | JWT cookie-based; v1 mirrored routers apply auth explicitly in `v1/router.ts` |
+| Social contracts | `routes/friends.ts`, `routes/leaderboard.ts`, `v1/share.ts` | Friends blocked list, leaderboard route aliases, share token envelope |
 | Map features | `routes/map.ts` | Interactive world map — Voronoi regions, 3-level zoom |
 
 ## CONVENTIONS
@@ -39,8 +40,9 @@ backend/src/
 - **Services**: Class-based, injected via constructor or imported directly
 - **Models**: Mongoose with TypeScript interfaces; use `returnDocument: 'after'` and `.lean()` for reads
 - **Error handling**: Throw custom errors (`NotFoundError`, `ValidationError`, etc.), handled by error middleware
-- **Response format**: `{ status: 'success'|'error', data?: any, message?: string }`
+- **Response format**: `{ status: 'success'|'error', data?: unknown, message?: string }`; `/api/v1` JSON responses are wrapped by `middleware/responseEnvelope.ts`, while binary/file `res.send()` responses bypass the envelope
 - **Auth**: JWT in httpOnly cookies; `authLimiter` for login/register, `apiLimiter` for general
+- **Social routes**: Friends support accepted friends, pending requests, blocked users, block/unblock. Leaderboards use `/api/leaderboard/:type` with `scope=friends|global` and `period=weekly|alltime`; query `?type=` remains as compatibility. V1 share uses `/api/v1/playthroughs/:id/share` and public `/api/v1/share/token/:token`.
 - **Testing**: Vitest + MongoDB Memory Server; centralized `__tests__/` with mirror structure
 
 ## ANTI-PATTERNS

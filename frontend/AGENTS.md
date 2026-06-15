@@ -25,19 +25,21 @@ frontend/src/
 |------|----------|-------|
 | Add new page | `pages/` | Add to `App.tsx` React.lazy imports |
 | Add global state | `stores/` | Zustand with persist for settings/auth |
-| Add API call | `services/` | Axios instance configured at `services/api.ts` |
+| Add API call | `services/` | Axios instance configured at `services/api.ts`; social clients include `friendsApi.ts` and `leaderboardApi.ts` |
 | Add interactive map | `services/mapApi.ts` | Map data types + API functions |
 | Debug auth state | `stores/authStore.ts` | JWT cookie-based auth |
-| Debug routing | `App.tsx` | Lazy-loaded route config; `/worlds/:id/map` for MapPage |
+| Debug routing | `App.tsx` | Lazy-loaded route config; `/worlds/:id/map` for MapPage; public share page is `/share/:token` |
+| Social UI | `pages/FriendsPage.tsx`, `components/social/` | Friends/blocked users, leaderboards, share menu |
 
 ## CONVENTIONS
 - **Code splitting**: All pages loaded via `React.lazy()` + `<Suspense>`
 - **State**: Zustand stores; persist middleware for auth and settings
-- **API calls**: Centralized axios instance (`services/api.ts`) with interceptors
+- **API calls**: Centralized axios instance (`services/api.ts`) with interceptors; leaderboard client calls `/leaderboard/:type`, friends client uses `/friends`, `/friends/blocked`, request/block/unblock endpoints
 - **Styling**: TailwindCSS v4 utility classes; avoid custom CSS files
 - **Icons**: Lucide React exclusively; no custom icon SVGs
 - **Forms**: Controlled components with local state; no form library
 - **i18n**: Each language has its own JSON file; use keys, not inline strings
+- **Social sharing**: `ShareMenu` generates `/share/:id` links to match the existing `SharePage` route; do not emit typed `/share/story|card|chronicle/:id` frontend links unless matching routes/pages are added
 - **TypeScript**: Strict mode; `@/` alias for `src/`; no `as any`
 
 ## ANTI-PATTERNS

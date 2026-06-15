@@ -33,7 +33,7 @@
 - **📜 Chronicle**: Auto-generated playthrough timeline with arc summaries, stats, and shareable recap.
 - **📅 Daily Engagement**: Login streaks, daily quests, 7-day reward calendar, and streak freeze protection — build daily habits.
 - **🕸️ Fate Threads**: Interactive branch visualization showing story paths taken and ghost threads unexplored. Peek into "what if" alternate timelines.
-- **👥 Social Features**: Friend system, leaderboards, story sharing, and granular privacy controls — opt-in community layer.
+- **👥 Social Features**: Friend requests, blocked-user management, privacy settings, friends/global leaderboards, and shareable story links — opt-in community layer.
 - **🗺️ Interactive World Map**: AI-generated world maps with 3-level zoom (continent → region → location), Voronoi-based territory rendering, dynamic location discovery during gameplay, and d3-powered SVG visualization — node-based travel between discovered locations with terrain type coloring and real-time SSE updates.
 
 ---
@@ -190,6 +190,19 @@ VITE_API_URL=http://localhost:3000
 | | `POST /api/user/xp` | Award XP to a user |
 | | `GET /api/user/level-history`| Get level-up history |
 | **Images** | `POST /api/images/generate`| Generate AI images |
+| **Friends** | `GET /api/friends` | List accepted friends |
+| | `GET /api/friends/requests` | List incoming/outgoing friend requests |
+| | `GET /api/friends/blocked` | List blocked users |
+| | `POST /api/friends/request` | Send a friend request by username |
+| | `PUT /api/friends/:requestId/accept` | Accept an incoming friend request |
+| | `PUT /api/friends/:requestId/reject` | Reject an incoming friend request |
+| | `DELETE /api/friends/:friendId` | Remove an accepted friend |
+| | `POST /api/friends/:targetUserId/block` | Block a user |
+| | `DELETE /api/friends/:targetUserId/unblock` | Unblock a user |
+| **Leaderboards** | `GET /api/leaderboard/:type` | Get `scenes`, `achievements`, `streak`, or `cards` leaderboard; supports `scope=friends|global` and `period=weekly|alltime` |
+| | `GET /api/leaderboard?type=:type` | Compatibility form for leaderboard clients |
+| **Sharing** | `POST /api/v1/playthroughs/:id/share` | Mint a 30-day public share token for a playthrough |
+| | `GET /api/v1/share/token/:token` | Read a public shared playthrough snapshot |
 
 > *Note: This is a partial list. Most resources support full CRUD operations.*
 

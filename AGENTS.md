@@ -148,6 +148,9 @@ World > Continent > Region > Location. Top 3 levels are world-level (shared). Lo
 | `createOrganization` | Tool | `backend/src/tools/createOrganization.ts` | Create organization/faction |
 | `updateOrganization` | Tool | `backend/src/tools/updateOrganization.ts` | Update organization stats/members |
 | `archiveRouter` | Router | `backend/src/routes/archive.ts` | Archive list + restore |
+| `friendsRouter` | Router | `backend/src/routes/friends.ts` | Friends, requests, blocked users, block/unblock |
+| `leaderboardRouter` | Router | `backend/src/routes/leaderboard.ts` | Friends/global leaderboards with period normalization |
+| `shareRouter` | Router | `backend/src/v1/share.ts` | V1 playthrough share tokens and public snapshots |
 | `organizationsRouter` | Router | `backend/src/routes/organizations.ts` | Organization CRUD |
 | `Character` | Model | `backend/src/models/Character.ts` | Characters with extended fields + archive |
 | `Item` | Model | `backend/src/models/Item.ts` | Items with archive |
@@ -191,7 +194,11 @@ World > Continent > Region > Location. Top 3 levels are world-level (shared). Lo
 | `ConsequenceSeed` | Model | `backend/src/models/ConsequenceSeed.ts` | Delayed consequence seeds |
 | `DailyLogin` | Model | `backend/src/models/DailyLogin.ts` | Daily login streak |
 | `DailyQuest` | Model | `backend/src/models/DailyQuest.ts` | Daily quest objectives |
-| `Friendship` | Model | `backend/src/models/Friendship.ts` | Friend relationship |
+| `Friendship` | Model | `backend/src/models/Friendship.ts` | Friend relationship, pending requests, accepted friends, blocked users |
+| `friendsApi` | API Client | `frontend/src/services/friendsApi.ts` | Friends, requests, blocked users, block/unblock API calls |
+| `leaderboardApi` | API Client | `frontend/src/services/leaderboardApi.ts` | Leaderboard API client using `/leaderboard/:type` |
+| `ShareMenu` | Component | `frontend/src/components/social/ShareMenu.tsx` | Generates `/share/:id` share links |
+| `LeaderboardWidget` | Component | `frontend/src/components/social/LeaderboardWidget.tsx` | Social leaderboard UI with friends/global and weekly/all-time toggles |
 
 ## CONVENTIONS
 - **TypeScript strict** everywhere — `noUncheckedIndexedAccess` enabled
@@ -199,7 +206,7 @@ World > Continent > Region > Location. Top 3 levels are world-level (shared). Lo
 - **Path aliases**: `@/` maps to `src/` in both backend and frontend
 - **Imports**: Named exports preferred; use path aliases
 - **Error handling**: Backend uses custom error classes (AppError, NotFoundError, etc.) via errorHandler middleware
-- **API responses**: Consistent JSON shape `{ status, data, message }`
+- **API responses**: Consistent JSON shape `{ status, data, message }`; `/api/v1` uses `responseEnvelope` for JSON and keeps file/binary `res.send()` responses passthrough
 - **State management**: Zustand with `persist` middleware for settings/auth
 - **Styling**: TailwindCSS v4 utility classes; custom theme colors (ink, accent)
 - **Git commits**: `type: description` format (feat, fix, refactor, chore)
