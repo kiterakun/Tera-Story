@@ -19,6 +19,7 @@ export default {
     blocked: 'Đã chặn',
     noBlocked: 'Chưa chặn người dùng nào',
     unfriend: 'Hủy kết bạn',
+    unblock: 'Bỏ chặn',
     requestSent: 'Đã gửi lời mời kết bạn!',
     requestAccept: 'Đã chấp nhận lời mời!',
     requestReject: 'Đã từ chối lời mời',
@@ -27,6 +28,8 @@ export default {
     failedToAccept: 'Không thể chấp nhận lời mời',
     failedToReject: 'Không thể từ chối lời mời',
     failedToRemove: 'Không thể hủy kết bạn',
+    unblocked: 'Đã bỏ chặn người dùng',
+    failedToUnblock: 'Không thể bỏ chặn người dùng',
   },
   leaderboard: {
     title: 'Bảng xếp hạng',

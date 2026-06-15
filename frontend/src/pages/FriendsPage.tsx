@@ -133,6 +133,7 @@ export default function FriendsPage() {
   const t = useTranslation();
   const {
     friends,
+    blockedUsers,
     requests,
     searchResults,
     isLoading,
@@ -143,6 +144,7 @@ export default function FriendsPage() {
     acceptRequest,
     rejectRequest,
     removeFriend,
+    unblockUser,
     searchUsers,
   } = useFriends();
 
@@ -211,10 +213,19 @@ export default function FriendsPage() {
     }
   };
 
+  const handleUnblock = async (userId: string) => {
+    try {
+      await unblockUser(userId);
+      showSuccess(t.friends.unblocked ?? 'User unblocked');
+    } catch {
+      showError(t.friends.failedToUnblock ?? 'Failed to unblock user');
+    }
+  };
+
   const tabs = [
     { id: 'friends' as Tab, label: t.friends.title, count: friends.length },
     { id: 'requests' as Tab, label: t.friends.noRequests, count: requests.incoming.length },
-    { id: 'blocked' as Tab, label: t.friends.blocked, icon: ShieldBan },
+    { id: 'blocked' as Tab, label: t.friends.blocked, icon: ShieldBan, count: blockedUsers.length },
   ];
 
   const hasSearchQuery = searchQuery.trim().length > 0;
@@ -400,10 +411,25 @@ export default function FriendsPage() {
               </div>
             )
           ) : activeTab === 'blocked' ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Ban size={40} className="text-ink-600 mb-3" />
-              <p className="text-sm text-ink-400">{t.friends.noBlocked}</p>
-            </div>
+            blockedUsers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Ban size={40} className="text-ink-600 mb-3" />
+                <p className="text-sm text-ink-400">{t.friends.noBlocked}</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {blockedUsers.map((blocked) => (
+                  <FriendCard
+                    key={blocked._id}
+                    user={blocked}
+                    action={() => handleUnblock(blocked._id)}
+                    actionLabel={t.friends.unblock ?? 'Unblock'}
+                    actionIcon={UserCheck}
+                    primary
+                  />
+                ))}
+              </div>
+            )
           ) : null}
         </>
       )}

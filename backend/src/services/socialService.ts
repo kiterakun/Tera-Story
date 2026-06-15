@@ -5,6 +5,7 @@ import { User } from '../models/User';
 const MAX_FRIENDS = 200;
 
 interface BasicUserInfo {
+  _id: string;
   userId: string;
   username: string;
   displayName: string;
@@ -23,15 +24,25 @@ interface FriendRequestsResult {
   outgoing: FriendRequestInfo[];
 }
 
-function userToBasicInfo(user: {
-  _id: mongoose.Types.ObjectId;
+type BasicUserSource = {
+  _id: mongoose.Types.ObjectId | string;
   username: string;
   displayName?: string;
   avatar?: string;
   level?: number;
-}): BasicUserInfo {
+};
+
+function isBasicUserSource(value: unknown): value is BasicUserSource {
+  if (value === null || typeof value !== 'object') return false;
+  const candidate = value as { _id?: unknown; username?: unknown };
+  return candidate._id !== undefined && typeof candidate.username === 'string';
+}
+
+function userToBasicInfo(user: BasicUserSource): BasicUserInfo {
+  const id = user._id.toString();
   return {
-    userId: user._id.toString(),
+    _id: id,
+    userId: id,
     username: user.username,
     displayName: user.displayName || user.username,
     avatar: user.avatar,
@@ -75,6 +86,19 @@ export async function getFriendsList(userId: string): Promise<BasicUserInfo[]> {
   return friends.map(userToBasicInfo);
 }
 
+export async function getBlockedUsers(userId: string): Promise<BasicUserInfo[]> {
+  const blocked = await Friendship.find({ userId, status: 'blocked' })
+    .select('friendId')
+    .populate('friendId', 'username displayName avatar level')
+    .sort({ updatedAt: -1 })
+    .lean();
+
+  return blocked.flatMap((entry) => {
+    if (!isBasicUserSource(entry.friendId)) return [];
+    return [userToBasicInfo(entry.friendId)];
+  });
+}
+
 export async function getFriendRequests(userId: string): Promise<FriendRequestsResult> {
   const [incoming, outgoing] = await Promise.all([
     Friendship.find({ friendId: userId, status: 'pending' })
@@ -87,17 +111,27 @@ export async function getFriendRequests(userId: string): Promise<FriendRequestsR
       .lean(),
   ]);
 
+  const incomingRequests = incoming.flatMap((request) => {
+    if (!isBasicUserSource(request.userId)) return [];
+    return [{
+      requestId: request._id.toString(),
+      user: userToBasicInfo(request.userId),
+      createdAt: request.createdAt,
+    }];
+  });
+
+  const outgoingRequests = outgoing.flatMap((request) => {
+    if (!isBasicUserSource(request.friendId)) return [];
+    return [{
+      requestId: request._id.toString(),
+      user: userToBasicInfo(request.friendId),
+      createdAt: request.createdAt,
+    }];
+  });
+
   return {
-    incoming: incoming.map((request) => ({
-      requestId: request._id.toString(),
-      user: userToBasicInfo(request.userId as unknown as Parameters<typeof userToBasicInfo>[0]),
-      createdAt: request.createdAt,
-    })),
-    outgoing: outgoing.map((request) => ({
-      requestId: request._id.toString(),
-      user: userToBasicInfo(request.friendId as unknown as Parameters<typeof userToBasicInfo>[0]),
-      createdAt: request.createdAt,
-    })),
+    incoming: incomingRequests,
+    outgoing: outgoingRequests,
   };
 }
 

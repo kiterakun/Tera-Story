@@ -19,6 +19,7 @@ export default {
     blocked: 'Blocked',
     noBlocked: 'No blocked users',
     unfriend: 'Unfriend',
+    unblock: 'Unblock',
     requestSent: 'Friend request sent!',
     requestAccept: 'Friend request accepted!',
     requestReject: 'Friend request rejected',
@@ -27,6 +28,8 @@ export default {
     failedToAccept: 'Failed to accept request',
     failedToReject: 'Failed to reject request',
     failedToRemove: 'Failed to unfriend',
+    unblocked: 'User unblocked',
+    failedToUnblock: 'Failed to unblock user',
   },
   leaderboard: {
     title: 'Leaderboard',

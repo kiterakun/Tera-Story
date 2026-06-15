@@ -4,6 +4,7 @@ import type { FriendUser, FriendRequest } from '../services/friendsApi';
 
 export function useFriends() {
   const [friends, setFriends] = useState<FriendUser[]>([]);
+  const [blockedUsers, setBlockedUsers] = useState<FriendUser[]>([]);
   const [requests, setRequests] = useState<{ incoming: FriendRequest[]; outgoing: FriendRequest[] }>({
     incoming: [],
     outgoing: [],
@@ -17,12 +18,14 @@ export function useFriends() {
     setIsLoading(true);
     setError(null);
     try {
-      const [friendsRes, requestsRes] = await Promise.all([
+      const [friendsRes, requestsRes, blockedRes] = await Promise.all([
         friendsApi.getFriendsList(),
         friendsApi.getFriendRequests(),
+        friendsApi.getBlockedUsers(),
       ]);
       setFriends(friendsRes.data.friends);
       setRequests(requestsRes.data);
+      setBlockedUsers(blockedRes.data.blocked);
     } catch {
       setError('Không thể tải danh sách bạn bè');
     } finally {
@@ -106,6 +109,7 @@ export function useFriends() {
 
   return {
     friends,
+    blockedUsers,
     requests,
     searchResults,
     isLoading,

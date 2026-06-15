@@ -5,6 +5,7 @@ import { validate } from '../middleware/validate';
 import { logger } from '../utils/logger';
 import {
   getFriendsList,
+  getBlockedUsers,
   getFriendRequests,
   sendFriendRequest,
   acceptFriendRequest,
@@ -55,6 +56,18 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   }
 });
 
+// GET /api/friends/blocked - List blocked users
+router.get('/blocked', async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const blocked = await getBlockedUsers(userId);
+    res.json({ status: 'success', data: { blocked } });
+  } catch (err) {
+    logger.error({ err }, 'List blocked users error:');
+    res.status(500).json({ status: 'error', message: 'Internal server error' });
+  }
+});
+
 // GET /api/friends/requests - Pending friend requests (incoming + outgoing)
 router.get('/requests', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -76,8 +89,8 @@ router.post('/request', validate(friendRequestBody), async (req: AuthRequest, re
       res.status(400).json({ status: 'error', message: 'Username is required' });
       return;
     }
-    await sendFriendRequest(userId, username);
-    res.status(201).json({ status: 'success', data: { message: 'Friend request sent' } });
+    const result = await sendFriendRequest(userId, username);
+    res.status(201).json({ status: 'success', data: { message: 'Friend request sent', request: result } });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';
     const status = ['User not found', 'Cannot friend yourself', 'Friend limit reached', 'Friendship already exists', 'Cannot send friend request', 'User does not allow friend requests'].includes(message) ? 400 : 500;
