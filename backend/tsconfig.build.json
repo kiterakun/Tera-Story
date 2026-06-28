@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2022",
+    
+    // Đưa về lại CommonJS để tương thích 100% với code hiện tại của bạn
     "module": "CommonJS",
-
-    "moduleResolution": "nodenext",
-
+    
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -12,10 +12,12 @@
     "skipLibCheck": true,
     "types": []
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
-    "node_modules",
-    "dist",
+    "node_modules", 
+    "dist", 
     "src/__tests__",
     "**/*.spec.ts",
     "**/*.test.ts"
