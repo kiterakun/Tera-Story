@@ -1,15 +1,16 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
-    // 1. Sửa lỗi 'node' và 'vitest/globals': Bỏ trống mảng types để TS tự động nhận diện theo node_modules thực tế
-    "types": [],
-
-    // 2. Sửa lỗi TS5107: Ép cấu hình moduleResolution về 'node' bản chuẩn (ẩn cảnh báo node10)
+    "target": "ES2022",
+    "module": "CommonJS",
     "moduleResolution": "node",
-
-    // 3. Sửa lỗi TS5101: Vô hiệu hóa hoàn toàn baseUrl bằng cách đặt về định dạng gốc (hoặc null nếu TS phiên bản cũ hỗ trợ)
-    "baseUrl": "./"
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": []
   },
+  "include": ["src/**/*"],
   "exclude": [
     "node_modules",
     "dist",
