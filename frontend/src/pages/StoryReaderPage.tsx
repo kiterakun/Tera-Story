@@ -15,6 +15,7 @@ import { showSuccess, showError } from '../lib/toast';
 import { ConsequenceFlashback } from '../components/ConsequenceFlashback';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { LevelUpModal } from '../components/progression/LevelUpModal';
+import RPGPanel from '../components/RPGPanel';
 import { useProgression } from '../hooks/useProgression';
 import type { Chapter, Choice } from '../types';
 
