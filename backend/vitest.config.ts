@@ -15,6 +15,10 @@ export default defineConfig({
       JWT_SECRET: 'test-jwt-secret-at-least-32-characters-long!!',
       ENCRYPTION_KEY: 'test-encryption-key-at-least-32-chars-long!!',
       FRONTEND_URL: 'http://localhost:5173',
+      // Tests use the local disk fallback for image storage; never hit real Cloudinary.
+      CLOUDINARY_CLOUD_NAME: '',
+      CLOUDINARY_API_KEY: '',
+      CLOUDINARY_API_SECRET: '',
     },
     // Timeout for integration tests (mongo, network)
     testTimeout: 30000,
