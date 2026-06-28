@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && copyfiles -u 3 \"src/agents/prompts/**/*.md\" \"src/agents/prompts/**/*.xml\" dist/agents/prompts",
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -15,6 +15,9 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": "22.x"
+  },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.50",
     "@ai-sdk/google": "^3.0.34",
@@ -24,6 +27,7 @@
     "@types/pino": "^7.0.4",
     "ai": "^6.0.105",
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.6.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
@@ -49,6 +53,7 @@
     "@types/node": "^25.3.3",
     "@types/pdfkit": "^0.17.6",
     "@types/supertest": "^7.2.0",
+    "copyfiles": "^2.4.1",
     "eslint": "^10.3.0",
     "mongodb-memory-server": "^11.1.0",
     "supertest": "^7.2.2",

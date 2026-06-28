@@ -52,9 +52,18 @@ app.use(helmet({
 }));
 
 // CORS
+const allowedOrigins = env.FRONTEND_URL.split(',').map((s) => s.trim()).filter(Boolean);
 app.use(cors({
-  origin: env.FRONTEND_URL,
-  credentials: true
+  origin: (origin, callback) => {
+    if (!origin || env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
 }));
 
 // Parsers
@@ -92,8 +101,10 @@ const storyLimiter = rateLimit({
 });
 app.use('/api/story/', storyLimiter);
 
-// Static Files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Static Files — only used as a fallback when Cloudinary is not configured
+if (!env.CLOUDINARY_CLOUD_NAME) {
+  app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+}
 
 // Health Check
 app.get('/api/health', (req, res) => {

@@ -3,6 +3,7 @@ import path from "path";
 import { decrypt } from "../services/encryption";
 import { IAgentConfig } from "../types/user.types";
 import { emit } from "../services/sseManager";
+import { cloudinaryEnabled, uploadImageBuffer } from "../services/cloudinary";
 
 export interface ImageErrorPayload {
   entityType: string;
@@ -15,12 +16,13 @@ export interface ImageErrorPayload {
 
 const UPLOADS_BASE = path.join(__dirname, "../../uploads/images");
 
-// Ensure upload directories exist
-fs.mkdirSync(path.join(UPLOADS_BASE, "character"), { recursive: true });
-fs.mkdirSync(path.join(UPLOADS_BASE, "item"), { recursive: true });
-fs.mkdirSync(path.join(UPLOADS_BASE, "special-item"), { recursive: true });
-fs.mkdirSync(path.join(UPLOADS_BASE, "world"), { recursive: true });
-fs.mkdirSync(path.join(UPLOADS_BASE, "organization"), { recursive: true });
+function ensureLocalUploadDirs(): void {
+  fs.mkdirSync(path.join(UPLOADS_BASE, "character"), { recursive: true });
+  fs.mkdirSync(path.join(UPLOADS_BASE, "item"), { recursive: true });
+  fs.mkdirSync(path.join(UPLOADS_BASE, "special-item"), { recursive: true });
+  fs.mkdirSync(path.join(UPLOADS_BASE, "world"), { recursive: true });
+  fs.mkdirSync(path.join(UPLOADS_BASE, "organization"), { recursive: true });
+}
 
 type EntityType = "character" | "item" | "special-item" | "world" | "organization";
 
@@ -218,21 +220,21 @@ export async function generateImage(
       data: Array<{ url?: string; b64_json?: string }>;
     };
 
-    const imageUrl = result.data?.[0]?.url;
+    const providerImageUrl = result.data?.[0]?.url;
     const b64Json = result.data?.[0]?.b64_json;
-    
+
     let buffer: Buffer;
 
-    if (imageUrl) {
+    if (providerImageUrl) {
       // Download image bytes with optional auth fallback
       // Some providers (OpenRouter, Azure) return URLs that require the API token
       // OpenAI DALL-E returns pre-signed URLs that don't need auth
-      let imageResponse = await fetch(imageUrl);
+      let imageResponse = await fetch(providerImageUrl);
 
       // If 401, retry with Bearer token
       if (imageResponse.status === 401) {
         console.log(`[Image] URL returned 401, retrying with auth token...`);
-        imageResponse = await fetch(imageUrl, {
+        imageResponse = await fetch(providerImageUrl, {
           headers: {
             Authorization: `Bearer ${apiKey}`,
           },
@@ -256,35 +258,41 @@ export async function generateImage(
       throw new Error(errorMsg);
     }
 
-    const filePath = path.join(UPLOADS_BASE, entityType, `${entityId}.png`);
-    fs.writeFileSync(filePath, buffer);
+    let imageUrl: string;
 
-    // Update entity document imageUrl field
-    const relativeUrl = `/uploads/images/${entityType}/${entityId}.png`;
-
-    if (entityType === "character") {
-      const { Character } = await import("../models/Character");
-      await Character.findByIdAndUpdate(entityId, { imageUrl: relativeUrl });
-    } else if (entityType === "item") {
-      const { Item } = await import("../models/Item");
-      await Item.findByIdAndUpdate(entityId, { imageUrl: relativeUrl });
-    } else if (entityType === "special-item") {
-      const { SpecialItem } = await import("../models/SpecialItem");
-      await SpecialItem.findByIdAndUpdate(entityId, { imageUrl: relativeUrl });
-    } else if (entityType === "world") {
-      const { World } = await import("../models/World");
-      await World.findByIdAndUpdate(entityId, { imageUrl: relativeUrl });
-    } else if (entityType === "organization") {
-      const { Organization } = await import("../models/Organization");
-      await Organization.findByIdAndUpdate(entityId, { imageUrl: relativeUrl });
+    if (cloudinaryEnabled()) {
+      imageUrl = await uploadImageBuffer(buffer, entityType, entityId);
+      console.log(`[Image] Generated entity=${entityType}/${entityId} url=${imageUrl} size=${size}`);
+    } else {
+      ensureLocalUploadDirs();
+      const filePath = path.join(UPLOADS_BASE, entityType, `${entityId}.png`);
+      fs.writeFileSync(filePath, buffer);
+      imageUrl = `/uploads/images/${entityType}/${entityId}.png`;
+      console.log(`[Image] Generated entity=${entityType}/${entityId} url=${imageUrl} size=${size}`);
     }
 
-    console.log(`[Image] Generated entity=${entityType}/${entityId} url=${relativeUrl} size=${size}`);
+    // Update entity document imageUrl field
+    if (entityType === "character") {
+      const { Character } = await import("../models/Character");
+      await Character.findByIdAndUpdate(entityId, { imageUrl });
+    } else if (entityType === "item") {
+      const { Item } = await import("../models/Item");
+      await Item.findByIdAndUpdate(entityId, { imageUrl });
+    } else if (entityType === "special-item") {
+      const { SpecialItem } = await import("../models/SpecialItem");
+      await SpecialItem.findByIdAndUpdate(entityId, { imageUrl });
+    } else if (entityType === "world") {
+      const { World } = await import("../models/World");
+      await World.findByIdAndUpdate(entityId, { imageUrl });
+    } else if (entityType === "organization") {
+      const { Organization } = await import("../models/Organization");
+      await Organization.findByIdAndUpdate(entityId, { imageUrl });
+    }
 
     // Derive playthroughId from entity lookup for SSE
     const derivedPlaythroughId = await derivePlaythroughId(entityType, entityId);
     if (derivedPlaythroughId) {
-      emit(derivedPlaythroughId, 'image:completed', { entityType, entityId, imageUrl: relativeUrl });
+      emit(derivedPlaythroughId, 'image:completed', { entityType, entityId, imageUrl });
     }
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);

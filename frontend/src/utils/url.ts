@@ -5,7 +5,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // Strip trailing /api to get the backend origin
-const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
+export const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
 
 export function getImageUrl(relativeUrl?: string | null): string | undefined {
   if (!relativeUrl) return undefined;

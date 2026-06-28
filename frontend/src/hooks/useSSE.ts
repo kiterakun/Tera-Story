@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { BACKEND_ORIGIN } from '../utils/url';
 
 type SSEEventHandler = (data: unknown) => void;
 
@@ -36,10 +37,12 @@ export function useSSE(
     if (!playthroughId) return;
 
     function connect() {
-      // Build URL with optional token query param
+      // Build absolute URL pointing to the backend Render origin.
+      // Relative URLs only work in local dev where Vite proxies /api.
+      const path = `/api/events/${playthroughId}`;
       const url = token
-        ? `/api/events/${playthroughId}?token=${encodeURIComponent(token)}`
-        : `/api/events/${playthroughId}`;
+        ? `${BACKEND_ORIGIN}${path}?token=${encodeURIComponent(token)}`
+        : `${BACKEND_ORIGIN}${path}`;
 
       const es = new EventSource(url);
       eventSourceRef.current = es;
