@@ -11,7 +11,7 @@ module.exports = [
     files: ['**/*.ts'],
     languageOptions: {
       parserOptions: {
-        project: './tsconfig.json',
+        project: './tsconfig.lint.json',
         tsconfigRootDir: __dirname,
       },
     },

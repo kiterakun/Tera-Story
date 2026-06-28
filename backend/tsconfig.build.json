@@ -1,4 +1,16 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "dist", "src/__tests__"]
+  "compilerOptions": {
+    "moduleResolution": "node", // Sửa từ node10 thành node để hết cảnh báo TS5107
+
+    // GHI ĐÈ Ở ĐÂY: Ép buộc mảng types không chứa vitest/globals khi build production
+    "types": ["node"]
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/__tests__",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
 }
