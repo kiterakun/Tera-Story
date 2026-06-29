@@ -1,6 +1,15 @@
 import { Router, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { generateChapter, generateChapterStream, retryChapter, retryChapterTools, summarizeCurrentArc } from '../services/storyOrchestrator';
+import {
+  generateChapter,
+  generateChapterStream,
+  retryChapter,
+  retryChapterTools,
+  resumeChapter,
+  summarizeCurrentArc,
+} from '../services/storyOrchestrator';
+import { getLatestGenerationState } from '../services/chapterGenerationStateService';
+import { listEvents } from '../services/eventLogService';
 import { Arc } from '../models/Arc';
 import { Chapter } from '../models/Chapter';
 import { Character } from '../models/Character';
@@ -14,10 +23,19 @@ const STORY_ERROR_MESSAGES = {
   retryTools: 'Failed to retry story updates. Please try again.',
   state: 'Failed to fetch story state. Please try again.',
   summarize: 'Failed to summarize arc. Please try again.',
+  resume: 'Failed to resume story generation. Please try again.',
+  generationState: 'Failed to fetch generation state. Please try again.',
 };
 
 // In-memory concurrency guard
 const activeGenerations = new Set<string>();
+
+function extractErrorDetails(err: unknown): { message: string; phase?: string; attempts?: number } {
+  if (err instanceof Error) {
+    return { message: err.message };
+  }
+  return { message: String(err) };
+}
 
 // POST /api/story/generate — full JSON response (no streaming)
 router.post(
@@ -53,7 +71,10 @@ router.post(
       });
     } catch (err: unknown) {
       console.error('[Story] Generation error:', err);
-      res.status(500).json({ error: STORY_ERROR_MESSAGES.generate });
+      res.status(500).json({
+        error: STORY_ERROR_MESSAGES.generate,
+        details: extractErrorDetails(err),
+      });
     } finally {
       activeGenerations.delete(playthroughId);
     }
@@ -98,7 +119,7 @@ router.post(
         (res as unknown as { flush: () => void }).flush();
       }
     };
-    
+
     // Immediately send a connected event to resolve the fetch promise and show progress
     sendSSE('phase', { phase: 'context', message: 'Analyzing world and story state...' });
 
@@ -107,7 +128,7 @@ router.post(
         playthroughId,
         choice,
         userId,
-        (token) => sendSSE('token', { token }),
+        (token: string) => sendSSE('token', { token }),
         () => sendSSE('phase', { phase: 'tools', message: 'Updating game state...' }),
         () => sendSSE('phase', { phase: 'tools_complete', message: 'Game state updated' })
       );
@@ -122,7 +143,12 @@ router.post(
       });
     } catch (err: unknown) {
       console.error('[Story] Stream generation error:', err);
-      sendSSE('error', { error: STORY_ERROR_MESSAGES.generate });
+      const details = extractErrorDetails(err);
+      sendSSE('error', {
+        error: STORY_ERROR_MESSAGES.generate,
+        phase: details.phase,
+        details: details.message,
+      });
     } finally {
       activeGenerations.delete(playthroughId);
       if (!clientDisconnected) res.end();
@@ -130,7 +156,75 @@ router.post(
   }
 );
 
-// POST /api/story/retry — retry a failed chapter generation
+// POST /api/story/resume — SSE streaming resume for failed/paused generation
+router.post(
+  '/story/resume',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const { playthroughId, chapterId } = req.body;
+    const userId = req.user!.id;
+
+    if (!playthroughId && !chapterId) {
+      res.status(400).json({ error: 'playthroughId or chapterId is required' });
+      return;
+    }
+
+    if (activeGenerations.has(playthroughId)) {
+      res.status(429).json({ error: 'Generation already in progress for this playthrough' });
+      return;
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    activeGenerations.add(playthroughId);
+
+    let clientDisconnected = false;
+    req.on('close', () => { clientDisconnected = true; });
+
+    const sendSSE = (event: string, data: unknown) => {
+      if (clientDisconnected) return;
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      if (typeof (res as unknown as { flush?: () => void }).flush === 'function') {
+        (res as unknown as { flush: () => void }).flush();
+      }
+    };
+
+    sendSSE('phase', { phase: 'resuming', message: 'Resuming chapter generation...' });
+
+    try {
+      const result = await resumeChapter(
+        playthroughId,
+        userId,
+        (token: string) => sendSSE('token', { token }),
+        () => sendSSE('phase', { phase: 'tools', message: 'Updating game state...' }),
+        () => sendSSE('phase', { phase: 'tools_complete', message: 'Game state updated' })
+      );
+
+      const updatedChapter = await Chapter.findById(result.chapter?._id).lean();
+      sendSSE('complete', {
+        success: true,
+        chapter: updatedChapter || result.chapter,
+        content: result.content,
+      });
+    } catch (err: unknown) {
+      console.error('[Story] Resume generation error:', err);
+      const details = extractErrorDetails(err);
+      sendSSE('error', {
+        error: STORY_ERROR_MESSAGES.resume,
+        phase: details.phase,
+        details: details.message,
+      });
+    } finally {
+      activeGenerations.delete(playthroughId);
+      if (!clientDisconnected) res.end();
+    }
+  }
+);
+
+// POST /api/story/retry — legacy alias for resume
 router.post(
   '/story/retry',
   async (req: AuthRequest, res: Response): Promise<void> => {
@@ -152,12 +246,15 @@ router.post(
       });
     } catch (err: unknown) {
       console.error('[Story] Retry error:', err);
-      res.status(500).json({ error: STORY_ERROR_MESSAGES.retry });
+      res.status(500).json({
+        error: STORY_ERROR_MESSAGES.retry,
+        details: extractErrorDetails(err),
+      });
     }
   }
 );
 
-// POST /api/story/retry-tools — retry only Pass 2 (tools) for a chapter with content OK
+// POST /api/story/retry-tools — legacy alias for resume
 router.post(
   '/story/retry-tools',
   async (req: AuthRequest, res: Response): Promise<void> => {
@@ -179,7 +276,10 @@ router.post(
       });
     } catch (err: unknown) {
       console.error('[Story] Retry tools error:', err);
-      res.status(500).json({ error: STORY_ERROR_MESSAGES.retryTools });
+      res.status(500).json({
+        error: STORY_ERROR_MESSAGES.retryTools,
+        details: extractErrorDetails(err),
+      });
     }
   }
 );
@@ -241,6 +341,43 @@ router.get(
     } catch (err: unknown) {
       console.error('[Story] State error:', err);
       res.status(500).json({ error: STORY_ERROR_MESSAGES.state });
+    }
+  }
+);
+
+// GET /api/story/:playthroughId/generation-state
+router.get(
+  '/story/:playthroughId/generation-state',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.id;
+      const playthroughId = req.params.playthroughId as string;
+
+      const playthrough = await Playthrough.findById(playthroughId).lean();
+      if (!playthrough) {
+        res.status(404).json({ error: 'Playthrough not found' });
+        return;
+      }
+      if (playthrough.userId.toString() !== userId) {
+        res.status(403).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const state = await getLatestGenerationState(playthroughId);
+      if (!state) {
+        res.json({ state: null });
+        return;
+      }
+
+      const recentEvents = await listEvents(playthroughId, { limit: 20 });
+
+      res.json({
+        state,
+        recentEvents: recentEvents.events,
+      });
+    } catch (err: unknown) {
+      console.error('[Story] Generation state error:', err);
+      res.status(500).json({ error: STORY_ERROR_MESSAGES.generationState });
     }
   }
 );

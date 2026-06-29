@@ -39,6 +39,7 @@ import privacyRouter from './routes/privacy';
 import shareRouter from './routes/share';
 import archiveRouter from './routes/archive';
 import organizationsRouter from './routes/organizations';
+import eventLogRouter from './routes/eventLog';
 import { authMiddleware } from './middleware/auth';
 import v1Router from './v1/router';
 import { logger } from './utils/logger';
@@ -242,6 +243,9 @@ app.use('/api/support', authMiddleware, supportRouter);
 
 // Story Routes (generation + state)
 app.use('/api', authMiddleware, storyRouter);
+
+// Event Log Routes (per-playthrough audit trail)
+app.use('/api', authMiddleware, eventLogRouter);
 
 // Relationship & Consequence Routes
 app.use('/api', authMiddleware, relationshipsRouter);

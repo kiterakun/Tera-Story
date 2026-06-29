@@ -12,6 +12,7 @@ import social from './social';
 import map from './map';
 import daily from './daily';
 import landing from './landing';
+import eventLog from './eventLog';
 
 const vi: Translations = {
   ...ui,
@@ -27,6 +28,7 @@ const vi: Translations = {
   ...map,
   ...daily,
   ...landing,
+  ...eventLog,
 };
 
 export default vi;

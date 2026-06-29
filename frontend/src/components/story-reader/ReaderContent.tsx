@@ -7,6 +7,7 @@ import { CombatPanel } from '../CombatPanel';
 import { ChoiceCards } from '../ChoiceCards';
 import type { Chapter, Choice } from '../../types/story';
 import type { CombatEncounter } from '../../services/playthroughApi';
+import type { GenerationState, EventLogEntry } from '../../services/storyApi';
 
 interface ReaderContentProps {
   isNewGame: boolean;
@@ -22,6 +23,9 @@ interface ReaderContentProps {
   isLatestToolsFailed: boolean;
   isToolsRunning: boolean;
   isRetryingTools: boolean;
+  isAwaitingUser: boolean;
+  generationState: GenerationState | null;
+  recentEvents: EventLogEntry[];
   error: string | null;
   choices: Choice[];
   playthroughId: string;
@@ -31,6 +35,9 @@ interface ReaderContentProps {
   onEntityClick: (entity: EntityRef) => void;
   onRetry: () => void;
   onRetryTools: () => void;
+  onResume: () => void;
+  onViewLogs: () => void;
+  onChangeSettings: () => void;
   onChoiceSelect: (text: string) => void;
   onCombatUpdate: (combat: CombatEncounter) => void;
   onCombatEnd: () => void;
@@ -51,6 +58,9 @@ export function ReaderContent({
   isLatestToolsFailed,
   isToolsRunning,
   isRetryingTools,
+  isAwaitingUser,
+  generationState,
+  recentEvents,
   error,
   choices,
   playthroughId,
@@ -60,6 +70,9 @@ export function ReaderContent({
   onEntityClick,
   onRetry,
   onRetryTools,
+  onResume,
+  onViewLogs,
+  onChangeSettings,
   onChoiceSelect,
   onCombatUpdate,
   onCombatEnd,
@@ -123,6 +136,19 @@ export function ReaderContent({
             status="failed"
             error={error}
             onRetry={onRetry}
+            onChangeSettings={onChangeSettings}
+          />
+        )}
+
+        {isOnLatest && isAwaitingUser && !isGenerating && (
+          <ChapterStatusOverlay
+            status="awaiting-user"
+            error={error}
+            generationState={generationState}
+            recentEvents={recentEvents}
+            onResume={onResume}
+            onViewLogs={onViewLogs}
+            onChangeSettings={onChangeSettings}
           />
         )}
 
@@ -134,6 +160,7 @@ export function ReaderContent({
           <ChapterStatusOverlay
             status="tools-failed"
             onRetryTools={onRetryTools}
+            onChangeSettings={onChangeSettings}
           />
         )}
 

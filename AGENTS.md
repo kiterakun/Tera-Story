@@ -102,8 +102,19 @@ Characters have: `name`, `description`, `role`, `status`, `dynamicStats`, `backg
 
 ### Two-Pass Writer Agent
 1. **Pass 1 (WRITE)**: Pure prose generation, no tools. 800-1500 words. Uses entity markup `[[char:Name]]`, `[[item:Name:rarity]]`, `[[special:Name:rarity]]`, `[[org:Name]]`.
-2. **Pass 2 (TOOLS)**: Analyzes chapter, calls all game-state tools in a single step. 17 tools available.
-3. **Choices**: Separate step generates 3-4 reader choices with optional `travelTo` for location travel.
+2. **Pass 2 (TOOLS)**: Analyzes chapter, calls all game-state tools in a single step. 17 tools available. `generateChoices` is now part of Pass 2 (not a separate pass).
+3. **Choices**: 3-4 reader choices with optional `travelTo` for location travel, with retry + fallback if the model omits them.
+
+### Resumable Generation State Machine
+Every chapter generation is tracked by a durable `ChapterGenerationState` document (`backend/src/models/ChapterGenerationState.ts`) with phases `context → writing → tools → post_effects → travel → complete`. The stateful orchestrator (`backend/src/services/story/statefulOrchestrator.ts`) drives these phases; `storyOrchestrator.ts` is now a thin re-export shim.
+- **Auto-retry**: `agentRetryService.withAgentRetry()` runs each phase with 1 initial attempt + 3 retries (exponential backoff). Each attempt logs to `EventLog`.
+- **Pause for user**: after retries exhaust, the state becomes `awaiting_user` with a detailed `error` (failed phase, provider, model, message).
+- **Resume**: `POST /api/story/resume` reloads the user's current `UserSettings.aiSettings` (so model/provider changes apply immediately) and re-runs only the failed phase onward — completed phases are skipped (idempotent). Before the tools phase re-runs, entities with `createdInChapterId` for that chapter are deleted and choices cleared.
+- **`postChapterEffects`** accepts a per-chapter effects tracker persisted on the state (`appliedEffects`), so XP/quests/echoes/story cards are not double-applied on resume.
+- Frontend: `useChapterGeneration.resumeChapter()`, `ChapterStatusOverlay` `awaiting-user` state, and polling of `GET /api/story/:id/generation-state`.
+
+### Event Log
+`EventLog` (`backend/src/models/EventLog.ts`) is a per-playthrough audit trail of every agent action (chapter started/completed/failed, phase events, tool calls, XP, echoes, errors, retries). Soft-deleted via `deletedAt`. Routes: `GET/DELETE /api/playthroughs/:id/events`, `DELETE /api/events/:eventId`. Frontend: `EventLogPanel` (floating button in the reader) with filters, pagination, and delete. All copy is i18n (en/vi) under the `eventLog` namespace.
 
 ### Playthrough Premise
 Playthroughs can have an optional `premise` field describing the player's desired story direction. The context agent includes this premise in the story context, and the writer agent follows it when generating chapters.

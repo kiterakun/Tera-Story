@@ -38,6 +38,8 @@ export interface WriterAgentParams {
   onToolsStart?: () => void;
   /** Called when Pass 2 (tools) completes */
   onToolsComplete?: () => void;
+  /** Optional callback to log every tool call for audit/event log */
+  onToolCall?: (toolName: string, result: unknown) => void;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -81,6 +83,7 @@ export async function runWriterAgent(
     onToken,
     onToolsStart,
     onToolsComplete,
+    onToolCall,
   } = params;
 
   // ── Shared context blocks ──
@@ -403,6 +406,12 @@ Call all applicable tools NOW in ONE step. Do NOT output any text — ONLY tool 
           tool: toolResult.toolName,
           result: 'result' in toolResult ? toolResult.result : undefined,
         });
+      }
+      if (onToolCall) {
+        onToolCall(
+          toolResult.toolName,
+          'result' in toolResult ? toolResult.result : undefined
+        );
       }
     }
   }

@@ -11,6 +11,7 @@ import social from './social';
 import map from './map';
 import daily from './daily';
 import landing from './landing';
+import eventLog from './eventLog';
 
 const en = {
   ...ui,
@@ -26,6 +27,7 @@ const en = {
   ...map,
   ...daily,
   ...landing,
+  ...eventLog,
 };
 
 export type Translations = typeof en;

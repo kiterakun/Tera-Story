@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import * as storyApi from '../services/storyApi';
-import type { GenerateChapterResponse } from '../services/storyApi';
+import type { GenerateChapterResponse, GenerationState } from '../services/storyApi';
 
 interface UseChapterGenerationReturn {
   isGenerating: boolean;
@@ -9,10 +9,15 @@ interface UseChapterGenerationReturn {
   streamingText: string;
   streamPhase: string;
   error: string | null;
+  errorDetails: { phase?: string; details?: string } | null;
+  generationState: GenerationState | null;
+  isAwaitingUser: boolean;
   generateChapter: (playthroughId: string, choice: string) => Promise<GenerateChapterResponse | null>;
   generateChapterStream: (playthroughId: string, choice: string) => Promise<GenerateChapterResponse | null>;
   retryChapter: (chapterId: string) => Promise<GenerateChapterResponse | null>;
   retryTools: (chapterId: string) => Promise<GenerateChapterResponse | null>;
+  resumeChapter: (playthroughId: string) => Promise<GenerateChapterResponse | null>;
+  setGenerationState: (state: GenerationState | null) => void;
   clearError: () => void;
   cancelStream: () => void;
 }
@@ -24,11 +29,16 @@ export function useChapterGeneration(): UseChapterGenerationReturn {
   const [streamingText, setStreamingText] = useState('');
   const [streamPhase, setStreamPhase] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<{ phase?: string; details?: string } | null>(null);
+  const [generationState, setGenerationState] = useState<GenerationState | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
+
+  const isAwaitingUser = generationState?.status === 'awaiting_user';
 
   const generateChapter = useCallback(async (playthroughId: string, choice: string): Promise<GenerateChapterResponse | null> => {
     setIsGenerating(true);
     setError(null);
+    setErrorDetails(null);
 
     try {
       const result = await storyApi.generateChapter(playthroughId, choice);
@@ -52,6 +62,8 @@ export function useChapterGeneration(): UseChapterGenerationReturn {
     setStreamingText('');
     setStreamPhase('writing');
     setError(null);
+    setErrorDetails(null);
+    setGenerationState(null);
 
     return new Promise((resolve) => {
       const { cancel } = storyApi.generateChapterStream(playthroughId, choice, {
@@ -69,6 +81,42 @@ export function useChapterGeneration(): UseChapterGenerationReturn {
         },
         onError: (err) => {
           setError(err);
+          setIsGenerating(false);
+          setIsStreaming(false);
+          setStreamPhase('');
+          resolve(null);
+        },
+      });
+
+      cancelRef.current = cancel;
+    });
+  }, []);
+
+  const resumeChapter = useCallback((playthroughId: string): Promise<GenerateChapterResponse | null> => {
+    setIsGenerating(true);
+    setIsStreaming(true);
+    setStreamingText('');
+    setError(null);
+    setErrorDetails(null);
+
+    return new Promise((resolve) => {
+      const { cancel } = storyApi.resumeChapterStream(playthroughId, {
+        onToken: (token) => {
+          setStreamingText((prev) => prev + token);
+        },
+        onPhase: (phase) => {
+          setStreamPhase(phase);
+        },
+        onComplete: (data) => {
+          setIsGenerating(false);
+          setIsStreaming(false);
+          setStreamPhase('');
+          setGenerationState(null);
+          resolve(data);
+        },
+        onError: (err, details) => {
+          setError(err);
+          setErrorDetails(details ?? null);
           setIsGenerating(false);
           setIsStreaming(false);
           setStreamPhase('');
@@ -129,6 +177,7 @@ export function useChapterGeneration(): UseChapterGenerationReturn {
 
   const clearError = useCallback(() => {
     setError(null);
+    setErrorDetails(null);
   }, []);
 
   return {
@@ -138,10 +187,15 @@ export function useChapterGeneration(): UseChapterGenerationReturn {
     streamingText,
     streamPhase,
     error,
+    errorDetails,
+    generationState,
+    isAwaitingUser,
     generateChapter,
     generateChapterStream,
     retryChapter,
     retryTools,
+    resumeChapter,
+    setGenerationState,
     clearError,
     cancelStream,
   };

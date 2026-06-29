@@ -8,7 +8,7 @@ import * as playthroughApi from '../services/playthroughApi';
 import { useStoryStore } from '../stores/storyStore';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../i18n';
-import { Swords, Gamepad2, Compass } from 'lucide-react';
+import { Swords, Gamepad2, Compass, ScrollText } from 'lucide-react';
 import type { CombatEncounter, Relationship, ConsequenceSeed } from '../services/playthroughApi';
 import ChapterNav from '../components/ChapterNav';
 import { showSuccess, showError } from '../lib/toast';
@@ -16,8 +16,10 @@ import { ConsequenceFlashback } from '../components/ConsequenceFlashback';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { LevelUpModal } from '../components/progression/LevelUpModal';
 import RPGPanel from '../components/RPGPanel';
+import { EventLogPanel } from '../components/EventLogPanel';
 import { useProgression } from '../hooks/useProgression';
 import type { Chapter, Choice } from '../types';
+import type { EventLogEntry } from '../services/storyApi';
 
 // Heavy subcomponents — lazy-loaded to keep initial StoryReaderPage chunk small.
 const EntityDetailModal = lazy(() =>
@@ -114,6 +116,8 @@ export default function StoryReaderPage() {
   const [flashbackQueue, setFlashbackQueue] = useState<ConsequenceSeed[]>([]);
   const [isRelationshipModalOpen, setIsRelationshipModalOpen] = useState(false);
   const [gamePanelOpen, setGamePanelOpen] = useState(false);
+  const [eventLogOpen, setEventLogOpen] = useState(false);
+  const [recentEvents, setRecentEvents] = useState<EventLogEntry[]>([]);
   const [prevLevel, setPrevLevel] = useState<number | null>(null);
   const [levelUpModal, setLevelUpModal] = useState<{ show: boolean; newLevel: number; levelTitle?: string; xpToNext: number }>({
     show: false,
@@ -121,7 +125,7 @@ export default function StoryReaderPage() {
     xpToNext: 0,
   });
   
-  const { isGenerating, isRetryingTools, isStreaming, streamingText, streamPhase, error, generateChapterStream, retryChapter, retryTools, clearError } = useChapterGeneration();
+  const { isGenerating, isRetryingTools, isStreaming, streamingText, streamPhase, error, generationState, isAwaitingUser, generateChapterStream, retryChapter, retryTools, resumeChapter, setGenerationState, clearError } = useChapterGeneration();
   
   const characters = useStoryStore(s => s.characters);
   const items = useStoryStore(s => s.items);
@@ -185,6 +189,7 @@ export default function StoryReaderPage() {
   useEffect(() => {
     if (playthroughId) {
       loadStoryState();
+      refreshGenerationState();
       fetchPlaythrough(playthroughId).catch(console.error);
       fetchCharacters(playthroughId).catch(console.error);
       fetchItems(playthroughId).catch(console.error);
@@ -260,6 +265,7 @@ export default function StoryReaderPage() {
       loadActiveCombat(),
       loadConsequences(true),
       refetchProgress(),
+      refreshGenerationState(),
     ]);
     setCurrentChapterIdx(-1);
   };
@@ -409,6 +415,34 @@ export default function StoryReaderPage() {
     await reloadAfterGeneration();
   };
 
+  const refreshGenerationState = async () => {
+    if (!playthroughId) return;
+    try {
+      const res = await storyApi.getGenerationState(playthroughId);
+      setGenerationState(res.state);
+      setRecentEvents(res.recentEvents || []);
+    } catch { /* non-critical */ }
+  };
+
+  const handleResume = async () => {
+    if (!playthroughId) return;
+    clearError();
+    const result = await resumeChapter(playthroughId);
+    if (result?.chapter?.choices && result.chapter.choices.length > 0) {
+      setChoices(result.chapter.choices);
+    }
+    await reloadAfterGeneration();
+    await refreshGenerationState();
+  };
+
+  const handleViewLogs = () => {
+    setEventLogOpen(true);
+  };
+
+  const handleChangeSettings = () => {
+    navigate('/settings');
+  };
+
   const handleSummarizeArc = async () => {
     if (!playthroughId || isSummarizingArc) return;
     if (!confirm(t.storyReader.confirmSummarize)) return;
@@ -517,6 +551,9 @@ export default function StoryReaderPage() {
           isLatestToolsFailed={isLatestToolsFailed}
           isToolsRunning={isToolsRunning}
           isRetryingTools={isRetryingTools}
+          isAwaitingUser={isAwaitingUser}
+          generationState={generationState}
+          recentEvents={recentEvents}
           error={error}
           choices={choices}
           playthroughId={playthroughId!}
@@ -526,6 +563,9 @@ export default function StoryReaderPage() {
           onEntityClick={handleEntityClick}
           onRetry={handleRetry}
           onRetryTools={handleRetryTools}
+          onResume={handleResume}
+          onViewLogs={handleViewLogs}
+          onChangeSettings={handleChangeSettings}
           onChoiceSelect={handleChoiceSelect}
           onCombatUpdate={(updated) => setActiveCombat(updated)}
           onCombatEnd={() => { loadActiveCombat(); reloadAfterGeneration(); }}
@@ -607,6 +647,15 @@ export default function StoryReaderPage() {
         <Compass size={22} />
       </button>
 
+      {/* Floating Event Log Button */}
+      <button
+        onClick={() => setEventLogOpen(true)}
+        className="fixed bottom-52 lg:bottom-38 right-4 z-30 bg-ink-800 border border-ink-700 hover:border-accent-400/50 text-ink-200/70 hover:text-accent-300 rounded-full p-3.5 shadow-lg transition-all duration-200 flex items-center justify-center cursor-pointer"
+        title={t.eventLog?.title || 'Event Log'}
+      >
+        <ScrollText size={20} />
+      </button>
+
       <button
         onClick={() => setGamePanelOpen(true)}
         className="fixed bottom-20 lg:bottom-6 right-4 z-30 bg-accent-600 hover:bg-accent-500 text-white rounded-full p-3.5 shadow-lg hover:shadow-accent-600/30 transition-all duration-200"
@@ -642,7 +691,13 @@ export default function StoryReaderPage() {
       </Suspense>
 
       <ConsequenceFlashback consequences={flashbackQueue} />
-      
+
+      <EventLogPanel
+        playthroughId={playthroughId!}
+        isOpen={eventLogOpen}
+        onClose={() => setEventLogOpen(false)}
+      />
+
       <LevelUpModal
         isOpen={levelUpModal.show}
         newLevel={levelUpModal.newLevel}
