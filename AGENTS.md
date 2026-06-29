@@ -229,6 +229,7 @@ World > Continent > Region > Location. Top 3 levels are world-level (shared). Lo
 cd backend
 npm run dev        # Start dev server (ts-node-dev)
 npm run build      # Compile TypeScript
+npm run lint       # ESLint
 npm test           # Run tests (Vitest)
 npm run test:watch # Watch mode
 

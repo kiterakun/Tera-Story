@@ -366,13 +366,17 @@ export default function StoryReaderPage() {
         /* non-critical */
       }
     }
-    await generateChapterStream(playthroughId, choiceText);
+    const result = await generateChapterStream(playthroughId, choiceText);
     // Clear the saved choice once generation starts.
     try {
       const { useDraftStore } = await import('../stores/draftStore');
       useDraftStore.getState().clearChoice(playthroughId);
     } catch {
       /* non-critical */
+    }
+    // Optimistically apply choices from the stream completion before reloading state.
+    if (result?.chapter?.choices && result.chapter.choices.length > 0) {
+      setChoices(result.chapter.choices);
     }
     await reloadAfterGeneration();
   };
@@ -383,7 +387,11 @@ export default function StoryReaderPage() {
     setIsNewGame(false);
     setChoices([]);
     setCurrentChapterIdx(-1);
-    await generateChapterStream(playthroughId, t.storyReader.beginStoryPrompt);
+    const result = await generateChapterStream(playthroughId, t.storyReader.beginStoryPrompt);
+    // Optimistically apply choices from the stream completion before reloading state.
+    if (result?.chapter?.choices && result.chapter.choices.length > 0) {
+      setChoices(result.chapter.choices);
+    }
     await reloadAfterGeneration();
   };
 

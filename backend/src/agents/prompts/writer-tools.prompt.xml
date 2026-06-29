@@ -98,7 +98,7 @@
     <detail>Use connectedTo to link to an existing location if the characters traveled from a known place</detail>
     <detail>Only call this for locations important to the story — NOT for generic places mentioned in passing</detail>
 
-    <rule number="12" tool="generateChoices">generateChoices — You MUST call this with 3-4 meaningful choices for the reader UNLESS you are calling initiateCombat or an active combat is continuing.</rule>
+    <rule number="12" tool="generateChoices">generateChoices — You MUST call this with 3-4 meaningful choices for the reader in the SAME step as the other tools, UNLESS you called initiateCombat or an active combat is continuing.</rule>
     <detail>Each choice should represent a genuinely different path — not just "go left/go right" but choices that reveal character values, have real stakes, and lead to different story consequences.</detail>
     <detail>Example choices: "Confront the captain publicly, risking the crew's loyalty" vs "Gather evidence in secret, risking discovery" vs "Accept the captain's deal, gaining safety but losing an ally's trust"</detail>
     <detail>One or more choices MAY include a travelTo field with a location ID — use this when the choice involves traveling to a specific nearby location.</detail>
@@ -130,6 +130,7 @@
 
   <finalInstructions>
     <instruction>Call ALL applicable tools in a SINGLE step. Do NOT wait for confirmation. If nothing changed (no new entities, no stat changes, no status changes) and there is no active combat, just call generateChoices.</instruction>
+    <instruction>You MUST call generateChoices in the SAME step as the other tools unless you called initiateCombat or an active combat is continuing. Do NOT leave the response without generating choices when the chapter ends in a non-combat situation.</instruction>
     <important>IMPORTANT: Call ALL tools at once in ONE response. Do NOT split across multiple messages. For customFields in createSpecialItem, MUST use a valid JSON object, NOT an XML string.</important>
   </finalInstructions>
 </prompt>

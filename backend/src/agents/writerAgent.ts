@@ -18,6 +18,7 @@ import { makeUpdateLocationStatsTool } from '../tools/updateLocationStats';
 import { makeCreateOrganizationTool } from '../tools/createOrganization';
 import { makeUpdateOrganizationTool } from '../tools/updateOrganization';
 import { emit } from '../services/sseManager';
+import { Chapter } from '../models/Chapter';
 
 export interface WriterAgentParams {
   contextOutput: ContextOutput;
@@ -178,7 +179,6 @@ export async function runWriterAgent(
     : '';
 
   // --- First Chapter & Clean Content Checks ---
-  const { Chapter } = await import('../models/Chapter');
   const currentChapterDoc = await Chapter.findById(chapterId).lean();
   const isFirstChapter = currentChapterDoc ? currentChapterDoc.chapterIndex === 0 : false;
 
@@ -282,6 +282,8 @@ ${cleanProseInstruction}`.trim();
   // PASS 2 — TOOLS: Analyze chapter, update game state, generate choices
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+  const choicesTool = makeGenerateChoicesTool(chapterId);
+
   const tools = {
     createCharacter: makeCreateCharacterTool(playthroughId, worldId, userId, chapterId),
     createItem: makeCreateItemTool(playthroughId, worldId, userId, chapterId),
@@ -293,6 +295,7 @@ ${cleanProseInstruction}`.trim();
     activateConsequence: makeActivateConsequenceTool(playthroughId, chapterId),
     initiateCombat: makeInitiateCombatTool(playthroughId, chapterId),
     summarizeArc: makeSummarizeArcTool(),
+    generateChoices: choicesTool,
     ...(contextOutput.currentRegionId
       ? { discoverLocation: makeDiscoverLocationTool({ playthroughId, regionId: contextOutput.currentRegionId, worldId }) }
       : {}),
@@ -301,8 +304,6 @@ ${cleanProseInstruction}`.trim();
     createOrganization: makeCreateOrganizationTool(playthroughId, worldId, userId, chapterId),
     updateOrganization: makeUpdateOrganizationTool(playthroughId),
   };
-
-  const choicesTool = makeGenerateChoicesTool(chapterId);
 
   const TOOL_SSE_EVENTS: Record<string, string> = {
     createCharacter: 'character:created',
@@ -408,7 +409,31 @@ Call all applicable tools NOW in ONE step. Do NOT output any text — ONLY tool 
 
   const pass2Usage = await toolStream.usage;
 
-  const choicesPrompt = `
+  // Detect whether combat is active so we know if choices are expected.
+  const initiatedCombat = toolSteps.some(step =>
+    'toolResults' in step &&
+    Array.isArray(step.toolResults) &&
+    step.toolResults.some(
+      (tr) =>
+        tr &&
+        typeof tr === 'object' &&
+        'toolName' in tr &&
+        tr.toolName === 'initiateCombat'
+    )
+  );
+  const hasActiveCombat = !!contextOutput.activeCombat || initiatedCombat;
+
+  // Verify choices were actually generated; retry/fallback if not.
+  let chapterAfterTools = await Chapter.findById(chapterId).lean();
+  let choices = chapterAfterTools?.choices || [];
+  let retryUsage:
+    | { promptTokens?: number; inputTokens?: number; completionTokens?: number; outputTokens?: number }
+    | undefined;
+
+  if (!hasActiveCombat && choices.length === 0) {
+    console.log(`[Writer] generateChoices missing after Pass 2 — retrying for chapter=${chapterId}`);
+
+    const retryPrompt = `
 Based on the completed chapter below, call generateChoices with 3-4 meaningful choices for the reader.
 Language: ${language}. ALL choices must be in ${language}.
 
@@ -417,23 +442,39 @@ ${chapterContent}
 
 Do NOT output any text — ONLY call generateChoices.`.trim();
 
-  const choicesStream = streamText({
-    model,
-    system: getToolsSystemPrompt(language),
-    prompt: choicesPrompt,
-    tools: { generateChoices: choicesTool },
-    stopWhen: stepCountIs(1),
-  });
+    const retryStream = streamText({
+      model,
+      system: getToolsSystemPrompt(language),
+      prompt: retryPrompt,
+      tools: { generateChoices: choicesTool },
+      stopWhen: stepCountIs(1),
+    });
 
-  // Run generateChoices after all other tools complete
-  await choicesStream.steps;
-  const choicesUsage = await choicesStream.usage;
+    await retryStream.steps;
+    retryUsage = await retryStream.usage;
+
+    chapterAfterTools = await Chapter.findById(chapterId).lean();
+    choices = chapterAfterTools?.choices || [];
+  }
+
+  if (!hasActiveCombat && choices.length === 0) {
+    console.log(`[Writer] generateChoices still missing — writing fallback choices for chapter=${chapterId}`);
+
+    const fallbackChoices = [
+      { text: language === 'vi' ? 'Tiếp tục câu chuyện' : 'Continue the story', type: 'continue' as const },
+      { text: language === 'vi' ? 'Khám phá xung quanh' : 'Explore the surroundings', type: 'custom' as const },
+      { text: language === 'vi' ? 'Nghỉ ngơi và hồi phục' : 'Rest and recover', type: 'custom' as const },
+    ];
+
+    await Chapter.findByIdAndUpdate(chapterId, { choices: fallbackChoices });
+    choices = fallbackChoices;
+  }
 
   // Mark tools as completed & notify caller
   await Chapter.findByIdAndUpdate(chapterId, { toolsStatus: 'completed' });
   onToolsComplete?.();
 
-  console.log(`[Writer] Pass 2 complete — all tool calls executed for chapter=${chapterId}`);
+  console.log(`[Writer] Pass 2 complete — choices=${choices.length} for chapter=${chapterId}`);
 
   let totalPromptTokens = 0;
   let totalCompletionTokens = 0;
@@ -450,10 +491,9 @@ Do NOT output any text — ONLY call generateChoices.`.trim();
     totalCompletionTokens += p2Usage.completionTokens || p2Usage.outputTokens || 0;
   }
 
-  const p3Usage = choicesUsage as { promptTokens?: number; inputTokens?: number; completionTokens?: number; outputTokens?: number } | undefined;
-  if (p3Usage) {
-    totalPromptTokens += p3Usage.promptTokens || p3Usage.inputTokens || 0;
-    totalCompletionTokens += p3Usage.completionTokens || p3Usage.outputTokens || 0;
+  if (retryUsage) {
+    totalPromptTokens += retryUsage.promptTokens || retryUsage.inputTokens || 0;
+    totalCompletionTokens += retryUsage.completionTokens || retryUsage.outputTokens || 0;
   }
 
   const totalTokens = totalPromptTokens + totalCompletionTokens;
